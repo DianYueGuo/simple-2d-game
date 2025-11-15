@@ -3,6 +3,7 @@ cmake_minimum_required()
 project(simple-2d-game)
 
 include(FetchContent)
+
 FetchContent_Declare(
     SFML
     GIT_REPOSITORY https://github.com/SFML/SFML.git
@@ -10,8 +11,16 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(SFML)
 
+FetchContent_Declare(
+    box2d
+    GIT_REPOSITORY git@github.com:erincatto/box2d.git
+    GIT_TAG v3.1.1
+)
+FetchContent_MakeAvailable(box2d)
+
 add_executable(
     app
     src/main.cpp
 )
 target_link_libraries(app PRIVATE SFML::Graphics SFML::Audio SFML::Network)
+target_link_libraries(app PRIVATE box2d)
