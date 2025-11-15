@@ -19,6 +19,7 @@ Game::~Game() {
 void Game::handleInput() {
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space)) {
         std::cout << "Space key pressed" << std::endl;
+        cell->apply_impulse();
     }
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left)) {

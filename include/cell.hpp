@@ -11,6 +11,7 @@ public:
     ~Cell();
 
     void draw(sf::RenderWindow& window) const;
+    void apply_impulse();
 private:
     b2BodyId bodyId;
     b2ShapeId shapeId;

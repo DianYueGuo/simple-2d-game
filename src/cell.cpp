@@ -23,6 +23,15 @@ Cell::~Cell() {
     b2DestroyBody(bodyId);
 }
 
+void Cell::apply_impulse() {
+    b2Body_ApplyLinearImpulse(
+        bodyId,
+        {1.0f, 0.0f},
+        {0.0f, 0.0f},
+        true
+    );
+}
+
 void Cell::draw(sf::RenderWindow& window) const {
     b2Circle circle = b2Shape_GetCircle(shapeId);
     sf::CircleShape shape(circle.radius);
