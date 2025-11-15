@@ -9,6 +9,7 @@ public:
     Game(sf::RenderWindow& window);
 
     void handleInput();
+    void update();
     void render() const;
 private:
     sf::RenderWindow& window;

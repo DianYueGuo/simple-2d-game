@@ -23,6 +23,13 @@ void Game::handleInput() {
     }
 }
 
+void Game::update() {
+    static const float timeStep = 1.0f / 60.0f;
+    static const int subStepCount = 4;
+
+    b2World_Step(worldId, timeStep, subStepCount);
+}
+
 void Game::render() const {
     window.clear(sf::Color::Black);
 
