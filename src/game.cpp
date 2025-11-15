@@ -7,9 +7,12 @@ Game::Game() {
     b2WorldDef worldDef = b2DefaultWorldDef();
     worldDef.gravity = (b2Vec2){0.0f, 0.0f};
     worldId = b2CreateWorld(&worldDef);
+
+    cell = std::make_unique<Cell>(worldId);
 }
 
 Game::~Game() {
+    cell.reset();
     b2DestroyWorld(worldId);
 }
 
@@ -37,7 +40,7 @@ void Game::update() {
 void Game::render(sf::RenderWindow& window) const {
     window.clear(sf::Color::Black);
 
-    cell.draw(window);
+    cell->draw(window);
 
     window.display();
 }

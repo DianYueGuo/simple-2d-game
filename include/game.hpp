@@ -17,7 +17,7 @@ public:
 private:
     b2WorldId worldId;
 
-    Cell cell;
+    std::unique_ptr<Cell> cell;
 };
 
 #endif
