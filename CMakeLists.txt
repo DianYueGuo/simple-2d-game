@@ -1,4 +1,4 @@
-cmake_minimum_required()
+cmake_minimum_required(VERSION 3.11)
 
 project(simple-2d-game)
 
