@@ -7,12 +7,12 @@
 
 class CirclePhysics {
 public:
-    CirclePhysics(CirclePhysics &circlePhysics, b2WorldId &worldId) {
+    CirclePhysics(b2WorldId &worldId) {
         b2BodyDef circleBodyDef = b2DefaultBodyDef();
         circleBodyDef.type = b2_dynamicBody;
         circleBodyDef.position = (b2Vec2){10.0f, 10.0f};
 
-        circlePhysics.bodyId = b2CreateBody(worldId, &circleBodyDef);
+        bodyId = b2CreateBody(worldId, &circleBodyDef);
 
         b2ShapeDef CircleShapeDef = b2DefaultShapeDef();
         CircleShapeDef.density = 1.0f;
@@ -22,7 +22,7 @@ public:
         circle.center = (b2Vec2){0.0f, 0.0f};
         circle.radius = 10.0f;
 
-        b2CreateCircleShape(circlePhysics.bodyId, &CircleShapeDef, &circle);
+        b2CreateCircleShape(bodyId, &CircleShapeDef, &circle);
     }
 
     b2Vec2 getPosition() {
@@ -44,7 +44,7 @@ int main() {
     worldDef.gravity = (b2Vec2){0.0f, 0.0f};
     b2WorldId worldId = b2CreateWorld(&worldDef);
 
-    CirclePhysics circle_physics(circle_physics, worldId);
+    CirclePhysics circle_physics(worldId);
 
     float timeStep = 1.0f / 60.0f;
     int subStepCount = 4;
