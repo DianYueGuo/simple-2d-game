@@ -11,6 +11,23 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(SFML)
 
+FetchContent_Populate(
+    imgui
+    GIT_REPOSITORY https://github.com/ocornut/imgui.git
+    GIT_TAG v1.92.4
+)
+file(
+    GLOB
+    IMGUI_SOURCES
+    "${imgui_SOURCE_DIR}/imgui*.cpp"
+    "${imgui_SOURCE_DIR}/imgui*.h"
+)
+add_library(
+    imgui
+    STATIC
+    ${IMGUI_SOURCES}
+)
+
 FetchContent_Declare(
     box2d
     GIT_REPOSITORY git@github.com:erincatto/box2d.git
@@ -27,4 +44,5 @@ add_executable(
     src/cell.cpp
 )
 target_link_libraries(app PRIVATE SFML::Graphics SFML::Audio SFML::Network)
+target_link_libraries(app PRIVATE imgui)
 target_link_libraries(app PRIVATE box2d)
