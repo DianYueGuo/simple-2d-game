@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include <SFML/Graphics.hpp>
 #include <imgui.h>
 #include <imgui-SFML.h>
@@ -72,6 +74,18 @@ int main() {
             if (event->is<sf::Event::Closed>())
             {
                 window.close();
+            }
+
+            if (const auto* mouseButtonPressed = event->getIf<sf::Event::MouseButtonPressed>()) {
+                if ( ImGui::GetIO().WantCaptureMouse ){
+		            std::cout << "ImGui captured the mouse click" << std::endl;
+	            }
+
+                if (mouseButtonPressed->button == sf::Mouse::Button::Left) {
+                    std::cout << "the left button was pressed" << std::endl;
+                    std::cout << "mouse x: " << mouseButtonPressed->position.x << std::endl;
+                    std::cout << "mouse y: " << mouseButtonPressed->position.y << std::endl;
+                }
             }
         }
 
