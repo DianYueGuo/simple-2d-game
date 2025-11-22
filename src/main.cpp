@@ -11,7 +11,8 @@
 
 class CirclePhysics {
 public:
-    CirclePhysics(b2WorldId &worldId, float position_x = 0.0f, float position_y = 0.0f, float radius = 1.0f, float density = 1.0f, float friction = 0.0f) {
+    CirclePhysics(b2WorldId &worldId, float position_x = 0.0f, float position_y = 0.0f, float radius = 1.0f, float density = 1.0f, float friction = 0.0f) :
+        bodyId{} {
         b2BodyDef circleBodyDef = b2DefaultBodyDef();
         circleBodyDef.type = b2_dynamicBody;
         circleBodyDef.position = (b2Vec2){position_x, position_y};
@@ -27,6 +28,33 @@ public:
         circle.radius = radius;
 
         b2CreateCircleShape(bodyId, &CircleShapeDef, &circle);
+    }
+
+    ~CirclePhysics() {
+        if (b2Body_IsValid(bodyId)) {
+            b2DestroyBody(bodyId);
+        }
+    }
+
+    CirclePhysics(const CirclePhysics&) = delete;
+    CirclePhysics& operator=(const CirclePhysics&) = delete;
+
+    CirclePhysics(CirclePhysics&& other_circle_physics) noexcept
+        : bodyId(other_circle_physics.bodyId)
+    {
+        other_circle_physics.bodyId = (b2BodyId){};
+    }
+
+    CirclePhysics& operator=(CirclePhysics&& other_circle_physics) noexcept {
+        if (this == &other_circle_physics) {
+            return *this;
+        }
+
+        if (b2Body_IsValid(bodyId)) b2DestroyBody(bodyId);
+        bodyId = other_circle_physics.bodyId;
+        other_circle_physics.bodyId = (b2BodyId){};
+
+        return *this;
     }
 
     b2Vec2 getPosition() const {
@@ -82,14 +110,13 @@ int main() {
                 if (mouseButtonPressed->button == sf::Mouse::Button::Left) {
                     circle_physics.push_back(
                         CirclePhysics(
-                            worldId,
-                            mouseButtonPressed->position.x,
-                            mouseButtonPressed->position.y,
-                            20.0f,
-                            1.0f,
-                            0.3f
-                        )
-                    );
+                        worldId,
+                        mouseButtonPressed->position.x,
+                        mouseButtonPressed->position.y,
+                        20.0f,
+                        1.0f,
+                        0.3f
+                    ));
                 }
             }
         }
