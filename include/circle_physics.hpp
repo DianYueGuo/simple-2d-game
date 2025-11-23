@@ -20,6 +20,12 @@ public:
     b2Vec2 getPosition() const;
 
     float getRadius() const;
+
+    void apply_forward_force() const;
+    void stop_applying_force() const;
+    void apply_left_turn_torque() const;
+    void apply_right_turn_torque() const;
+    void stop_applying_torque() const;
 private:
     b2BodyId bodyId;
 };

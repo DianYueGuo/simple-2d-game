@@ -18,6 +18,15 @@ int main() {
 
     std::vector<CirclePhysics> circle_physics;
 
+    circle_physics.emplace_back(
+                        worldId,
+                        100.0f,
+                        100.0f,
+                        10.0f,
+                        1.0f,
+                        0.3f
+                    );
+
     float timeStep = 1.0f / 60.0f;
     int subStepCount = 4;
 
@@ -52,11 +61,40 @@ int main() {
                         worldId,
                         mouseButtonPressed->position.x,
                         mouseButtonPressed->position.y,
-                        20.0f,
+                        10.0f,
                         1.0f,
                         0.3f
                     );
                 }
+            }
+
+            if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
+                if (keyPressed->scancode == sf::Keyboard::Scancode::Space)
+                    circle_physics.at(0).apply_forward_force();
+            }
+            if (const auto* keyPressed = event->getIf<sf::Event::KeyReleased>()) {
+                if (keyPressed->scancode == sf::Keyboard::Scancode::Space)
+                    circle_physics.at(0).stop_applying_force();
+            }
+
+            if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
+                if (keyPressed->scancode == sf::Keyboard::Scancode::Left)
+                    circle_physics.at(0).apply_left_turn_torque();
+            }
+
+            if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
+                if (keyPressed->scancode == sf::Keyboard::Scancode::Right)
+                    circle_physics.at(0).apply_right_turn_torque();
+            }
+
+            if (const auto* keyPressed = event->getIf<sf::Event::KeyReleased>()) {
+                if (keyPressed->scancode == sf::Keyboard::Scancode::Left)
+                    circle_physics.at(0).stop_applying_torque();
+            }
+
+            if (const auto* keyPressed = event->getIf<sf::Event::KeyReleased>()) {
+                if (keyPressed->scancode == sf::Keyboard::Scancode::Right)
+                    circle_physics.at(0).stop_applying_torque();
             }
         }
 
