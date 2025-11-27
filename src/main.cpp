@@ -32,6 +32,28 @@ void draw_circle(sf::RenderWindow& window, const CirclePhysics& circle_physics) 
     window.draw(line);
 }
 
+void process_touch_events(const b2WorldId& worldId) {
+    b2SensorEvents sensorEvents = b2World_GetSensorEvents(worldId);
+    for (int i = 0; i < sensorEvents.beginCount; ++i)
+    {
+        b2SensorBeginTouchEvent* beginTouch = sensorEvents.beginEvents + i;
+        void* myUserData = b2Shape_GetUserData(beginTouch->visitorShapeId);
+        // process begin event
+        std::cout << "Begin touch event detected!" << std::endl;
+    }
+
+    for (int i = 0; i < sensorEvents.endCount; ++i)
+    {
+        b2SensorEndTouchEvent* endTouch = sensorEvents.endEvents + i;
+        if (b2Shape_IsValid(endTouch->visitorShapeId))
+        {
+            void* myUserData = b2Shape_GetUserData(endTouch->visitorShapeId);
+            // process end event
+            std::cout << "End touch event detected!" << std::endl;
+        }
+    }
+}
+
 int main() {
     srand(time(NULL));
 
@@ -62,6 +84,8 @@ int main() {
     while (window.isOpen())
     {
         b2World_Step(worldId, timeStep, subStepCount);
+
+        process_touch_events(worldId);
 
         while (const auto event = window.pollEvent())
         {

@@ -17,6 +17,7 @@ CirclePhysics::CirclePhysics(b2WorldId &worldId, float position_x, float positio
     CircleShapeDef.material.friction = friction;
 
     CircleShapeDef.isSensor = true;
+    CircleShapeDef.enableSensorEvents = true;
 
     b2Circle circle;
     circle.center = (b2Vec2){0.0f, 0.0f};
