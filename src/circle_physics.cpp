@@ -16,6 +16,8 @@ CirclePhysics::CirclePhysics(b2WorldId &worldId, float position_x, float positio
     CircleShapeDef.density = density;
     CircleShapeDef.material.friction = friction;
 
+    CircleShapeDef.userData = this;
+
     CircleShapeDef.isSensor = true;
     CircleShapeDef.enableSensorEvents = true;
 
@@ -34,6 +36,11 @@ CirclePhysics::~CirclePhysics() {
 
 CirclePhysics::CirclePhysics(CirclePhysics&& other_circle_physics) noexcept :
     bodyId(other_circle_physics.bodyId) {
+
+    b2ShapeId shapeId;
+    b2Body_GetShapes(bodyId, &shapeId, 1);
+    b2Shape_SetUserData(shapeId, this);
+
     other_circle_physics.bodyId = (b2BodyId){};
 }
 
@@ -44,6 +51,11 @@ CirclePhysics& CirclePhysics::operator=(CirclePhysics&& other_circle_physics) no
 
     if (b2Body_IsValid(bodyId)) b2DestroyBody(bodyId);
     bodyId = other_circle_physics.bodyId;
+
+    b2ShapeId shapeId;
+    b2Body_GetShapes(bodyId, &shapeId, 1);
+    b2Shape_SetUserData(shapeId, this);
+
         other_circle_physics.bodyId = (b2BodyId){};
 
     return *this;
