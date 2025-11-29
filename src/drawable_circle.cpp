@@ -6,22 +6,20 @@ DrawableCircle::DrawableCircle(b2WorldId &worldId, float position_x, float posit
 }
 
 void DrawableCircle::draw(sf::RenderWindow& window) const {
-    const CirclePhysics& circle_physics = static_cast<const CirclePhysics&>(*this);
-
     sf::CircleShape shape(100.f);
     shape.setFillColor(sf::Color::Green);
 
-    shape.setOrigin({circle_physics.getRadius(), circle_physics.getRadius()});
-    shape.setPosition({circle_physics.getPosition().x, circle_physics.getPosition().y});
-    shape.setRadius(circle_physics.getRadius());
+    shape.setOrigin({getRadius(), getRadius()});
+    shape.setPosition({getPosition().x, getPosition().y});
+    shape.setRadius(getRadius());
     window.draw(shape);
 
-    sf::RectangleShape line({circle_physics.getRadius(), circle_physics.getRadius() / 4.0f});
+    sf::RectangleShape line({getRadius(), getRadius() / 4.0f});
     line.setFillColor(sf::Color::White);
-    line.rotate(sf::radians(circle_physics.getAngle()));
+    line.rotate(sf::radians(getAngle()));
 
-    line.setOrigin({0, circle_physics.getRadius() / 4.0f / 2.0f});
-    line.setPosition({circle_physics.getPosition().x, circle_physics.getPosition().y});
+    line.setOrigin({0, getRadius() / 4.0f / 2.0f});
+    line.setPosition({getPosition().x, getPosition().y});
 
     window.draw(line);
 }
