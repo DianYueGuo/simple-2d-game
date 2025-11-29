@@ -50,7 +50,7 @@ add_executable(
     app
     src/main.cpp
     src/circle_physics.cpp
-    src/circle.cpp
+    src/drawable_circle.cpp
 )
 target_link_libraries(app PRIVATE SFML::Graphics SFML::Audio SFML::Network)
 target_link_libraries(app PRIVATE imgui)

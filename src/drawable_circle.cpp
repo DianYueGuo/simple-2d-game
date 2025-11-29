@@ -1,11 +1,13 @@
-#include "circle.hpp"
+#include "drawable_circle.hpp"
 
 
-Circle::Circle(b2WorldId &worldId, float position_x, float position_y, float radius, float density, float friction) :
-    circle_physics(worldId, position_x, position_y, radius, density, friction) {
+DrawableCircle::DrawableCircle(b2WorldId &worldId, float position_x, float position_y, float radius, float density, float friction) :
+    CirclePhysics(worldId, position_x, position_y, radius, density, friction) {
 }
 
-void Circle::draw(sf::RenderWindow& window) const {
+void DrawableCircle::draw(sf::RenderWindow& window) const {
+    const CirclePhysics& circle_physics = static_cast<const CirclePhysics&>(*this);
+
     sf::CircleShape shape(100.f);
     shape.setFillColor(sf::Color::Green);
 
@@ -22,8 +24,4 @@ void Circle::draw(sf::RenderWindow& window) const {
     line.setPosition({circle_physics.getPosition().x, circle_physics.getPosition().y});
 
     window.draw(line);
-}
-
-CirclePhysics& Circle::getPhysics() {
-    return circle_physics;
 }

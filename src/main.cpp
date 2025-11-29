@@ -9,7 +9,7 @@
 #include <box2d/box2d.h>
 
 #include "circle_physics.hpp"
-#include "circle.hpp"
+#include "drawable_circle.hpp"
 
 #include <time.h>
 
@@ -51,10 +51,10 @@ int main() {
     worldDef.gravity = (b2Vec2){0.0f, 0.0f};
     b2WorldId worldId = b2CreateWorld(&worldDef);
 
-    std::vector<std::unique_ptr<Circle>> circles;
+    std::vector<std::unique_ptr<DrawableCircle>> circles;
 
     circles.push_back(
-        std::make_unique<Circle>(
+        std::make_unique<DrawableCircle>(
                         worldId,
                         100.0f,
                         100.0f,
@@ -94,7 +94,7 @@ int main() {
             if (const auto* mouseButtonPressed = event->getIf<sf::Event::MouseButtonPressed>()) {
                 if (mouseButtonPressed->button == sf::Mouse::Button::Left) {
                     circles.push_back(
-                    std::make_unique<Circle>(
+                    std::make_unique<DrawableCircle>(
                         worldId,
                         mouseButtonPressed->position.x,
                         mouseButtonPressed->position.y,
@@ -108,31 +108,31 @@ int main() {
 
             if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
                 if (keyPressed->scancode == sf::Keyboard::Scancode::Space)
-                    circles.at(0)->getPhysics().apply_forward_force();
+                    circles.at(0)->apply_forward_force();
             }
             if (const auto* keyPressed = event->getIf<sf::Event::KeyReleased>()) {
                 if (keyPressed->scancode == sf::Keyboard::Scancode::Space)
-                    circles.at(0)->getPhysics().stop_applying_force();
+                    circles.at(0)->stop_applying_force();
             }
 
             if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
                 if (keyPressed->scancode == sf::Keyboard::Scancode::Left)
-                    circles.at(0)->getPhysics().apply_left_turn_torque();
+                    circles.at(0)->apply_left_turn_torque();
             }
 
             if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
                 if (keyPressed->scancode == sf::Keyboard::Scancode::Right)
-                    circles.at(0)->getPhysics().apply_right_turn_torque();
+                    circles.at(0)->apply_right_turn_torque();
             }
 
             if (const auto* keyPressed = event->getIf<sf::Event::KeyReleased>()) {
                 if (keyPressed->scancode == sf::Keyboard::Scancode::Left)
-                    circles.at(0)->getPhysics().stop_applying_torque();
+                    circles.at(0)->stop_applying_torque();
             }
 
             if (const auto* keyPressed = event->getIf<sf::Event::KeyReleased>()) {
                 if (keyPressed->scancode == sf::Keyboard::Scancode::Right)
-                    circles.at(0)->getPhysics().stop_applying_torque();
+                    circles.at(0)->stop_applying_torque();
             }
         }
 
