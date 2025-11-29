@@ -1,6 +1,8 @@
 #ifndef CIRCLE_PHYSICS_HPP
 #define CIRCLE_PHYSICS_HPP
 
+#include <unordered_set>
+
 #include <box2d/box2d.h>
 
 
@@ -28,8 +30,12 @@ public:
     void stop_applying_torque() const;
 
     float getAngle() const;
+
+    void add_touching_circle(CirclePhysics* circle_physics);
+    void remove_touching_circle(CirclePhysics* circle_physics);
 private:
     b2BodyId bodyId;
+    std::unordered_set<CirclePhysics*> touching_circles;
 };
 
 #endif

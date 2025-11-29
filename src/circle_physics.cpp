@@ -32,16 +32,26 @@ CirclePhysics::~CirclePhysics() {
     if (b2Body_IsValid(bodyId)) {
         b2DestroyBody(bodyId);
     }
+
+    for (auto* touching_circle : touching_circles) {
+        touching_circle->remove_touching_circle(this);
+    }
 }
 
 CirclePhysics::CirclePhysics(CirclePhysics&& other_circle_physics) noexcept :
-    bodyId(other_circle_physics.bodyId) {
+    bodyId(other_circle_physics.bodyId),
+    touching_circles(std::move(other_circle_physics.touching_circles)) {
 
     b2ShapeId shapeId;
     b2Body_GetShapes(bodyId, &shapeId, 1);
     b2Shape_SetUserData(shapeId, this);
 
     other_circle_physics.bodyId = (b2BodyId){};
+
+    for (auto* touching_circle : touching_circles) {
+        touching_circle->remove_touching_circle(&other_circle_physics);
+        touching_circle->add_touching_circle(this);
+    }
 }
 
 CirclePhysics& CirclePhysics::operator=(CirclePhysics&& other_circle_physics) noexcept {
@@ -57,6 +67,12 @@ CirclePhysics& CirclePhysics::operator=(CirclePhysics&& other_circle_physics) no
     b2Shape_SetUserData(shapeId, this);
 
         other_circle_physics.bodyId = (b2BodyId){};
+
+    touching_circles = std::move(other_circle_physics.touching_circles);
+    for (auto* touching_circle : touching_circles) {
+        touching_circle->remove_touching_circle(&other_circle_physics);
+        touching_circle->add_touching_circle(this);
+    }
 
     return *this;
 }
@@ -98,4 +114,12 @@ void CirclePhysics::stop_applying_torque() const {
 
 float CirclePhysics::getAngle() const {
     return b2Rot_GetAngle(b2Body_GetRotation(bodyId));
+}
+
+void CirclePhysics::add_touching_circle(CirclePhysics* circle_physics) {
+    touching_circles.insert(circle_physics);
+}
+
+void CirclePhysics::remove_touching_circle(CirclePhysics* circle_physics) {
+    touching_circles.erase(circle_physics);
 }

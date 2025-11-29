@@ -37,10 +37,13 @@ void process_touch_events(const b2WorldId& worldId) {
     for (int i = 0; i < sensorEvents.beginCount; ++i)
     {
         b2SensorBeginTouchEvent* beginTouch = sensorEvents.beginEvents + i;
-        void* myUserData = b2Shape_GetUserData(beginTouch->visitorShapeId);
+        void* sensorShapeUserData = b2Shape_GetUserData(beginTouch->sensorShapeId);
+        void* visitorShapeUserData = b2Shape_GetUserData(beginTouch->visitorShapeId);
         // process begin event
         std::cout << "Begin touch event detected!" << std::endl;
-        std::cout << "Visitor radius: " << static_cast<CirclePhysics*>(myUserData)->getRadius() << std::endl;
+        std::cout << "Visitor radius: " << static_cast<CirclePhysics*>(visitorShapeUserData)->getRadius() << std::endl;
+
+        static_cast<CirclePhysics*>(sensorShapeUserData)->add_touching_circle(static_cast<CirclePhysics*>(visitorShapeUserData));
     }
 
     for (int i = 0; i < sensorEvents.endCount; ++i)
@@ -48,10 +51,13 @@ void process_touch_events(const b2WorldId& worldId) {
         b2SensorEndTouchEvent* endTouch = sensorEvents.endEvents + i;
         if (b2Shape_IsValid(endTouch->visitorShapeId))
         {
-            void* myUserData = b2Shape_GetUserData(endTouch->visitorShapeId);
+            void* sensorShapeUserData = b2Shape_GetUserData(endTouch->sensorShapeId);
+            void* visitorShapeUserData = b2Shape_GetUserData(endTouch->visitorShapeId);
             // process end event
             std::cout << "End touch event detected!" << std::endl;
-            std::cout << "Visitor radius: " << static_cast<CirclePhysics*>(myUserData)->getRadius() << std::endl;
+            std::cout << "Visitor radius: " << static_cast<CirclePhysics*>(visitorShapeUserData)->getRadius() << std::endl;
+
+            static_cast<CirclePhysics*>(sensorShapeUserData)->remove_touching_circle(static_cast<CirclePhysics*>(visitorShapeUserData));
         }
     }
 }
