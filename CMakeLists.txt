@@ -51,6 +51,8 @@ add_executable(
     src/main.cpp
     src/circle_physics.cpp
     src/drawable_circle.cpp
+    src/eatable_circle.cpp
+    src/eater_circle.cpp
 )
 target_link_libraries(app PRIVATE SFML::Graphics SFML::Audio SFML::Network)
 target_link_libraries(app PRIVATE imgui)

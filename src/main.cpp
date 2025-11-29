@@ -9,7 +9,7 @@
 #include <box2d/box2d.h>
 
 #include "circle_physics.hpp"
-#include "drawable_circle.hpp"
+#include "eater_circle.hpp"
 
 #include <time.h>
 
@@ -31,7 +31,7 @@ void process_touch_events(const b2WorldId& worldId) {
     for (int i = 0; i < sensorEvents.endCount; ++i)
     {
         b2SensorEndTouchEvent* endTouch = sensorEvents.endEvents + i;
-        if (b2Shape_IsValid(endTouch->visitorShapeId))
+        if (b2Shape_IsValid(endTouch->sensorShapeId) && b2Shape_IsValid(endTouch->visitorShapeId))
         {
             void* sensorShapeUserData = b2Shape_GetUserData(endTouch->sensorShapeId);
             void* visitorShapeUserData = b2Shape_GetUserData(endTouch->visitorShapeId);
@@ -51,10 +51,10 @@ int main() {
     worldDef.gravity = (b2Vec2){0.0f, 0.0f};
     b2WorldId worldId = b2CreateWorld(&worldDef);
 
-    std::vector<std::unique_ptr<DrawableCircle>> circles;
+    std::vector<std::unique_ptr<EaterCircle>> circles;
 
     circles.push_back(
-        std::make_unique<DrawableCircle>(
+        std::make_unique<EaterCircle>(
                         worldId,
                         100.0f,
                         100.0f,
@@ -79,6 +79,20 @@ int main() {
 
         process_touch_events(worldId);
 
+        for (auto& circle : circles) {
+            if (auto* eater_circle = dynamic_cast<EaterCircle*>(circle.get())) {
+                eater_circle->process_eating();
+            }
+        }
+
+        for (auto it = circles.begin(); it != circles.end(); ) {
+            if ((*it)->is_eaten()) {
+                it = circles.erase(it);
+            } else {
+                ++it;
+            }
+        }
+
         while (const auto event = window.pollEvent())
         {
             ImGui::SFML::ProcessEvent(window, *event);
@@ -94,7 +108,7 @@ int main() {
             if (const auto* mouseButtonPressed = event->getIf<sf::Event::MouseButtonPressed>()) {
                 if (mouseButtonPressed->button == sf::Mouse::Button::Left) {
                     circles.push_back(
-                    std::make_unique<DrawableCircle>(
+                    std::make_unique<EaterCircle>(
                         worldId,
                         mouseButtonPressed->position.x,
                         mouseButtonPressed->position.y,

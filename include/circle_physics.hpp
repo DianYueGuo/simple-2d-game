@@ -35,6 +35,7 @@ public:
     void remove_touching_circle(CirclePhysics* circle_physics);
 private:
     b2BodyId bodyId;
+protected:
     std::unordered_set<CirclePhysics*> touching_circles;
 };
 
