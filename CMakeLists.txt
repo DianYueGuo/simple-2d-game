@@ -49,8 +49,6 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 add_executable(
     app
     src/main.cpp
-    src/game.cpp
-    src/cell.cpp
     src/circle_physics.cpp
 )
 target_link_libraries(app PRIVATE SFML::Graphics SFML::Audio SFML::Network)
