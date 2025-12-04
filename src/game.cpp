@@ -77,7 +77,7 @@ void Game::process_game_logic() {
 
 void Game::draw(sf::RenderWindow& window) const {
     for (const auto& circle : circles) {
-        circle->draw(window);
+        circle->draw(window, pixles_per_meter);
     }
 }
 
@@ -87,8 +87,8 @@ void Game::process_input_events(const std::optional<sf::Event>& event) {
             circles.push_back(
             std::make_unique<EaterCircle>(
                 worldId,
-                mouseButtonPressed->position.x,
-                mouseButtonPressed->position.y,
+                mouseButtonPressed->position.x / pixles_per_meter,
+                mouseButtonPressed->position.y / pixles_per_meter,
                 10.0f * (0.5f + static_cast<float>(rand()) / RAND_MAX),
                 1.0f,
                 0.3f

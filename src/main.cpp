@@ -49,6 +49,11 @@ int main() {
 
         ImGui::Begin("Hello, world!");
         ImGui::Button("Look at this pretty button");
+
+        static float pixel_per_meter = 1.0f;
+        ImGui::SliderFloat("Pixel Per Meter", &pixel_per_meter, 0.1f, 100.0f);
+        game.set_pixles_per_meter(pixel_per_meter);
+
         ImGui::End();
 
         window.clear();

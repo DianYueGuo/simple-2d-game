@@ -5,21 +5,20 @@ DrawableCircle::DrawableCircle(b2WorldId &worldId, float position_x, float posit
     CirclePhysics(worldId, position_x, position_y, radius, density, friction) {
 }
 
-void DrawableCircle::draw(sf::RenderWindow& window) const {
-    sf::CircleShape shape(100.f);
+void DrawableCircle::draw(sf::RenderWindow& window, float pixle_per_meter) const {
+    sf::CircleShape shape(getRadius() * pixle_per_meter);
     shape.setFillColor(sf::Color::Green);
 
-    shape.setOrigin({getRadius(), getRadius()});
-    shape.setPosition({getPosition().x, getPosition().y});
-    shape.setRadius(getRadius());
+    shape.setOrigin({getRadius() * pixle_per_meter, getRadius() * pixle_per_meter});
+    shape.setPosition({getPosition().x * pixle_per_meter, getPosition().y * pixle_per_meter});
     window.draw(shape);
 
-    sf::RectangleShape line({getRadius(), getRadius() / 4.0f});
+    sf::RectangleShape line({getRadius() * pixle_per_meter, getRadius() * pixle_per_meter / 4.0f});
     line.setFillColor(sf::Color::White);
     line.rotate(sf::radians(getAngle()));
 
-    line.setOrigin({0, getRadius() / 4.0f / 2.0f});
-    line.setPosition({getPosition().x, getPosition().y});
+    line.setOrigin({0, getRadius() * pixle_per_meter / 4.0f / 2.0f});
+    line.setPosition({getPosition().x * pixle_per_meter, getPosition().y * pixle_per_meter});
 
     window.draw(line);
 }

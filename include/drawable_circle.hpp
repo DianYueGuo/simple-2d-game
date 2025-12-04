@@ -10,7 +10,7 @@ class DrawableCircle : public CirclePhysics {
 public:
     DrawableCircle(b2WorldId &worldId, float position_x = 0.0f, float position_y = 0.0f, float radius = 1.0f, float density = 1.0f, float friction = 0.0f);
 
-    void draw(sf::RenderWindow& window) const;
+    void draw(sf::RenderWindow& window, float pixle_per_meter) const;
 };
 
 #endif
