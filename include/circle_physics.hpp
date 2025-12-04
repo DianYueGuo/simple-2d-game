@@ -29,6 +29,10 @@ public:
     void apply_right_turn_torque() const;
     void stop_applying_torque() const;
 
+    void apply_forward_impulse() const;
+    void apply_left_turn_impulse() const;
+    void apply_right_turn_impulse() const;
+
     float getAngle() const;
 
     void add_touching_circle(CirclePhysics* circle_physics);

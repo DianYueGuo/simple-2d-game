@@ -100,31 +100,15 @@ void Game::process_input_events(sf::RenderWindow& window, const std::optional<sf
     }
 
     if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
-        if (keyPressed->scancode == sf::Keyboard::Scancode::Space)
-            circles.at(0)->apply_forward_force();
-    }
-    if (const auto* keyPressed = event->getIf<sf::Event::KeyReleased>()) {
-        if (keyPressed->scancode == sf::Keyboard::Scancode::Space)
-            circles.at(0)->stop_applying_force();
-    }
+        float probability = static_cast<float>(rand()) / RAND_MAX;
 
-    if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
-        if (keyPressed->scancode == sf::Keyboard::Scancode::Left)
-            circles.at(0)->apply_left_turn_torque();
-    }
+        if (keyPressed->scancode == sf::Keyboard::Scancode::Space && probability > 0.8f)
+            circles.at(0)->apply_forward_impulse();
 
-    if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
-        if (keyPressed->scancode == sf::Keyboard::Scancode::Right)
-            circles.at(0)->apply_right_turn_torque();
-    }
+        if (keyPressed->scancode == sf::Keyboard::Scancode::Left && probability > 0.8f)
+            circles.at(0)->apply_left_turn_impulse();
 
-    if (const auto* keyPressed = event->getIf<sf::Event::KeyReleased>()) {
-        if (keyPressed->scancode == sf::Keyboard::Scancode::Left)
-            circles.at(0)->stop_applying_torque();
-    }
-
-    if (const auto* keyPressed = event->getIf<sf::Event::KeyReleased>()) {
-        if (keyPressed->scancode == sf::Keyboard::Scancode::Right)
-            circles.at(0)->stop_applying_torque();
+        if (keyPressed->scancode == sf::Keyboard::Scancode::Right && probability > 0.8f)
+            circles.at(0)->apply_right_turn_impulse();
     }
 }

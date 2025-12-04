@@ -112,6 +112,21 @@ void CirclePhysics::stop_applying_torque() const {
     b2Body_ApplyTorque(bodyId, 0.0f, true);
 };
 
+void CirclePhysics::apply_forward_impulse() const {
+    b2Rot rotation = b2Body_GetRotation(bodyId);
+    float impulse_magnitude = 5.0f;
+    b2Vec2 impulse = {impulse_magnitude * rotation.c, impulse_magnitude * rotation.s};
+    b2Body_ApplyLinearImpulse(bodyId, impulse, b2Body_GetPosition(bodyId), true);
+};
+
+void CirclePhysics::apply_left_turn_impulse() const {
+    b2Body_ApplyAngularImpulse(bodyId, -5.0f, true);
+};
+
+void CirclePhysics::apply_right_turn_impulse() const {
+    b2Body_ApplyAngularImpulse(bodyId, 5.0f, true);
+};
+
 float CirclePhysics::getAngle() const {
     return b2Rot_GetAngle(b2Body_GetRotation(bodyId));
 }
