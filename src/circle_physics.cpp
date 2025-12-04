@@ -90,7 +90,7 @@ float CirclePhysics::getRadius() const {
 
 void CirclePhysics::apply_forward_force() const {
     b2Rot rotation = b2Body_GetRotation(bodyId);
-    float force_magnitude = 10000.0f;
+    float force_magnitude = 50.0f;
     b2Vec2 force = {force_magnitude * rotation.c, force_magnitude * rotation.s};
     b2Body_ApplyForceToCenter(bodyId, force, true);
 };
@@ -101,11 +101,11 @@ void CirclePhysics::stop_applying_force() const {
 };
 
 void CirclePhysics::apply_left_turn_torque() const {
-    b2Body_ApplyTorque(bodyId, -100000.0f, true);
+    b2Body_ApplyTorque(bodyId, -50.0f, true);
 };
 
 void CirclePhysics::apply_right_turn_torque() const {
-    b2Body_ApplyTorque(bodyId, 100000.0f, true);
+    b2Body_ApplyTorque(bodyId, 50.0f, true);
 };
 
 void CirclePhysics::stop_applying_torque() const {

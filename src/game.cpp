@@ -10,9 +10,9 @@ Game::Game() {
     circles.push_back(
         std::make_unique<EaterCircle>(
                         worldId,
-                        100.0f,
-                        100.0f,
                         10.0f,
+                        10.0f,
+                        1.0f,
                         1.0f,
                         0.3f
         )
@@ -89,7 +89,7 @@ void Game::process_input_events(const std::optional<sf::Event>& event) {
                 worldId,
                 mouseButtonPressed->position.x / pixles_per_meter,
                 mouseButtonPressed->position.y / pixles_per_meter,
-                10.0f * (0.5f + static_cast<float>(rand()) / RAND_MAX),
+                1.0f * (0.5f + static_cast<float>(rand()) / RAND_MAX),
                 1.0f,
                 0.3f
             )
