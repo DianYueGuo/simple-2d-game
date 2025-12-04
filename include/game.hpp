@@ -15,7 +15,7 @@ public:
     ~Game();
     void process_game_logic();
     void draw(sf::RenderWindow& window) const;
-    void process_input_events(const std::optional<sf::Event>& event);
+    void process_input_events(sf::RenderWindow& window, const std::optional<sf::Event>& event);
     void set_pixles_per_meter(float ppm) { pixles_per_meter = ppm; }
 private:
     b2WorldId worldId;

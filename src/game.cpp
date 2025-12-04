@@ -81,14 +81,16 @@ void Game::draw(sf::RenderWindow& window) const {
     }
 }
 
-void Game::process_input_events(const std::optional<sf::Event>& event) {
+void Game::process_input_events(sf::RenderWindow& window, const std::optional<sf::Event>& event) {
     if (const auto* mouseButtonPressed = event->getIf<sf::Event::MouseButtonPressed>()) {
         if (mouseButtonPressed->button == sf::Mouse::Button::Left) {
+            sf::Vector2f worldPos = window.mapPixelToCoords(mouseButtonPressed->position);
+
             circles.push_back(
             std::make_unique<EaterCircle>(
                 worldId,
-                mouseButtonPressed->position.x / pixles_per_meter,
-                mouseButtonPressed->position.y / pixles_per_meter,
+                worldPos.x / pixles_per_meter,
+                worldPos.y / pixles_per_meter,
                 1.0f * (0.5f + static_cast<float>(rand()) / RAND_MAX),
                 1.0f,
                 0.3f

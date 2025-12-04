@@ -40,7 +40,7 @@ int main() {
             if (ImGui::GetIO().WantCaptureMouse)
                 continue;
 
-            game.process_input_events(event);
+            game.process_input_events(window, event);
         }
 
         ImGui::SFML::Update(window, deltaClock.restart());
