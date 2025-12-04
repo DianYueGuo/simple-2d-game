@@ -33,6 +33,8 @@ public:
 
     void add_touching_circle(CirclePhysics* circle_physics);
     void remove_touching_circle(CirclePhysics* circle_physics);
+
+    void setRadius(float new_radius, const b2WorldId &worldId);
 private:
     b2BodyId bodyId;
 protected:

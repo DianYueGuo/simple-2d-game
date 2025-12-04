@@ -20,7 +20,7 @@ float calculate_overlap_area(float r1, float r2, float distance) {
     return part1 + part2 - part3;
 }
 
-void EaterCircle::process_eating() {
+void EaterCircle::process_eating(const b2WorldId &worldId) {
     for (auto* touching_circle : touching_circles) {
         if (touching_circle->getRadius() < this->getRadius()) {
             float touching_area = 3.14159f * touching_circle->getRadius() * touching_circle->getRadius();
@@ -30,6 +30,10 @@ void EaterCircle::process_eating() {
             float overlap_area = calculate_overlap_area(this->getRadius(), touching_circle->getRadius(), distance);
 
             if (overlap_area >= overlap_threshold) {
+                float new_area = 3.14159f * this->getRadius() * this->getRadius() + touching_area;
+                float new_radius = sqrt(new_area / 3.14159f);
+                this->setRadius(new_radius, worldId);
+
                 static_cast<EatableCircle*>(touching_circle)->be_eaten();
             }
         }
