@@ -41,13 +41,19 @@ void EaterCircle::process_eating(const b2WorldId &worldId) {
             float overlap_area = calculate_overlap_area(this->getRadius(), touching_circle->getRadius(), distance);
 
             if (overlap_area >= overlap_threshold) {
+                if (auto* eatable = dynamic_cast<EatableCircle*>(touching_circle)) {
+                    if (eatable->is_toxic()) {
+                        this->be_eaten();
+                        eatable->be_eaten();
+                        continue;
+                    } else {
+                        eatable->be_eaten();
+                    }
+                }
+
                 float new_area = 3.14159f * this->getRadius() * this->getRadius() + touching_area;
                 float new_radius = sqrt(new_area / 3.14159f);
                 this->setRadius(new_radius, worldId);
-
-                if (auto* eatable = dynamic_cast<EatableCircle*>(touching_circle)) {
-                    eatable->be_eaten();
-                }
             }
         }
     }
