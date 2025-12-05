@@ -30,15 +30,22 @@ public:
     void draw(sf::RenderWindow& window) const;
     void process_input_events(sf::RenderWindow& window, const std::optional<sf::Event>& event);
     void set_pixles_per_meter(float ppm) { pixles_per_meter = ppm; }
+    float get_pixles_per_meter() const { return pixles_per_meter; }
     void set_time_scale(float scale) { time_scale = scale; }
+    float get_time_scale() const { return time_scale; }
     void set_brain_updates_per_sim_second(float hz) { brain_updates_per_sim_second = hz; }
+    float get_brain_updates_per_sim_second() const { return brain_updates_per_sim_second; }
     void set_minimum_area(float area) { minimum_area = area; }
     float get_minimum_area() const { return minimum_area; }
     void set_cursor_mode(CursorMode mode) { cursor_mode = mode; }
     void set_add_type(AddType type) { add_type = type; }
+    AddType get_add_type() const { return add_type; }
     void set_add_eatable_area(float area) { add_eatable_area = area; }
+    float get_add_eatable_area() const { return add_eatable_area; }
     void set_poison_death_probability(float p) { poison_death_probability = p; }
+    float get_poison_death_probability() const { return poison_death_probability; }
     void set_poison_death_probability_normal(float p) { poison_death_probability_normal = p; }
+    float get_poison_death_probability_normal() const { return poison_death_probability_normal; }
     void set_boost_area(float area) { boost_area = area; }
     void set_circle_density(float d);
     float get_circle_density() const { return circle_density; }
@@ -58,6 +65,9 @@ public:
     float get_average_eater_area() const { return average_eater_area; }
     void set_sprinkle_rate_eatable(float r) { sprinkle_rate_eatable = r; }
     void set_sprinkle_rate_toxic(float r) { sprinkle_rate_toxic = r; }
+    float get_sprinkle_rate_eater() const { return sprinkle_rate_eater; }
+    float get_sprinkle_rate_eatable() const { return sprinkle_rate_eatable; }
+    float get_sprinkle_rate_toxic() const { return sprinkle_rate_toxic; }
     CursorMode get_cursor_mode() const { return cursor_mode; }
     void add_circle(std::unique_ptr<EatableCircle> circle);
     void remove_random_percentage(float percentage);
