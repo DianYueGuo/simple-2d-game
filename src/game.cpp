@@ -59,7 +59,7 @@ void Game::process_game_logic() {
     // Use index-based iteration so push_back inside eater logic doesn't invalidate references
     for (size_t i = 0; i < circles.size(); ++i) {
         if (auto* eater_circle = dynamic_cast<EaterCircle*>(circles[i].get())) {
-            eater_circle->process_eating(worldId);
+            eater_circle->process_eating(worldId, poison_death_probability);
         }
     }
 

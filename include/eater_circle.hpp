@@ -16,7 +16,7 @@ public:
     void set_minimum_area(float area) { minimum_area = area; }
     float get_minimum_area() const { return minimum_area; }
 
-    void process_eating(const b2WorldId &worldId);
+    void process_eating(const b2WorldId &worldId, float poison_death_probability);
 
     void move_randomly(const b2WorldId &worldId, Game &game);
     void move_intelligently(const b2WorldId &worldId, Game &game);
@@ -24,12 +24,15 @@ public:
     void boost_forward(const b2WorldId &worldId, Game& game);
     void divide(const b2WorldId &worldId, Game& game);
 
+    bool is_poisoned() const { return poisoned; }
+
 private:
     void initialize_brain();
     void update_color_from_brain();
 
     EaterBrain brain;
     float minimum_area = 1.0f;
+    bool poisoned = false;
 };
 
 #endif

@@ -37,6 +37,7 @@ public:
     void set_cursor_mode(CursorMode mode) { cursor_mode = mode; }
     void set_add_type(AddType type) { add_type = type; }
     void set_add_eatable_area(float area) { add_eatable_area = area; }
+    void set_poison_death_probability(float p) { poison_death_probability = p; }
     CursorMode get_cursor_mode() const { return cursor_mode; }
     void add_circle(std::unique_ptr<EatableCircle> circle);
 private:
@@ -54,6 +55,7 @@ private:
     std::optional<sf::Vector2f> last_drag_world_pos;
     float add_drag_distance = 0.0f;
     float add_eatable_area = 1.0f;
+    float poison_death_probability = 1.0f;
     bool dragging = false;
     bool right_dragging = false;
     sf::Vector2i last_drag_pixels{};

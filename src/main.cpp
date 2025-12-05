@@ -103,6 +103,10 @@ int main() {
             game.set_add_eatable_area(eatable_area);
         }
 
+        static float poison_death_probability = 1.0f;
+        ImGui::SliderFloat("Poison Death Probability", &poison_death_probability, 0.0f, 1.0f, "%.2f");
+        game.set_poison_death_probability(poison_death_probability);
+
         ImGui::End();
 
         window.clear();
