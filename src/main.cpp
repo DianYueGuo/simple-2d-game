@@ -58,45 +58,58 @@ int main() {
 
         ImGui::Begin("Simulation Controls");
 
-        static float pixel_per_meter = 15.0f;
-        ImGui::SliderFloat("Pixel Per Meter", &pixel_per_meter, 0.1f, 100.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
-        game.set_pixles_per_meter(pixel_per_meter);
+        if (ImGui::CollapsingHeader("World", ImGuiTreeNodeFlags_DefaultOpen)) {
+            static float pixel_per_meter = 15.0f;
+            ImGui::SliderFloat("Pixel Per Meter", &pixel_per_meter, 0.1f, 100.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
+            game.set_pixles_per_meter(pixel_per_meter);
 
-        static float time_scale = 1.0f;
-        ImGui::SliderFloat("Time Scale", &time_scale, 0.01f, 5.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
-        game.set_time_scale(time_scale);
+            static float petri_radius = 20.0f;
+            ImGui::SliderFloat("Petri Radius", &petri_radius, 1.0f, 200.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
+            game.set_petri_radius(petri_radius);
 
-        static float brain_updates_per_sim_second = 10.0f;
-        ImGui::SliderFloat("Brain Updates / Sim Second", &brain_updates_per_sim_second, 0.1f, 240.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
-        game.set_brain_updates_per_sim_second(brain_updates_per_sim_second);
+            if (ImGui::Button("Reset View")) {
+                view = window.getView();
+                view.setSize({static_cast<float>(window.getSize().x), static_cast<float>(window.getSize().y)});
+                view.setCenter({0.0f, 0.0f});
+                window.setView(view);
+            }
+        }
 
-        static float minimum_area = 1.0f;
-        ImGui::SliderFloat("Minimum Area", &minimum_area, 0.1f, 5.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
-        game.set_minimum_area(minimum_area);
+        if (ImGui::CollapsingHeader("Simulation", ImGuiTreeNodeFlags_DefaultOpen)) {
+            static float time_scale = 1.0f;
+            ImGui::SliderFloat("Time Scale", &time_scale, 0.01f, 5.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
+            game.set_time_scale(time_scale);
 
-        static float boost_area = 0.3f;
-        ImGui::SliderFloat("Boost Area", &boost_area, 0.01f, 3.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
-        game.set_boost_area(boost_area);
+            static float brain_updates_per_sim_second = 10.0f;
+            ImGui::SliderFloat("Brain Updates / Sim Second", &brain_updates_per_sim_second, 0.1f, 240.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
+            game.set_brain_updates_per_sim_second(brain_updates_per_sim_second);
 
-        static float petri_radius = 20.0f;
-        ImGui::SliderFloat("Petri Radius", &petri_radius, 1.0f, 200.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
-        game.set_petri_radius(petri_radius);
+            static float minimum_area = 1.0f;
+            ImGui::SliderFloat("Minimum Area", &minimum_area, 0.1f, 5.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
+            game.set_minimum_area(minimum_area);
 
-        static float sprinkle_rate_eater = 0.0f;
-        static float sprinkle_rate_eatable = 0.0f;
-        static float sprinkle_rate_toxic = 0.0f;
-        ImGui::SliderFloat("Sprinkle Rate Eater (per s)", &sprinkle_rate_eater, 0.0f, 5.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
-        ImGui::SliderFloat("Sprinkle Rate Eatable (per s)", &sprinkle_rate_eatable, 0.0f, 10.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
-        ImGui::SliderFloat("Sprinkle Rate Toxic (per s)", &sprinkle_rate_toxic, 0.0f, 10.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
-        game.set_sprinkle_rate_eater(sprinkle_rate_eater);
-        game.set_sprinkle_rate_eatable(sprinkle_rate_eatable);
-        game.set_sprinkle_rate_toxic(sprinkle_rate_toxic);
+            static float boost_area = 0.3f;
+            ImGui::SliderFloat("Boost Area", &boost_area, 0.01f, 3.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
+            game.set_boost_area(boost_area);
 
-        if (ImGui::Button("Reset View")) {
-            view = window.getView();
-            view.setSize({static_cast<float>(window.getSize().x), static_cast<float>(window.getSize().y)});
-            view.setCenter({0.0f, 0.0f});
-            window.setView(view);
+            static float poison_death_probability = 1.0f;
+            ImGui::SliderFloat("Poison Death Probability", &poison_death_probability, 0.0f, 1.0f, "%.2f");
+            game.set_poison_death_probability(poison_death_probability);
+            static float poison_death_probability_normal = 0.0f;
+            ImGui::SliderFloat("Normal Poison Death Probability", &poison_death_probability_normal, 0.0f, 1.0f, "%.2f");
+            game.set_poison_death_probability_normal(poison_death_probability_normal);
+        }
+
+        if (ImGui::CollapsingHeader("Sprinkle Rates", ImGuiTreeNodeFlags_DefaultOpen)) {
+            static float sprinkle_rate_eater = 0.0f;
+            static float sprinkle_rate_eatable = 0.0f;
+            static float sprinkle_rate_toxic = 0.0f;
+            ImGui::SliderFloat("Eater (per s)", &sprinkle_rate_eater, 0.0f, 5.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
+            ImGui::SliderFloat("Eatable (per s)", &sprinkle_rate_eatable, 0.0f, 10.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
+            ImGui::SliderFloat("Toxic (per s)", &sprinkle_rate_toxic, 0.0f, 10.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
+            game.set_sprinkle_rate_eater(sprinkle_rate_eater);
+            game.set_sprinkle_rate_eatable(sprinkle_rate_eatable);
+            game.set_sprinkle_rate_toxic(sprinkle_rate_toxic);
         }
 
         static int cursor_mode = static_cast<int>(Game::CursorMode::Add);
