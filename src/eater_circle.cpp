@@ -40,10 +40,10 @@ void EaterCircle::process_eating(const b2WorldId &worldId) {
     }
 }
 
-void EaterCircle::move_randomly(const b2WorldId &worldId) {
+void EaterCircle::move_randomly(const b2WorldId &worldId, Game &game) {
     float probability = static_cast<float>(rand()) / RAND_MAX;
     if (probability > 0.9f)
-        this->boost_forward(worldId);
+        this->boost_forward(worldId, game);
 
     probability = static_cast<float>(rand()) / RAND_MAX;
     if (probability > 0.9f)
@@ -54,14 +54,29 @@ void EaterCircle::move_randomly(const b2WorldId &worldId) {
         this->apply_right_turn_impulse();
 }
 
-void EaterCircle::boost_forward(const b2WorldId &worldId) {
+void EaterCircle::boost_forward(const b2WorldId &worldId, Game& game) {
     float current_area = 3.14159f * this->getRadius() * this->getRadius();
-    float boost_cost = current_area * 0.1f;  // 10% of current area
+    float boost_cost = 0.3f;
     float new_area = current_area - boost_cost;
 
     if (new_area > 1.0f) {
         float new_radius = sqrt(new_area / 3.14159f);
         this->setRadius(new_radius, worldId);
         this->apply_forward_impulse();
+
+        float boost_radius = sqrt(boost_cost / 3.14159f);
+        b2Vec2 pos = this->getPosition();
+        float angle = this->getAngle();
+        b2Vec2 direction = {cos(angle), sin(angle)};
+        b2Vec2 back_position = {pos.x - direction.x * (this->getRadius() + boost_radius), 
+                    pos.y - direction.y * (this->getRadius() + boost_radius)};
+
+        auto boost_circle = std::make_unique<EatableCircle>(worldId, back_position.x, back_position.y, boost_radius, 1.0f, 0.3f);
+        EatableCircle* boost_circle_ptr = boost_circle.get();
+        game.add_circle(std::move(boost_circle));
+        if (boost_circle_ptr) {
+            boost_circle_ptr->setAngle(angle + 3.14159f, worldId);
+            boost_circle_ptr->apply_forward_impulse();
+        }
     }
 }

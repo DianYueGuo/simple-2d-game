@@ -8,9 +8,9 @@
 
 class CirclePhysics {
 public:
-    CirclePhysics(b2WorldId &worldId, float position_x = 0.0f, float position_y = 0.0f, float radius = 1.0f, float density = 1.0f, float friction = 0.0f);
+    CirclePhysics(const b2WorldId &worldId, float position_x = 0.0f, float position_y = 0.0f, float radius = 1.0f, float density = 1.0f, float friction = 0.0f);
 
-    ~CirclePhysics();
+    virtual ~CirclePhysics();
 
     CirclePhysics(const CirclePhysics&) = delete;
     CirclePhysics& operator=(const CirclePhysics&) = delete;
@@ -39,6 +39,7 @@ public:
     void remove_touching_circle(CirclePhysics* circle_physics);
 
     void setRadius(float new_radius, const b2WorldId &worldId);
+    void setAngle(float new_angle, const b2WorldId &worldId);
 private:
     b2BodyId bodyId;
 protected:

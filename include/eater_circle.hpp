@@ -3,6 +3,10 @@
 
 #include "eatable_circle.hpp"
 
+#include "game.hpp"
+
+class Game;
+
 
 class EaterCircle : public EatableCircle {
 public:
@@ -10,9 +14,9 @@ public:
 
     void process_eating(const b2WorldId &worldId);
 
-    void move_randomly(const b2WorldId &worldId);
+    void move_randomly(const b2WorldId &worldId, Game &game);
 
-    void boost_forward(const b2WorldId &worldId);
+    void boost_forward(const b2WorldId &worldId, Game& game);
 };
 
 #endif

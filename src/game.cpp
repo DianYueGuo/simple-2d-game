@@ -54,10 +54,11 @@ void Game::process_game_logic() {
 
     process_touch_events(worldId);
 
-    for (auto& circle : circles) {
-        if (auto* eater_circle = dynamic_cast<EaterCircle*>(circle.get())) {
+    // Use index-based iteration so push_back inside eater logic doesn't invalidate references
+    for (size_t i = 0; i < circles.size(); ++i) {
+        if (auto* eater_circle = dynamic_cast<EaterCircle*>(circles[i].get())) {
             eater_circle->process_eating(worldId);
-            eater_circle->move_randomly(worldId);
+            eater_circle->move_randomly(worldId, *this);
         }
     }
 
@@ -106,4 +107,8 @@ void Game::process_input_events(sf::RenderWindow& window, const std::optional<sf
         if (keyPressed->scancode == sf::Keyboard::Scancode::Right && probability > 0.8f)
             circles.at(0)->apply_right_turn_impulse();
     }
+}
+
+void Game::add_circle(std::unique_ptr<EatableCircle> circle) {
+    circles.push_back(std::move(circle));
 }

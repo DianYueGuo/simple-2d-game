@@ -1,7 +1,7 @@
 #include "drawable_circle.hpp"
 
 
-DrawableCircle::DrawableCircle(b2WorldId &worldId, float position_x, float position_y, float radius, float density, float friction) :
+DrawableCircle::DrawableCircle(const b2WorldId &worldId, float position_x, float position_y, float radius, float density, float friction) :
     CirclePhysics(worldId, position_x, position_y, radius, density, friction) {
 }
 
