@@ -14,7 +14,8 @@ public:
     enum class NodeType {
         Input,
         Output,
-        Hidden
+        Hidden,
+        Inverted
     };
 
     struct Node {
@@ -54,7 +55,7 @@ private:
     float random_unit() const { return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX); }
     float clamp01(float v) const { return std::clamp(v, 0.0f, 1.0f); }
     bool has_hidden_nodes() const;
-    void add_hidden_node();
+    void add_hidden_node(NodeType type = NodeType::Hidden);
     void remove_random_hidden_node();
     void add_random_connection();
     void remove_random_connection();

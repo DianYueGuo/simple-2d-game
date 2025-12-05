@@ -56,7 +56,11 @@ void EaterBrain::update() {
         }
 
         float probability = clamp01(node.input_register);
-        node.output_register = (random_unit() < probability) ? 1.0f : 0.0f;
+        if (node.type == NodeType::Inverted) {
+            node.output_register = (random_unit() < probability) ? 0.0f : 1.0f;
+        } else {
+            node.output_register = (random_unit() < probability) ? 1.0f : 0.0f;
+        }
     }
 }
 
@@ -76,7 +80,8 @@ float EaterBrain::read_output_input_register(size_t output_index) const {
 
 void EaterBrain::mutate(float add_node_probability, float remove_node_probability, float rewire_probability) {
     if (random_unit() < add_node_probability) {
-        add_hidden_node();
+        NodeType new_type = (random_unit() < 0.5f) ? NodeType::Hidden : NodeType::Inverted;
+        add_hidden_node(new_type);
     }
     if (random_unit() < remove_node_probability) {
         remove_random_hidden_node();
@@ -93,9 +98,9 @@ bool EaterBrain::has_hidden_nodes() const {
     return nodes.size() > input_count + output_count;
 }
 
-void EaterBrain::add_hidden_node() {
+void EaterBrain::add_hidden_node(NodeType type) {
     auto new_node = std::make_unique<Node>();
-    new_node->type = NodeType::Hidden;
+    new_node->type = type;
     new_node->input_register = 0.0f;
     new_node->output_register = 0.0f;
 
