@@ -44,6 +44,20 @@ public:
     void setPosition(const b2Vec2& new_position, const b2WorldId &worldId);
     void setAngle(float new_angle, const b2WorldId &worldId);
 private:
+    struct BodyState {
+        b2Vec2 position;
+        b2Rot rotation;
+        b2Vec2 linearVelocity;
+        float angularVelocity;
+        float radius;
+    };
+
+    BodyState captureBodyState() const;
+    b2BodyDef buildBodyDef(const BodyState& state) const;
+    b2ShapeDef buildCircleShapeDef() const;
+    void createBodyWithState(const b2WorldId& worldId, const BodyState& state);
+    void recreateBodyWithState(const b2WorldId& worldId, const BodyState& state);
+
     b2BodyId bodyId;
     float density;
     float friction;

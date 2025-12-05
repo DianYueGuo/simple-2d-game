@@ -9,29 +9,14 @@ CirclePhysics::CirclePhysics(const b2WorldId &worldId, float position_x, float p
     enableSensorEvents(true),
     linearDamping(0.3f),
     angularDamping(1.0f) {
-    b2BodyDef circleBodyDef = b2DefaultBodyDef();
-    circleBodyDef.type = b2_dynamicBody;
-    circleBodyDef.position = (b2Vec2){position_x, position_y};
+    BodyState initialState{};
+    initialState.position = (b2Vec2){position_x, position_y};
+    initialState.rotation = b2MakeRot(0.0f);
+    initialState.linearVelocity = (b2Vec2){0.0f, 0.0f};
+    initialState.angularVelocity = 0.0f;
+    initialState.radius = radius;
 
-    circleBodyDef.linearDamping = linearDamping;
-    circleBodyDef.angularDamping = angularDamping;
-
-    bodyId = b2CreateBody(worldId, &circleBodyDef);
-
-    b2ShapeDef CircleShapeDef = b2DefaultShapeDef();
-    CircleShapeDef.density = this->density;
-    CircleShapeDef.material.friction = this->friction;
-
-    CircleShapeDef.userData = this;
-
-    CircleShapeDef.isSensor = isSensor;
-    CircleShapeDef.enableSensorEvents = enableSensorEvents;
-
-    b2Circle circle;
-    circle.center = (b2Vec2){0.0f, 0.0f};
-    circle.radius = radius;
-
-    b2CreateCircleShape(bodyId, &CircleShapeDef, &circle);
+    createBodyWithState(worldId, initialState);
 }
 
 CirclePhysics::~CirclePhysics() {
@@ -42,6 +27,57 @@ CirclePhysics::~CirclePhysics() {
     for (auto* touching_circle : touching_circles) {
         touching_circle->remove_touching_circle(this);
     }
+}
+
+CirclePhysics::BodyState CirclePhysics::captureBodyState() const {
+    BodyState state{};
+    state.position = b2Body_GetPosition(bodyId);
+    state.rotation = b2Body_GetRotation(bodyId);
+    state.linearVelocity = b2Body_GetLinearVelocity(bodyId);
+    state.angularVelocity = b2Body_GetAngularVelocity(bodyId);
+    state.radius = getRadius();
+    return state;
+}
+
+b2BodyDef CirclePhysics::buildBodyDef(const BodyState& state) const {
+    b2BodyDef bodyDef = b2DefaultBodyDef();
+    bodyDef.type = b2_dynamicBody;
+    bodyDef.position = state.position;
+    bodyDef.rotation = state.rotation;
+    bodyDef.linearVelocity = state.linearVelocity;
+    bodyDef.angularVelocity = state.angularVelocity;
+    bodyDef.linearDamping = linearDamping;
+    bodyDef.angularDamping = angularDamping;
+    return bodyDef;
+}
+
+b2ShapeDef CirclePhysics::buildCircleShapeDef() const {
+    b2ShapeDef shapeDef = b2DefaultShapeDef();
+    shapeDef.density = density;
+    shapeDef.material.friction = friction;
+    shapeDef.userData = const_cast<CirclePhysics*>(this);
+    shapeDef.isSensor = isSensor;
+    shapeDef.enableSensorEvents = enableSensorEvents;
+    return shapeDef;
+}
+
+void CirclePhysics::createBodyWithState(const b2WorldId& worldId, const BodyState& state) {
+    b2BodyDef bodyDef = buildBodyDef(state);
+    bodyId = b2CreateBody(worldId, &bodyDef);
+
+    b2ShapeDef shapeDef = buildCircleShapeDef();
+    b2Circle circle;
+    circle.center = (b2Vec2){0.0f, 0.0f};
+    circle.radius = state.radius;
+
+    b2CreateCircleShape(bodyId, &shapeDef, &circle);
+}
+
+void CirclePhysics::recreateBodyWithState(const b2WorldId& worldId, const BodyState& state) {
+    if (b2Body_IsValid(bodyId)) {
+        b2DestroyBody(bodyId);
+    }
+    createBodyWithState(worldId, state);
 }
 
 CirclePhysics::CirclePhysics(CirclePhysics&& other_circle_physics) noexcept :
@@ -165,39 +201,9 @@ void CirclePhysics::remove_touching_circle(CirclePhysics* circle_physics) {
 void CirclePhysics::setRadius(float new_radius, const b2WorldId &worldId) {
     if (!b2Body_IsValid(bodyId)) return;
 
-    // Get current body properties
-    b2Vec2 position = b2Body_GetPosition(bodyId);
-    b2Rot rotation = b2Body_GetRotation(bodyId);
-    b2Vec2 linearVelocity = b2Body_GetLinearVelocity(bodyId);
-    float angularVelocity = b2Body_GetAngularVelocity(bodyId);
-
-    // Destroy old body
-    b2DestroyBody(bodyId);
-
-    // Create new body with same properties
-    b2BodyDef bodyDef = b2DefaultBodyDef();
-    bodyDef.type = b2_dynamicBody;
-    bodyDef.position = position;
-    bodyDef.rotation = rotation;
-    bodyDef.linearVelocity = linearVelocity;
-    bodyDef.angularVelocity = angularVelocity;
-    bodyDef.linearDamping = linearDamping;
-    bodyDef.angularDamping = angularDamping;
-
-    bodyId = b2CreateBody(worldId, &bodyDef);
-
-    b2ShapeDef shapeDef = b2DefaultShapeDef();
-    shapeDef.density = density;
-    shapeDef.material.friction = friction;
-    shapeDef.userData = this;
-    shapeDef.isSensor = isSensor;
-    shapeDef.enableSensorEvents = enableSensorEvents;
-
-    b2Circle circle;
-    circle.center = (b2Vec2){0.0f, 0.0f};
-    circle.radius = new_radius;
-
-    b2CreateCircleShape(bodyId, &shapeDef, &circle);
+    BodyState state = captureBodyState();
+    state.radius = new_radius;
+    recreateBodyWithState(worldId, state);
 }
 
 void CirclePhysics::setArea(float area, const b2WorldId &worldId) {
@@ -211,72 +217,15 @@ void CirclePhysics::setArea(float area, const b2WorldId &worldId) {
 void CirclePhysics::setPosition(const b2Vec2& new_position, const b2WorldId &worldId) {
     if (!b2Body_IsValid(bodyId)) return;
 
-    b2Rot rotation = b2Body_GetRotation(bodyId);
-    b2Vec2 linearVelocity = b2Body_GetLinearVelocity(bodyId);
-    float angularVelocity = b2Body_GetAngularVelocity(bodyId);
-    float radius = getRadius();
-
-    b2DestroyBody(bodyId);
-
-    b2BodyDef bodyDef = b2DefaultBodyDef();
-    bodyDef.type = b2_dynamicBody;
-    bodyDef.position = new_position;
-    bodyDef.rotation = rotation;
-    bodyDef.linearVelocity = linearVelocity;
-    bodyDef.angularVelocity = angularVelocity;
-    bodyDef.linearDamping = linearDamping;
-    bodyDef.angularDamping = angularDamping;
-
-    bodyId = b2CreateBody(worldId, &bodyDef);
-
-    b2ShapeDef shapeDef = b2DefaultShapeDef();
-    shapeDef.density = density;
-    shapeDef.material.friction = friction;
-    shapeDef.userData = this;
-    shapeDef.isSensor = isSensor;
-    shapeDef.enableSensorEvents = enableSensorEvents;
-
-    b2Circle circle;
-    circle.center = (b2Vec2){0.0f, 0.0f};
-    circle.radius = radius;
-
-    b2CreateCircleShape(bodyId, &shapeDef, &circle);
+    BodyState state = captureBodyState();
+    state.position = new_position;
+    recreateBodyWithState(worldId, state);
 }
 
 void CirclePhysics::setAngle(float new_angle, const b2WorldId &worldId) {
     if (!b2Body_IsValid(bodyId)) return;
 
-    // Get current body properties
-    b2Vec2 position = b2Body_GetPosition(bodyId);
-    b2Vec2 linearVelocity = b2Body_GetLinearVelocity(bodyId);
-    float angularVelocity = b2Body_GetAngularVelocity(bodyId);
-    float radius = getRadius();
-
-    // Destroy old body
-    b2DestroyBody(bodyId);
-
-    // Create new body with updated rotation
-    b2BodyDef bodyDef = b2DefaultBodyDef();
-    bodyDef.type = b2_dynamicBody;
-    bodyDef.position = position;
-    bodyDef.rotation = b2MakeRot(new_angle);
-    bodyDef.linearVelocity = linearVelocity;
-    bodyDef.angularVelocity = angularVelocity;
-    bodyDef.linearDamping = linearDamping;
-    bodyDef.angularDamping = angularDamping;
-
-    bodyId = b2CreateBody(worldId, &bodyDef);
-
-    b2ShapeDef shapeDef = b2DefaultShapeDef();
-    shapeDef.density = density;
-    shapeDef.material.friction = friction;
-    shapeDef.userData = this;
-    shapeDef.isSensor = isSensor;
-    shapeDef.enableSensorEvents = enableSensorEvents;
-
-    b2Circle circle;
-    circle.center = (b2Vec2){0.0f, 0.0f};
-    circle.radius = radius;
-
-    b2CreateCircleShape(bodyId, &shapeDef, &circle);
+    BodyState state = captureBodyState();
+    state.rotation = b2MakeRot(new_angle);
+    recreateBodyWithState(worldId, state);
 }
