@@ -18,7 +18,7 @@ int main() {
 
     Game game;
 
-    sf::RenderWindow window(sf::VideoMode({640, 480}), "ImGui + SFML = <3");
+    sf::RenderWindow window(sf::VideoMode({640, 480}), "Petri Dish Simulation");
     window.setFramerateLimit(60);
     if (!ImGui::SFML::Init(window))
         return -1;
@@ -45,10 +45,7 @@ int main() {
 
         ImGui::SFML::Update(window, deltaClock.restart());
 
-        ImGui::ShowDemoWindow();
-
-        ImGui::Begin("Hello, world!");
-        ImGui::Button("Look at this pretty button");
+        ImGui::Begin("Simulation Controls");
 
         static float pixel_per_meter = 15.0f;
         ImGui::SliderFloat("Pixel Per Meter", &pixel_per_meter, 0.1f, 100.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
