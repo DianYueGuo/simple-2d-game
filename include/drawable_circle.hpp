@@ -16,6 +16,8 @@ public:
     std::array<float, 3> get_color_rgb() const { return color_rgb; }
 protected:
     std::array<float, 3> color_rgb{};
+
+    virtual bool should_draw_direction_indicator() const { return false; }
 };
 
 #endif

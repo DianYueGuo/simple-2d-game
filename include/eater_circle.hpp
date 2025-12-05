@@ -24,6 +24,9 @@ public:
 
     bool is_poisoned() const { return poisoned; }
 
+protected:
+    bool should_draw_direction_indicator() const override { return true; }
+
 private:
     void initialize_brain();
     void update_color_from_brain();

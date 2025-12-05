@@ -23,14 +23,16 @@ void DrawableCircle::draw(sf::RenderWindow& window, float pixle_per_meter) const
     shape.setPosition({getPosition().x * pixle_per_meter, getPosition().y * pixle_per_meter});
     window.draw(shape);
 
-    sf::RectangleShape line({getRadius() * pixle_per_meter, getRadius() * pixle_per_meter / 4.0f});
-    line.setFillColor(sf::Color::White);
-    line.rotate(sf::radians(getAngle()));
+    if (should_draw_direction_indicator()) {
+        sf::RectangleShape line({getRadius() * pixle_per_meter, getRadius() * pixle_per_meter / 4.0f});
+        line.setFillColor(sf::Color::White);
+        line.rotate(sf::radians(getAngle()));
 
-    line.setOrigin({0, getRadius() * pixle_per_meter / 4.0f / 2.0f});
-    line.setPosition({getPosition().x * pixle_per_meter, getPosition().y * pixle_per_meter});
+        line.setOrigin({0, getRadius() * pixle_per_meter / 4.0f / 2.0f});
+        line.setPosition({getPosition().x * pixle_per_meter, getPosition().y * pixle_per_meter});
 
-    window.draw(line);
+        window.draw(line);
+    }
 }
 
 void DrawableCircle::set_color_rgb(float r, float g, float b) {
