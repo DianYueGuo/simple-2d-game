@@ -151,6 +151,8 @@ void EaterCircle::divide(const b2WorldId &worldId, Game& game) {
         new_circle_ptr->apply_forward_impulse();
     }
 
+    this->apply_forward_impulse();
+
     constexpr int mutation_rounds = 3;
     for (int i = 0; i < mutation_rounds; ++i) {
         brain.mutate(0.6f, 0.2f, 0.5f, 0.5f);
