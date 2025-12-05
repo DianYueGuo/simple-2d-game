@@ -108,17 +108,6 @@ void Game::process_input_events(sf::RenderWindow& window, const std::optional<sf
     }
 
     if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
-        float probability = static_cast<float>(rand()) / RAND_MAX;
-
-        if (keyPressed->scancode == sf::Keyboard::Scancode::Space && probability > 0.8f)
-            circles.at(0)->apply_forward_impulse();
-
-        if (keyPressed->scancode == sf::Keyboard::Scancode::Left && probability > 0.8f)
-            circles.at(0)->apply_left_turn_impulse();
-
-        if (keyPressed->scancode == sf::Keyboard::Scancode::Right && probability > 0.8f)
-            circles.at(0)->apply_right_turn_impulse();
-
         sf::View view = window.getView();
         constexpr float pan_pixels = 20.0f;
         constexpr float zoom_step = 1.05f;
