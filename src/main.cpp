@@ -84,9 +84,19 @@ int main() {
         game.set_cursor_mode(static_cast<Game::CursorMode>(cursor_mode));
 
         if (cursor_mode == static_cast<int>(Game::CursorMode::Add)) {
-            static bool add_toxic = false;
-            ImGui::Checkbox("Add Toxic", &add_toxic);
-            game.set_add_toxic(add_toxic);
+            static int add_type = static_cast<int>(Game::AddType::Eater);
+            if (ImGui::RadioButton("Eater", add_type == static_cast<int>(Game::AddType::Eater))) {
+                add_type = static_cast<int>(Game::AddType::Eater);
+            }
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Eatable", add_type == static_cast<int>(Game::AddType::Eatable))) {
+                add_type = static_cast<int>(Game::AddType::Eatable);
+            }
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Toxic", add_type == static_cast<int>(Game::AddType::ToxicEatable))) {
+                add_type = static_cast<int>(Game::AddType::ToxicEatable);
+            }
+            game.set_add_type(static_cast<Game::AddType>(add_type));
         }
 
         ImGui::End();
