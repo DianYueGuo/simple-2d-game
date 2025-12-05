@@ -25,6 +25,8 @@ int main() {
 
     sf::Clock deltaClock;
     sf::View view = window.getDefaultView();
+    view.setCenter({0.0f, 0.0f});
+    window.setView(view);
     while (window.isOpen())
     {
         game.process_game_logic();
@@ -38,9 +40,8 @@ int main() {
                 window.close();
             }
             if (const auto* resize = event->getIf<sf::Event::Resized>()) {
-                const sf::Vector2f current_center = view.getCenter();
                 view.setSize({static_cast<float>(resize->size.x), static_cast<float>(resize->size.y)});
-                view.setCenter(current_center);
+                view.setCenter({0.0f, 0.0f});
                 window.setView(view);
             }
 
@@ -90,6 +91,13 @@ int main() {
         game.set_sprinkle_rate_eater(sprinkle_rate_eater);
         game.set_sprinkle_rate_eatable(sprinkle_rate_eatable);
         game.set_sprinkle_rate_toxic(sprinkle_rate_toxic);
+
+        if (ImGui::Button("Reset View")) {
+            view = window.getView();
+            view.setSize({static_cast<float>(window.getSize().x), static_cast<float>(window.getSize().y)});
+            view.setCenter({0.0f, 0.0f});
+            window.setView(view);
+        }
 
         static int cursor_mode = static_cast<int>(Game::CursorMode::Add);
         if (ImGui::RadioButton("Add", cursor_mode == static_cast<int>(Game::CursorMode::Add))) {
