@@ -1,0 +1,62 @@
+#ifndef EATER_BRAIN_HPP
+#define EATER_BRAIN_HPP
+
+#include <vector>
+#include <cstdlib>
+#include <algorithm>
+
+// EaterBrain is a simple node graph.
+// Nodes store input and output registers.
+// Update does a full input pass (mean of input nodes' outputs) then a full output pass (bernoulli using input as probability).
+class EaterBrain {
+public:
+    enum class NodeType {
+        Input,
+        Output,
+        Hidden
+    };
+
+    struct Node {
+        NodeType type;
+        std::vector<size_t> input_indices;
+        float input_register = 0.0f;
+        float output_register = 0.0f;
+    };
+
+    EaterBrain(size_t input_count, size_t output_count);
+
+    size_t get_input_count() const { return input_count; }
+    size_t get_output_count() const { return output_count; }
+
+    // Set the output register of an input node (0-based among inputs).
+    void set_input(size_t input_index, float value);
+
+    // Advance the brain: first update input registers for all nodes, then output registers.
+    void update();
+
+    // Read output register of an output node (0-based among outputs).
+    float read_output(size_t output_index) const;
+
+    // Read input register of an output node (0-based among outputs).
+    float read_output_input_register(size_t output_index) const;
+
+    // Mutation entry point. Probabilities are checked independently.
+    void mutate(float add_node_probability, float remove_node_probability, float rewire_probability);
+
+    const std::vector<Node>& get_nodes() const { return nodes; }
+
+private:
+    std::vector<Node> nodes;
+    size_t input_count;
+    size_t output_count;
+
+    float random_unit() const { return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX); }
+    float clamp01(float v) const { return std::clamp(v, 0.0f, 1.0f); }
+    bool has_hidden_nodes() const;
+    void add_hidden_node();
+    void remove_random_hidden_node();
+    void rewire_random_node();
+    size_t random_node_index() const;
+};
+
+#endif
