@@ -18,7 +18,7 @@ int main() {
 
     Game game;
 
-    sf::RenderWindow window(sf::VideoMode({640, 480}), "Petri Dish Simulation");
+    sf::RenderWindow window(sf::VideoMode({1280, 720}), "Petri Dish Simulation");
     window.setFramerateLimit(60);
     if (!ImGui::SFML::Init(window))
         return -1;
