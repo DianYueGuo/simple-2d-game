@@ -73,6 +73,16 @@ int main() {
         ImGui::SliderFloat("Minimum Area", &minimum_area, 0.1f, 5.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
         game.set_minimum_area(minimum_area);
 
+        static int cursor_mode = static_cast<int>(Game::CursorMode::Add);
+        if (ImGui::RadioButton("Add", cursor_mode == static_cast<int>(Game::CursorMode::Add))) {
+            cursor_mode = static_cast<int>(Game::CursorMode::Add);
+        }
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Drag", cursor_mode == static_cast<int>(Game::CursorMode::Drag))) {
+            cursor_mode = static_cast<int>(Game::CursorMode::Drag);
+        }
+        game.set_cursor_mode(static_cast<Game::CursorMode>(cursor_mode));
+
         ImGui::End();
 
         window.clear();

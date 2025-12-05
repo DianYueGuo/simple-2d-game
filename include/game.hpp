@@ -2,6 +2,7 @@
 #define GAME_HPP
 
 #include <vector>
+#include <optional>
 
 #include <SFML/Graphics.hpp>
 #include <box2d/box2d.h>
@@ -13,6 +14,11 @@
 
 class Game {
 public:
+    enum class CursorMode {
+        Add,
+        Drag
+    };
+
     Game();
     ~Game();
     void process_game_logic();
@@ -23,6 +29,8 @@ public:
     void set_brain_updates_per_sim_second(float hz) { brain_updates_per_sim_second = hz; }
     void set_minimum_area(float area) { minimum_area = area; }
     float get_minimum_area() const { return minimum_area; }
+    void set_cursor_mode(CursorMode mode) { cursor_mode = mode; }
+    CursorMode get_cursor_mode() const { return cursor_mode; }
     void add_circle(std::unique_ptr<EatableCircle> circle);
 private:
     b2WorldId worldId;
@@ -32,6 +40,9 @@ private:
     float brain_updates_per_sim_second = 60.0f;
     float brain_time_accumulator = 0.0f;
     float minimum_area = 1.0f;
+    CursorMode cursor_mode = CursorMode::Add;
+    bool dragging = false;
+    sf::Vector2i last_drag_pixels{};
 };
 
 #endif

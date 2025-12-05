@@ -92,18 +92,56 @@ void Game::draw(sf::RenderWindow& window) const {
 void Game::process_input_events(sf::RenderWindow& window, const std::optional<sf::Event>& event) {
     if (const auto* mouseButtonPressed = event->getIf<sf::Event::MouseButtonPressed>()) {
         if (mouseButtonPressed->button == sf::Mouse::Button::Left) {
-            sf::Vector2f worldPos = window.mapPixelToCoords(mouseButtonPressed->position);
+            sf::Vector2f viewPos = window.mapPixelToCoords(mouseButtonPressed->position);
+            sf::Vector2f worldPos = {viewPos.x / pixles_per_meter, viewPos.y / pixles_per_meter};
 
-            circles.push_back(
-            std::make_unique<EaterCircle>(
-                worldId,
-                worldPos.x / pixles_per_meter,
-                worldPos.y / pixles_per_meter,
-                1.0f * (0.5f + static_cast<float>(rand()) / RAND_MAX),
-                1.0f,
-                0.3f
-            )
-            );
+            switch (cursor_mode) {
+                case CursorMode::Add: {
+                    circles.push_back(
+                        std::make_unique<EaterCircle>(
+                            worldId,
+                            worldPos.x,
+                            worldPos.y,
+                            1.0f * (0.5f + static_cast<float>(rand()) / RAND_MAX),
+                            1.0f,
+                            0.3f
+                        )
+                    );
+                    break;
+                }
+                case CursorMode::Drag: {
+                    dragging = true;
+                    last_drag_pixels = mouseButtonPressed->position;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (const auto* mouseButtonReleased = event->getIf<sf::Event::MouseButtonReleased>()) {
+        if (mouseButtonReleased->button == sf::Mouse::Button::Left && cursor_mode == CursorMode::Drag) {
+            dragging = false;
+        }
+    }
+
+    if (const auto* mouseMoved = event->getIf<sf::Event::MouseMoved>()) {
+        if (dragging && cursor_mode == CursorMode::Drag) {
+            sf::View view = window.getView();
+            sf::Vector2f pixels_to_world = {
+                view.getSize().x / static_cast<float>(window.getSize().x),
+                view.getSize().y / static_cast<float>(window.getSize().y)
+            };
+
+            sf::Vector2i current_pixels = mouseMoved->position;
+            sf::Vector2i delta_pixels = last_drag_pixels - current_pixels;
+            sf::Vector2f delta_world = {
+                static_cast<float>(delta_pixels.x) * pixels_to_world.x,
+                static_cast<float>(delta_pixels.y) * pixels_to_world.y
+            };
+
+            view.move(delta_world);
+            window.setView(view);
+            last_drag_pixels = current_pixels;
         }
     }
 
