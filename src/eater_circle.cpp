@@ -5,7 +5,6 @@
 
 #include <cstdlib>
 
-
 EaterCircle::EaterCircle(const b2WorldId &worldId, float position_x, float position_y, float radius, float density, float friction) :
     EatableCircle(worldId, position_x, position_y, radius, density, friction),
     brain(0, 7) {
@@ -91,7 +90,7 @@ void EaterCircle::boost_forward(const b2WorldId &worldId, Game& game) {
     float boost_cost = 0.3f;
     float new_area = current_area - boost_cost;
 
-    if (new_area > 1.0f) {
+    if (new_area > minimum_area) {
         float new_radius = sqrt(new_area / 3.14159f);
         this->setRadius(new_radius, worldId);
         this->apply_forward_impulse();
@@ -127,7 +126,7 @@ void EaterCircle::divide(const b2WorldId &worldId, Game& game) {
     const float current_area = 3.14159f * this->getRadius() * this->getRadius();
     const float divided_area = current_area / 2.0f;
 
-    if (divided_area <= 1.0f) {
+    if (divided_area <= minimum_area) {
         return;
     }
 

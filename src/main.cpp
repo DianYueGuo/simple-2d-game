@@ -59,6 +59,10 @@ int main() {
         ImGui::SliderFloat("Brain Rate Multiplier", &brain_rate_multiplier, 0.01f, 5.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
         game.set_brain_rate_multiplier(brain_rate_multiplier);
 
+        static float minimum_area = 1.0f;
+        ImGui::SliderFloat("Minimum Area", &minimum_area, 0.1f, 5.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
+        game.set_minimum_area(minimum_area);
+
         ImGui::End();
 
         window.clear();

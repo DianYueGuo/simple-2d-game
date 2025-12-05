@@ -66,6 +66,7 @@ void Game::process_game_logic() {
     while (brain_time_accumulator >= timeStep) {
         for (size_t i = 0; i < circles.size(); ++i) {
             if (auto* eater_circle = dynamic_cast<EaterCircle*>(circles[i].get())) {
+                eater_circle->set_minimum_area(minimum_area);
                 eater_circle->move_intelligently(worldId, *this);
             }
         }
