@@ -130,11 +130,11 @@ void EaterBrain::remove_random_hidden_node() {
     }
 
     for (auto& node_ptr : nodes) {
-        for (auto& input_ptr : node_ptr->input_nodes) {
-            if (input_ptr == removed_node) {
-                input_ptr = nodes[random_node_index()].get();
-            }
-        }
+        auto& input_nodes = node_ptr->input_nodes;
+        input_nodes.erase(
+            std::remove(input_nodes.begin(), input_nodes.end(), removed_node),
+            input_nodes.end()
+        );
     }
 }
 
