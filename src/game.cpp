@@ -95,47 +95,61 @@ void Game::process_input_events(sf::RenderWindow& window, const std::optional<sf
             sf::Vector2f viewPos = window.mapPixelToCoords(mouseButtonPressed->position);
             sf::Vector2f worldPos = {viewPos.x / pixles_per_meter, viewPos.y / pixles_per_meter};
 
+            auto add_circle_at = [&](sf::Vector2f pos) {
+                switch (add_type) {
+                    case AddType::Eater:
+                        circles.push_back(
+                            std::make_unique<EaterCircle>(
+                                worldId,
+                                pos.x,
+                                pos.y,
+                                1.0f * (0.5f + static_cast<float>(rand()) / RAND_MAX),
+                                1.0f,
+                                0.3f
+                            )
+                        );
+                        break;
+                    case AddType::Eatable:
+                        circles.push_back(
+                            std::make_unique<EatableCircle>(
+                                worldId,
+                                pos.x,
+                                pos.y,
+                                std::sqrt(add_eatable_area / 3.14159f),
+                                1.0f,
+                                0.3f,
+                                false
+                            )
+                        );
+                        break;
+                    case AddType::ToxicEatable:
+                        circles.push_back(
+                            std::make_unique<EatableCircle>(
+                                worldId,
+                                pos.x,
+                                pos.y,
+                                std::sqrt(add_eatable_area / 3.14159f),
+                                1.0f,
+                                0.3f,
+                                true
+                            )
+                        );
+                        break;
+                }
+            };
+
             switch (cursor_mode) {
                 case CursorMode::Add: {
-                    switch (add_type) {
-                        case AddType::Eater:
-                            circles.push_back(
-                                std::make_unique<EaterCircle>(
-                                    worldId,
-                                    worldPos.x,
-                                    worldPos.y,
-                                    1.0f * (0.5f + static_cast<float>(rand()) / RAND_MAX),
-                                    1.0f,
-                                    0.3f
-                                )
-                            );
-                            break;
-                        case AddType::Eatable:
-                            circles.push_back(
-                                std::make_unique<EatableCircle>(
-                                    worldId,
-                                    worldPos.x,
-                                    worldPos.y,
-                                    std::sqrt(add_eatable_area / 3.14159f),
-                                    1.0f,
-                                    0.3f,
-                                    false
-                                )
-                            );
-                            break;
-                        case AddType::ToxicEatable:
-                            circles.push_back(
-                                std::make_unique<EatableCircle>(
-                                    worldId,
-                                    worldPos.x,
-                                    worldPos.y,
-                                    std::sqrt(add_eatable_area / 3.14159f),
-                                    1.0f,
-                                    0.3f,
-                                    true
-                                )
-                            );
-                            break;
+                    add_circle_at(worldPos);
+                    add_dragging = (add_type != AddType::Eater);
+                    if (add_dragging) {
+                        last_add_world_pos = worldPos;
+                        last_drag_world_pos = worldPos;
+                        add_drag_distance = 0.0f;
+                    } else {
+                        last_add_world_pos.reset();
+                        last_drag_world_pos.reset();
+                        add_drag_distance = 0.0f;
                     }
                     break;
                 }
@@ -159,9 +173,67 @@ void Game::process_input_events(sf::RenderWindow& window, const std::optional<sf
             dragging = false;
             right_dragging = false;
         }
+        if (mouseButtonReleased->button == sf::Mouse::Button::Left) {
+            add_dragging = false;
+            last_add_world_pos.reset();
+            last_drag_world_pos.reset();
+            add_drag_distance = 0.0f;
+        }
     }
 
     if (const auto* mouseMoved = event->getIf<sf::Event::MouseMoved>()) {
+        if (add_dragging && cursor_mode == CursorMode::Add) {
+            sf::Vector2f viewPos = window.mapPixelToCoords({mouseMoved->position.x, mouseMoved->position.y});
+            sf::Vector2f worldPos = {viewPos.x / pixles_per_meter, viewPos.y / pixles_per_meter};
+
+            if (!last_drag_world_pos) {
+                last_drag_world_pos = worldPos;
+            }
+
+            float dx_move = worldPos.x - last_drag_world_pos->x;
+            float dy_move = worldPos.y - last_drag_world_pos->y;
+            add_drag_distance += std::sqrt(dx_move * dx_move + dy_move * dy_move);
+            last_drag_world_pos = worldPos;
+
+            const float min_spacing = std::sqrt(add_eatable_area / 3.14159f) * 2.0f;
+
+            if (add_drag_distance >= min_spacing) {
+                switch (add_type) {
+                    case AddType::Eater:
+                        break;
+                    case AddType::Eatable:
+                        circles.push_back(
+                            std::make_unique<EatableCircle>(
+                                worldId,
+                                worldPos.x,
+                                worldPos.y,
+                                std::sqrt(add_eatable_area / 3.14159f),
+                                1.0f,
+                                0.3f,
+                                false
+                            )
+                        );
+                        last_add_world_pos = worldPos;
+                        break;
+                    case AddType::ToxicEatable:
+                        circles.push_back(
+                            std::make_unique<EatableCircle>(
+                                worldId,
+                                worldPos.x,
+                                worldPos.y,
+                                std::sqrt(add_eatable_area / 3.14159f),
+                                1.0f,
+                                0.3f,
+                                true
+                            )
+                        );
+                        last_add_world_pos = worldPos;
+                        break;
+                }
+                add_drag_distance = 0.0f;
+            }
+        }
+
         if (dragging && (cursor_mode == CursorMode::Drag || right_dragging)) {
             sf::View view = window.getView();
             sf::Vector2f pixels_to_world = {

@@ -49,6 +49,10 @@ private:
     float minimum_area = 1.0f;
     CursorMode cursor_mode = CursorMode::Add;
     AddType add_type = AddType::Eater;
+    bool add_dragging = false;
+    std::optional<sf::Vector2f> last_add_world_pos;
+    std::optional<sf::Vector2f> last_drag_world_pos;
+    float add_drag_distance = 0.0f;
     float add_eatable_area = 1.0f;
     bool dragging = false;
     bool right_dragging = false;
