@@ -56,6 +56,8 @@ private:
     void update_eaters(const b2WorldId& worldId);
     void run_brain_updates(const b2WorldId& worldId, float timeStep);
     void cull_consumed();
+    std::unique_ptr<EaterCircle> create_eater_at(const b2Vec2& pos) const;
+    std::unique_ptr<EatableCircle> create_eatable_at(const b2Vec2& pos, bool toxic) const;
 
     b2WorldId worldId;
     std::vector<std::unique_ptr<EatableCircle>> circles;

@@ -7,10 +7,22 @@
 #include "game.hpp"
 #include "eater_circle.hpp"
 
+namespace {
+constexpr float PI = 3.14159f;
+inline float random_unit() {
+    return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+}
+inline float radius_from_area(float area) {
+    return std::sqrt(std::max(area, 0.0f) / PI);
+}
+} // namespace
+
 Game::Game() {
     b2WorldDef worldDef = b2DefaultWorldDef();
     worldDef.gravity = (b2Vec2){0.0f, 0.0f};
     worldId = b2CreateWorld(&worldDef);
+
+    circles.push_back(create_eater_at({0.0f, 0.0f}));
 }
 
 Game::~Game() {
@@ -79,42 +91,13 @@ void Game::process_input_events(sf::RenderWindow& window, const std::optional<sf
             auto add_circle_at = [&](sf::Vector2f pos) {
                 switch (add_type) {
                     case AddType::Eater:
-                        circles.push_back(
-                            std::make_unique<EaterCircle>(
-                                worldId,
-                                pos.x,
-                                pos.y,
-                                1.0f * (0.5f + static_cast<float>(rand()) / RAND_MAX),
-                                1.0f,
-                                0.3f
-                            )
-                        );
+                        circles.push_back(create_eater_at({pos.x, pos.y}));
                         break;
                     case AddType::Eatable:
-                        circles.push_back(
-                            std::make_unique<EatableCircle>(
-                                worldId,
-                                pos.x,
-                                pos.y,
-                                std::sqrt(add_eatable_area / 3.14159f),
-                                1.0f,
-                                0.3f,
-                                false
-                            )
-                        );
+                        circles.push_back(create_eatable_at({pos.x, pos.y}, false));
                         break;
                     case AddType::ToxicEatable:
-                        circles.push_back(
-                            std::make_unique<EatableCircle>(
-                                worldId,
-                                pos.x,
-                                pos.y,
-                                std::sqrt(add_eatable_area / 3.14159f),
-                                1.0f,
-                                0.3f,
-                                true
-                            )
-                        );
+                        circles.push_back(create_eatable_at({pos.x, pos.y}, true));
                         break;
                 }
             };
@@ -295,42 +278,13 @@ void Game::sprinkle_with_rate(float rate, AddType type, float dt) {
         b2Vec2 pos = random_point_in_petri();
         switch (type) {
             case AddType::Eater:
-                circles.push_back(
-                    std::make_unique<EaterCircle>(
-                        worldId,
-                        pos.x,
-                        pos.y,
-                        1.0f * (0.5f + static_cast<float>(rand()) / RAND_MAX),
-                        1.0f,
-                        0.3f
-                    )
-                );
+                circles.push_back(create_eater_at(pos));
                 break;
             case AddType::Eatable:
-                circles.push_back(
-                    std::make_unique<EatableCircle>(
-                        worldId,
-                        pos.x,
-                        pos.y,
-                        std::sqrt(add_eatable_area / 3.14159f),
-                        1.0f,
-                        0.3f,
-                        false
-                    )
-                );
+                circles.push_back(create_eatable_at(pos, false));
                 break;
             case AddType::ToxicEatable:
-                circles.push_back(
-                    std::make_unique<EatableCircle>(
-                        worldId,
-                        pos.x,
-                        pos.y,
-                        std::sqrt(add_eatable_area / 3.14159f),
-                        1.0f,
-                        0.3f,
-                        true
-                    )
-                );
+                circles.push_back(create_eatable_at(pos, true));
                 break;
         }
     };
@@ -346,9 +300,19 @@ void Game::sprinkle_with_rate(float rate, AddType type, float dt) {
 }
 
 b2Vec2 Game::random_point_in_petri() const {
-    float angle = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX) * 2.0f * 3.14159f;
-    float radius = petri_radius * std::sqrt(static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX));
+    float angle = random_unit() * 2.0f * PI;
+    float radius = petri_radius * std::sqrt(random_unit());
     return b2Vec2{radius * std::cos(angle), radius * std::sin(angle)};
+}
+
+std::unique_ptr<EaterCircle> Game::create_eater_at(const b2Vec2& pos) const {
+    float radius = 1.0f * (0.5f + random_unit());
+    return std::make_unique<EaterCircle>(worldId, pos.x, pos.y, radius, 1.0f, 0.3f);
+}
+
+std::unique_ptr<EatableCircle> Game::create_eatable_at(const b2Vec2& pos, bool toxic) const {
+    float radius = radius_from_area(add_eatable_area);
+    return std::make_unique<EatableCircle>(worldId, pos.x, pos.y, radius, 1.0f, 0.3f, toxic);
 }
 
 void Game::sprinkle_entities(float dt) {
@@ -409,7 +373,7 @@ void Game::cull_consumed() {
 
 void Game::spawn_eatable_cloud(const EaterCircle& eater, std::vector<std::unique_ptr<EatableCircle>>& out) {
     float eater_radius = eater.getRadius();
-    float total_area = 3.14159f * eater_radius * eater_radius;
+    float total_area = PI * eater_radius * eater_radius;
     if (minimum_area <= 0.0f || total_area <= 0.0f) {
         return;
     }
@@ -419,7 +383,7 @@ void Game::spawn_eatable_cloud(const EaterCircle& eater, std::vector<std::unique
 
     while (remaining_area > 0.0f) {
         float use_area = std::min(chunk_area, remaining_area);
-        float piece_radius = std::sqrt(use_area / 3.14159f);
+        float piece_radius = radius_from_area(use_area);
         float max_offset = std::max(0.0f, eater_radius - piece_radius);
 
         float angle = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX) * 2.0f * 3.14159f;
