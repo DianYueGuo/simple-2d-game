@@ -10,7 +10,9 @@ public:
 
     void process_eating(const b2WorldId &worldId);
 
-    void move_randomly();
+    void move_randomly(const b2WorldId &worldId);
+
+    void boost_forward(const b2WorldId &worldId);
 };
 
 #endif

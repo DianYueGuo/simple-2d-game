@@ -57,7 +57,7 @@ void Game::process_game_logic() {
     for (auto& circle : circles) {
         if (auto* eater_circle = dynamic_cast<EaterCircle*>(circle.get())) {
             eater_circle->process_eating(worldId);
-            eater_circle->move_randomly();
+            eater_circle->move_randomly(worldId);
         }
     }
 

@@ -40,10 +40,10 @@ void EaterCircle::process_eating(const b2WorldId &worldId) {
     }
 }
 
-void EaterCircle::move_randomly() {
+void EaterCircle::move_randomly(const b2WorldId &worldId) {
     float probability = static_cast<float>(rand()) / RAND_MAX;
     if (probability > 0.8f)
-        this->apply_forward_impulse();
+        this->boost_forward(worldId);
 
     probability = static_cast<float>(rand()) / RAND_MAX;
     if (probability > 0.8f)
@@ -52,4 +52,16 @@ void EaterCircle::move_randomly() {
     probability = static_cast<float>(rand()) / RAND_MAX;
     if (probability > 0.8f)
         this->apply_right_turn_impulse();
+}
+
+void EaterCircle::boost_forward(const b2WorldId &worldId) {
+    float current_area = 3.14159f * this->getRadius() * this->getRadius();
+    float boost_cost = current_area * 0.1f;  // 10% of current area
+    float new_area = current_area - boost_cost;
+
+    if (new_area > 1.0f) {
+        float new_radius = sqrt(new_area / 3.14159f);
+        this->setRadius(new_radius, worldId);
+        this->apply_forward_impulse();
+    }
 }
