@@ -56,7 +56,8 @@ private:
     bool has_hidden_nodes() const;
     void add_hidden_node();
     void remove_random_hidden_node();
-    void rewire_random_node();
+    void add_random_connection();
+    void remove_random_connection();
     size_t random_node_index() const;
 };
 

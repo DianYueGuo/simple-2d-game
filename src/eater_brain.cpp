@@ -82,7 +82,10 @@ void EaterBrain::mutate(float add_node_probability, float remove_node_probabilit
         remove_random_hidden_node();
     }
     if (random_unit() < rewire_probability) {
-        rewire_random_node();
+        add_random_connection();
+    }
+    if (random_unit() < rewire_probability) {
+        remove_random_connection();
     }
 }
 
@@ -138,20 +141,41 @@ void EaterBrain::remove_random_hidden_node() {
     }
 }
 
-void EaterBrain::rewire_random_node() {
+void EaterBrain::add_random_connection() {
     if (nodes.empty()) {
         return;
     }
 
     size_t target_index = random_node_index();
     Node& target = *nodes[target_index];
+    target.input_nodes.push_back(nodes[random_node_index()].get());
+}
 
-    if (target.input_nodes.empty()) {
-        target.input_nodes.push_back(nodes[random_node_index()].get());
-    } else {
-        size_t slot = static_cast<size_t>(std::rand() % target.input_nodes.size());
-        target.input_nodes[slot] = nodes[random_node_index()].get();
+void EaterBrain::remove_random_connection() {
+    if (nodes.empty()) {
+        return;
     }
+
+    // Collect all connections
+    std::vector<std::pair<size_t, size_t>> all_connections;
+    for (size_t i = 0; i < nodes.size(); ++i) {
+        for (size_t j = 0; j < nodes[i]->input_nodes.size(); ++j) {
+            all_connections.push_back({i, j});
+        }
+    }
+
+    if (all_connections.empty()) {
+        return;
+    }
+
+    // Randomly choose a connection to remove
+    size_t chosen = static_cast<size_t>(std::rand() % all_connections.size());
+    size_t target_index = all_connections[chosen].first;
+    size_t input_slot = all_connections[chosen].second;
+
+    nodes[target_index]->input_nodes.erase(
+        nodes[target_index]->input_nodes.begin() + static_cast<long>(input_slot)
+    );
 }
 
 size_t EaterBrain::random_node_index() const {
