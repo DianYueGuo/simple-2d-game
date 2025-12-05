@@ -10,18 +10,6 @@ Game::Game() {
     b2WorldDef worldDef = b2DefaultWorldDef();
     worldDef.gravity = (b2Vec2){0.0f, 0.0f};
     worldId = b2CreateWorld(&worldDef);
-
-    b2Vec2 start = {0.0f, 0.0f};
-    circles.push_back(
-        std::make_unique<EaterCircle>(
-                        worldId,
-                        start.x,
-                        start.y,
-                        1.0f,
-                        1.0f,
-                        0.3f
-        )
-    );
 }
 
 Game::~Game() {
