@@ -49,7 +49,7 @@ public:
     float read_output_input_register(size_t output_index) const;
 
     // Mutation entry point. Probabilities are checked independently.
-    void mutate(float add_node_probability, float remove_node_probability, float rewire_probability);
+    void mutate(float add_node_probability, float remove_node_probability, float add_connection_probability, float remove_connection_probability);
 
     const std::vector<std::unique_ptr<Node>>& get_nodes() const { return nodes; }
 

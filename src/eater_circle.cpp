@@ -111,6 +111,6 @@ void EaterCircle::initialize_brain() {
     // Mutate repeatedly to seed a non-trivial brain topology.
     constexpr int mutation_rounds = 5;
     for (int i = 0; i < mutation_rounds; ++i) {
-        brain.mutate(0.7f, 0.2f, 0.6f);
+        brain.mutate(0.7f, 0.2f, 0.6f, 0.6f);
     }
 }

@@ -92,7 +92,7 @@ float EaterBrain::read_output_input_register(size_t output_index) const {
     return nodes[input_count + output_index]->input_register;
 }
 
-void EaterBrain::mutate(float add_node_probability, float remove_node_probability, float rewire_probability) {
+void EaterBrain::mutate(float add_node_probability, float remove_node_probability, float add_connection_probability, float remove_connection_probability) {
     if (random_unit() < add_node_probability) {
         NodeType new_type = (random_unit() < 0.5f) ? NodeType::Hidden : NodeType::Inverted;
         add_hidden_node(new_type);
@@ -100,10 +100,10 @@ void EaterBrain::mutate(float add_node_probability, float remove_node_probabilit
     if (random_unit() < remove_node_probability) {
         remove_random_hidden_node();
     }
-    if (random_unit() < rewire_probability) {
+    if (random_unit() < add_connection_probability) {
         add_random_connection();
     }
-    if (random_unit() < rewire_probability) {
+    if (random_unit() < remove_connection_probability) {
         remove_random_connection();
     }
 }
