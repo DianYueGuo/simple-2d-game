@@ -21,8 +21,6 @@ Game::Game() {
     b2WorldDef worldDef = b2DefaultWorldDef();
     worldDef.gravity = (b2Vec2){0.0f, 0.0f};
     worldId = b2CreateWorld(&worldDef);
-
-    circles.push_back(create_eater_at({0.0f, 0.0f}));
 }
 
 Game::~Game() {
