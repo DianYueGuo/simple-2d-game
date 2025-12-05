@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <algorithm>
+#include <limits>
 
 #include "game.hpp"
 #include "eater_circle.hpp"
@@ -48,54 +49,10 @@ void Game::process_game_logic() {
     process_touch_events(worldId);
 
     brain_time_accumulator += timeStep;
-    sprinkle_with_rate(sprinkle_rate_eater, AddType::Eater, timeStep);
-    sprinkle_with_rate(sprinkle_rate_eatable, AddType::Eatable, timeStep);
-    sprinkle_with_rate(sprinkle_rate_toxic, AddType::ToxicEatable, timeStep);
-
-    // Use index-based iteration so push_back inside eater logic doesn't invalidate references
-    for (size_t i = 0; i < circles.size(); ++i) {
-        if (auto* eater_circle = dynamic_cast<EaterCircle*>(circles[i].get())) {
-            eater_circle->process_eating(worldId, poison_death_probability, poison_death_probability_normal);
-        }
-    }
-
-    const float brain_period = (brain_updates_per_sim_second > 0.0f) ? (1.0f / brain_updates_per_sim_second) : std::numeric_limits<float>::max();
-    while (brain_time_accumulator >= brain_period) {
-        for (size_t i = 0; i < circles.size(); ++i) {
-            if (auto* eater_circle = dynamic_cast<EaterCircle*>(circles[i].get())) {
-                eater_circle->set_minimum_area(minimum_area);
-                eater_circle->move_intelligently(worldId, *this);
-            }
-        }
-        brain_time_accumulator -= brain_period;
-    }
-
-    std::vector<std::unique_ptr<EatableCircle>> spawned_cloud;
-
-    for (auto it = circles.begin(); it != circles.end(); ) {
-        bool remove = false;
-
-        if (auto* eater = dynamic_cast<EaterCircle*>(it->get())) {
-            if (eater->is_poisoned()) {
-                spawn_eatable_cloud(*eater, spawned_cloud);
-                remove = true;
-            } else if (eater->is_eaten()) {
-                remove = true;
-            }
-        } else if ((*it)->is_eaten()) {
-            remove = true;
-        }
-
-        if (remove) {
-            it = circles.erase(it);
-        } else {
-            ++it;
-        }
-    }
-
-    for (auto& c : spawned_cloud) {
-        circles.push_back(std::move(c));
-    }
+    sprinkle_entities(timeStep);
+    update_eaters(worldId);
+    run_brain_updates(worldId, timeStep);
+    cull_consumed();
 }
 
 void Game::draw(sf::RenderWindow& window) const {
@@ -392,6 +349,62 @@ b2Vec2 Game::random_point_in_petri() const {
     float angle = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX) * 2.0f * 3.14159f;
     float radius = petri_radius * std::sqrt(static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX));
     return b2Vec2{radius * std::cos(angle), radius * std::sin(angle)};
+}
+
+void Game::sprinkle_entities(float dt) {
+    sprinkle_with_rate(sprinkle_rate_eater, AddType::Eater, dt);
+    sprinkle_with_rate(sprinkle_rate_eatable, AddType::Eatable, dt);
+    sprinkle_with_rate(sprinkle_rate_toxic, AddType::ToxicEatable, dt);
+}
+
+void Game::update_eaters(const b2WorldId& worldId) {
+    for (size_t i = 0; i < circles.size(); ++i) {
+        if (auto* eater_circle = dynamic_cast<EaterCircle*>(circles[i].get())) {
+            eater_circle->process_eating(worldId, poison_death_probability, poison_death_probability_normal);
+        }
+    }
+}
+
+void Game::run_brain_updates(const b2WorldId& worldId, float timeStep) {
+    const float brain_period = (brain_updates_per_sim_second > 0.0f) ? (1.0f / brain_updates_per_sim_second) : std::numeric_limits<float>::max();
+    while (brain_time_accumulator >= brain_period) {
+        for (size_t i = 0; i < circles.size(); ++i) {
+            if (auto* eater_circle = dynamic_cast<EaterCircle*>(circles[i].get())) {
+                eater_circle->set_minimum_area(minimum_area);
+                eater_circle->move_intelligently(worldId, *this);
+            }
+        }
+        brain_time_accumulator -= brain_period;
+    }
+}
+
+void Game::cull_consumed() {
+    std::vector<std::unique_ptr<EatableCircle>> spawned_cloud;
+
+    for (auto it = circles.begin(); it != circles.end(); ) {
+        bool remove = false;
+
+        if (auto* eater = dynamic_cast<EaterCircle*>(it->get())) {
+            if (eater->is_poisoned()) {
+                spawn_eatable_cloud(*eater, spawned_cloud);
+                remove = true;
+            } else if (eater->is_eaten()) {
+                remove = true;
+            }
+        } else if ((*it)->is_eaten()) {
+            remove = true;
+        }
+
+        if (remove) {
+            it = circles.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    for (auto& c : spawned_cloud) {
+        circles.push_back(std::move(c));
+    }
 }
 
 void Game::spawn_eatable_cloud(const EaterCircle& eater, std::vector<std::unique_ptr<EatableCircle>>& out) {

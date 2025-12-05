@@ -52,6 +52,10 @@ private:
     void spawn_eatable_cloud(const EaterCircle& eater, std::vector<std::unique_ptr<EatableCircle>>& out);
     b2Vec2 random_point_in_petri() const;
     void sprinkle_with_rate(float rate, AddType type, float dt);
+    void sprinkle_entities(float dt);
+    void update_eaters(const b2WorldId& worldId);
+    void run_brain_updates(const b2WorldId& worldId, float timeStep);
+    void cull_consumed();
 
     b2WorldId worldId;
     std::vector<std::unique_ptr<EatableCircle>> circles;
