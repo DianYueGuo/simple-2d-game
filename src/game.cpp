@@ -116,7 +116,7 @@ void Game::process_input_events(sf::RenderWindow& window, const std::optional<sf
                                     worldId,
                                     worldPos.x,
                                     worldPos.y,
-                                    1.0f * (0.5f + static_cast<float>(rand()) / RAND_MAX),
+                                    std::sqrt(add_eatable_area / 3.14159f),
                                     1.0f,
                                     0.3f,
                                     false
@@ -129,7 +129,7 @@ void Game::process_input_events(sf::RenderWindow& window, const std::optional<sf
                                     worldId,
                                     worldPos.x,
                                     worldPos.y,
-                                    1.0f * (0.5f + static_cast<float>(rand()) / RAND_MAX),
+                                    std::sqrt(add_eatable_area / 3.14159f),
                                     1.0f,
                                     0.3f,
                                     true

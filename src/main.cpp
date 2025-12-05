@@ -97,6 +97,10 @@ int main() {
                 add_type = static_cast<int>(Game::AddType::ToxicEatable);
             }
             game.set_add_type(static_cast<Game::AddType>(add_type));
+
+            static float eatable_area = 1.0f;
+            ImGui::SliderFloat("Eatable Area", &eatable_area, 0.1f, 10.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
+            game.set_add_eatable_area(eatable_area);
         }
 
         ImGui::End();

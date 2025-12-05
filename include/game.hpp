@@ -36,6 +36,7 @@ public:
     float get_minimum_area() const { return minimum_area; }
     void set_cursor_mode(CursorMode mode) { cursor_mode = mode; }
     void set_add_type(AddType type) { add_type = type; }
+    void set_add_eatable_area(float area) { add_eatable_area = area; }
     CursorMode get_cursor_mode() const { return cursor_mode; }
     void add_circle(std::unique_ptr<EatableCircle> circle);
 private:
@@ -48,6 +49,7 @@ private:
     float minimum_area = 1.0f;
     CursorMode cursor_mode = CursorMode::Add;
     AddType add_type = AddType::Eater;
+    float add_eatable_area = 1.0f;
     bool dragging = false;
     bool right_dragging = false;
     sf::Vector2i last_drag_pixels{};
