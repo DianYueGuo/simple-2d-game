@@ -65,7 +65,7 @@ int main() {
         ImGui::SliderFloat("Time Scale", &time_scale, 0.01f, 5.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
         game.set_time_scale(time_scale);
 
-        static float brain_updates_per_sim_second = 60.0f;
+        static float brain_updates_per_sim_second = 10.0f;
         ImGui::SliderFloat("Brain Updates / Sim Second", &brain_updates_per_sim_second, 0.1f, 240.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
         game.set_brain_updates_per_sim_second(brain_updates_per_sim_second);
 
