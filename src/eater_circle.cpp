@@ -101,7 +101,7 @@ void EaterCircle::move_intelligently(const b2WorldId &worldId, Game &game) {
 
 void EaterCircle::boost_forward(const b2WorldId &worldId, Game& game) {
     float current_area = 3.14159f * this->getRadius() * this->getRadius();
-    float boost_cost = 0.3f;
+    float boost_cost = std::max(game.get_boost_area(), 0.0f);
     float new_area = current_area - boost_cost;
 
     if (new_area > minimum_area) {

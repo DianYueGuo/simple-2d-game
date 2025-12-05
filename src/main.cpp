@@ -73,6 +73,10 @@ int main() {
         ImGui::SliderFloat("Minimum Area", &minimum_area, 0.1f, 5.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
         game.set_minimum_area(minimum_area);
 
+        static float boost_area = 0.3f;
+        ImGui::SliderFloat("Boost Area", &boost_area, 0.01f, 3.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
+        game.set_boost_area(boost_area);
+
         static int cursor_mode = static_cast<int>(Game::CursorMode::Add);
         if (ImGui::RadioButton("Add", cursor_mode == static_cast<int>(Game::CursorMode::Add))) {
             cursor_mode = static_cast<int>(Game::CursorMode::Add);
