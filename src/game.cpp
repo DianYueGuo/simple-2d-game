@@ -145,6 +145,17 @@ void Game::process_input_events(sf::RenderWindow& window, const std::optional<sf
         }
     }
 
+    if (const auto* mouseWheel = event->getIf<sf::Event::MouseWheelScrolled>()) {
+        sf::View view = window.getView();
+        constexpr float zoom_factor = 1.05f;
+        if (mouseWheel->delta > 0) {
+            view.zoom(1.0f / zoom_factor);
+        } else if (mouseWheel->delta < 0) {
+            view.zoom(zoom_factor);
+        }
+        window.setView(view);
+    }
+
     if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
         sf::View view = window.getView();
         constexpr float pan_pixels = 20.0f;
