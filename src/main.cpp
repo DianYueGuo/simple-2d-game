@@ -65,9 +65,9 @@ int main() {
         ImGui::SliderFloat("Time Scale", &time_scale, 0.01f, 5.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
         game.set_time_scale(time_scale);
 
-        static float brain_rate_multiplier = 1.0f;
-        ImGui::SliderFloat("Brain Rate Multiplier", &brain_rate_multiplier, 0.01f, 5.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
-        game.set_brain_rate_multiplier(brain_rate_multiplier);
+        static float brain_updates_per_sim_second = 60.0f;
+        ImGui::SliderFloat("Brain Updates / Sim Second", &brain_updates_per_sim_second, 0.1f, 240.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
+        game.set_brain_updates_per_sim_second(brain_updates_per_sim_second);
 
         static float minimum_area = 1.0f;
         ImGui::SliderFloat("Minimum Area", &minimum_area, 0.1f, 5.0f, "%.2f", ImGuiSliderFlags_Logarithmic);

@@ -54,7 +54,7 @@ void Game::process_game_logic() {
 
     process_touch_events(worldId);
 
-    brain_time_accumulator += timeStep * brain_rate_multiplier;
+    brain_time_accumulator += timeStep;
 
     // Use index-based iteration so push_back inside eater logic doesn't invalidate references
     for (size_t i = 0; i < circles.size(); ++i) {
@@ -63,14 +63,15 @@ void Game::process_game_logic() {
         }
     }
 
-    while (brain_time_accumulator >= timeStep) {
+    const float brain_period = (brain_updates_per_sim_second > 0.0f) ? (1.0f / brain_updates_per_sim_second) : std::numeric_limits<float>::max();
+    while (brain_time_accumulator >= brain_period) {
         for (size_t i = 0; i < circles.size(); ++i) {
             if (auto* eater_circle = dynamic_cast<EaterCircle*>(circles[i].get())) {
                 eater_circle->set_minimum_area(minimum_area);
                 eater_circle->move_intelligently(worldId, *this);
             }
         }
-        brain_time_accumulator -= timeStep;
+        brain_time_accumulator -= brain_period;
     }
 
     for (auto it = circles.begin(); it != circles.end(); ) {
