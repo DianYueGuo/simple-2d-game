@@ -84,113 +84,15 @@ void Game::draw(sf::RenderWindow& window) const {
 
 void Game::process_input_events(sf::RenderWindow& window, const std::optional<sf::Event>& event) {
     if (const auto* mouseButtonPressed = event->getIf<sf::Event::MouseButtonPressed>()) {
-        if (mouseButtonPressed->button == sf::Mouse::Button::Left) {
-            sf::Vector2f viewPos = window.mapPixelToCoords(mouseButtonPressed->position);
-            sf::Vector2f worldPos = {viewPos.x / pixles_per_meter, viewPos.y / pixles_per_meter};
-
-            auto add_circle_at = [&](sf::Vector2f pos) {
-                switch (add_type) {
-                    case AddType::Eater:
-                        circles.push_back(create_eater_at({pos.x, pos.y}));
-                        break;
-                    case AddType::Eatable:
-                    case AddType::ToxicEatable:
-                        circles.push_back(create_eatable_at({pos.x, pos.y}, add_type == AddType::ToxicEatable));
-                        break;
-                }
-            };
-
-            switch (cursor_mode) {
-                case CursorMode::Add: {
-                    add_circle_at(worldPos);
-                    add_dragging = (add_type != AddType::Eater);
-                    if (add_dragging) {
-                        last_add_world_pos = worldPos;
-                        last_drag_world_pos = worldPos;
-                        add_drag_distance = 0.0f;
-                    } else {
-                        last_add_world_pos.reset();
-                        last_drag_world_pos.reset();
-                        add_drag_distance = 0.0f;
-                    }
-                    break;
-                }
-                case CursorMode::Drag: {
-                    dragging = true;
-                    right_dragging = false;
-                    last_drag_pixels = mouseButtonPressed->position;
-                    break;
-                }
-            }
-        } else if (mouseButtonPressed->button == sf::Mouse::Button::Right) {
-            dragging = true;
-            right_dragging = true;
-            last_drag_pixels = mouseButtonPressed->position;
-        }
+        handle_mouse_press(window, *mouseButtonPressed);
     }
 
     if (const auto* mouseButtonReleased = event->getIf<sf::Event::MouseButtonReleased>()) {
-        if ((mouseButtonReleased->button == sf::Mouse::Button::Left && cursor_mode == CursorMode::Drag) ||
-            mouseButtonReleased->button == sf::Mouse::Button::Right) {
-            dragging = false;
-            right_dragging = false;
-        }
-        if (mouseButtonReleased->button == sf::Mouse::Button::Left) {
-            add_dragging = false;
-            last_add_world_pos.reset();
-            last_drag_world_pos.reset();
-            add_drag_distance = 0.0f;
-        }
+        handle_mouse_release(*mouseButtonReleased);
     }
 
     if (const auto* mouseMoved = event->getIf<sf::Event::MouseMoved>()) {
-        if (add_dragging && cursor_mode == CursorMode::Add) {
-            sf::Vector2f viewPos = window.mapPixelToCoords({mouseMoved->position.x, mouseMoved->position.y});
-            sf::Vector2f worldPos = {viewPos.x / pixles_per_meter, viewPos.y / pixles_per_meter};
-
-            if (!last_drag_world_pos) {
-                last_drag_world_pos = worldPos;
-            }
-
-            float dx_move = worldPos.x - last_drag_world_pos->x;
-            float dy_move = worldPos.y - last_drag_world_pos->y;
-            add_drag_distance += std::sqrt(dx_move * dx_move + dy_move * dy_move);
-            last_drag_world_pos = worldPos;
-
-            const float min_spacing = radius_from_area(add_eatable_area) * 2.0f;
-
-            if (add_drag_distance >= min_spacing) {
-                switch (add_type) {
-                    case AddType::Eater:
-                        break;
-                    case AddType::Eatable:
-                    case AddType::ToxicEatable:
-                        circles.push_back(create_eatable_at({worldPos.x, worldPos.y}, add_type == AddType::ToxicEatable));
-                        last_add_world_pos = worldPos;
-                        break;
-                }
-                add_drag_distance = 0.0f;
-            }
-        }
-
-        if (dragging && (cursor_mode == CursorMode::Drag || right_dragging)) {
-            sf::View view = window.getView();
-            sf::Vector2f pixels_to_world = {
-                view.getSize().x / static_cast<float>(window.getSize().x),
-                view.getSize().y / static_cast<float>(window.getSize().y)
-            };
-
-            sf::Vector2i current_pixels = mouseMoved->position;
-            sf::Vector2i delta_pixels = last_drag_pixels - current_pixels;
-            sf::Vector2f delta_world = {
-                static_cast<float>(delta_pixels.x) * pixels_to_world.x,
-                static_cast<float>(delta_pixels.y) * pixels_to_world.y
-            };
-
-            view.move(delta_world);
-            window.setView(view);
-            last_drag_pixels = current_pixels;
-        }
+        handle_mouse_move(window, *mouseMoved);
     }
 
     if (const auto* mouseWheel = event->getIf<sf::Event::MouseWheelScrolled>()) {
@@ -205,35 +107,144 @@ void Game::process_input_events(sf::RenderWindow& window, const std::optional<sf
     }
 
     if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
-        sf::View view = window.getView();
-        constexpr float pan_pixels = 20.0f;
-        constexpr float zoom_step = 1.05f;
+        handle_key_press(window, *keyPressed);
+    }
+}
 
-        switch (keyPressed->scancode) {
-            case sf::Keyboard::Scancode::W:
-                view.move({0.0f, -pan_pixels});
-                break;
-            case sf::Keyboard::Scancode::S:
-                view.move({0.0f, pan_pixels});
-                break;
-            case sf::Keyboard::Scancode::A:
-                view.move({-pan_pixels, 0.0f});
-                break;
-            case sf::Keyboard::Scancode::D:
-                view.move({pan_pixels, 0.0f});
-                break;
-            case sf::Keyboard::Scancode::Q:
-                view.zoom(1.0f / zoom_step);
-                break;
-            case sf::Keyboard::Scancode::E:
-                view.zoom(zoom_step);
-                break;
-            default:
-                break;
+void Game::handle_mouse_press(sf::RenderWindow& window, const sf::Event::MouseButtonPressed& e) {
+    if (e.button == sf::Mouse::Button::Left) {
+        sf::Vector2f viewPos = window.mapPixelToCoords(e.position);
+        sf::Vector2f worldPos = {viewPos.x / pixles_per_meter, viewPos.y / pixles_per_meter};
+
+        auto add_circle_at = [&](sf::Vector2f pos) {
+            switch (add_type) {
+                case AddType::Eater:
+                    circles.push_back(create_eater_at({pos.x, pos.y}));
+                    break;
+                case AddType::Eatable:
+                case AddType::ToxicEatable:
+                    circles.push_back(create_eatable_at({pos.x, pos.y}, add_type == AddType::ToxicEatable));
+                    break;
+            }
+        };
+
+        if (cursor_mode == CursorMode::Add) {
+            add_circle_at(worldPos);
+            add_dragging = (add_type != AddType::Eater);
+            if (add_dragging) {
+                last_add_world_pos = worldPos;
+                last_drag_world_pos = worldPos;
+                add_drag_distance = 0.0f;
+            } else {
+                last_add_world_pos.reset();
+                last_drag_world_pos.reset();
+                add_drag_distance = 0.0f;
+            }
+        } else if (cursor_mode == CursorMode::Drag) {
+            dragging = true;
+            right_dragging = false;
+            last_drag_pixels = e.position;
+        }
+    } else if (e.button == sf::Mouse::Button::Right) {
+        dragging = true;
+        right_dragging = true;
+        last_drag_pixels = e.position;
+    }
+}
+
+void Game::handle_mouse_release(const sf::Event::MouseButtonReleased& e) {
+    if ((e.button == sf::Mouse::Button::Left && cursor_mode == CursorMode::Drag) ||
+        e.button == sf::Mouse::Button::Right) {
+        dragging = false;
+        right_dragging = false;
+    }
+    if (e.button == sf::Mouse::Button::Left) {
+        add_dragging = false;
+        last_add_world_pos.reset();
+        last_drag_world_pos.reset();
+        add_drag_distance = 0.0f;
+    }
+}
+
+void Game::handle_mouse_move(sf::RenderWindow& window, const sf::Event::MouseMoved& e) {
+    if (add_dragging && cursor_mode == CursorMode::Add) {
+        sf::Vector2f viewPos = window.mapPixelToCoords({e.position.x, e.position.y});
+        sf::Vector2f worldPos = {viewPos.x / pixles_per_meter, viewPos.y / pixles_per_meter};
+
+        if (!last_drag_world_pos) {
+            last_drag_world_pos = worldPos;
         }
 
-        window.setView(view);
+        float dx_move = worldPos.x - last_drag_world_pos->x;
+        float dy_move = worldPos.y - last_drag_world_pos->y;
+        add_drag_distance += std::sqrt(dx_move * dx_move + dy_move * dy_move);
+        last_drag_world_pos = worldPos;
+
+        const float min_spacing = radius_from_area(add_eatable_area) * 2.0f;
+
+        if (add_drag_distance >= min_spacing) {
+            switch (add_type) {
+                case AddType::Eater:
+                    break;
+                case AddType::Eatable:
+                case AddType::ToxicEatable:
+                    circles.push_back(create_eatable_at({worldPos.x, worldPos.y}, add_type == AddType::ToxicEatable));
+                    last_add_world_pos = worldPos;
+                    break;
+            }
+            add_drag_distance = 0.0f;
+        }
     }
+
+    if (dragging && (cursor_mode == CursorMode::Drag || right_dragging)) {
+        sf::View view = window.getView();
+        sf::Vector2f pixels_to_world = {
+            view.getSize().x / static_cast<float>(window.getSize().x),
+            view.getSize().y / static_cast<float>(window.getSize().y)
+        };
+
+        sf::Vector2i current_pixels = e.position;
+        sf::Vector2i delta_pixels = last_drag_pixels - current_pixels;
+        sf::Vector2f delta_world = {
+            static_cast<float>(delta_pixels.x) * pixels_to_world.x,
+            static_cast<float>(delta_pixels.y) * pixels_to_world.y
+        };
+
+        view.move(delta_world);
+        window.setView(view);
+        last_drag_pixels = current_pixels;
+    }
+}
+
+void Game::handle_key_press(sf::RenderWindow& window, const sf::Event::KeyPressed& e) {
+    sf::View view = window.getView();
+    constexpr float pan_pixels = 20.0f;
+    constexpr float zoom_step = 1.05f;
+
+    switch (e.scancode) {
+        case sf::Keyboard::Scancode::W:
+            view.move({0.0f, -pan_pixels});
+            break;
+        case sf::Keyboard::Scancode::S:
+            view.move({0.0f, pan_pixels});
+            break;
+        case sf::Keyboard::Scancode::A:
+            view.move({-pan_pixels, 0.0f});
+            break;
+        case sf::Keyboard::Scancode::D:
+            view.move({pan_pixels, 0.0f});
+            break;
+        case sf::Keyboard::Scancode::Q:
+            view.zoom(1.0f / zoom_step);
+            break;
+        case sf::Keyboard::Scancode::E:
+            view.zoom(zoom_step);
+            break;
+        default:
+            break;
+    }
+
+    window.setView(view);
 }
 
 void Game::add_circle(std::unique_ptr<EatableCircle> circle) {

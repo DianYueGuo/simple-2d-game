@@ -58,6 +58,10 @@ private:
     void cull_consumed();
     std::unique_ptr<EaterCircle> create_eater_at(const b2Vec2& pos) const;
     std::unique_ptr<EatableCircle> create_eatable_at(const b2Vec2& pos, bool toxic) const;
+    void handle_mouse_press(sf::RenderWindow& window, const sf::Event::MouseButtonPressed& e);
+    void handle_mouse_release(const sf::Event::MouseButtonReleased& e);
+    void handle_mouse_move(sf::RenderWindow& window, const sf::Event::MouseMoved& e);
+    void handle_key_press(sf::RenderWindow& window, const sf::Event::KeyPressed& e);
 
     b2WorldId worldId;
     std::vector<std::unique_ptr<EatableCircle>> circles;
