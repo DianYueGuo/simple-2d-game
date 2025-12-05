@@ -24,6 +24,7 @@ int main() {
         return -1;
 
     sf::Clock deltaClock;
+    sf::View view = window.getDefaultView();
     while (window.isOpen())
     {
         game.process_game_logic();
@@ -36,12 +37,21 @@ int main() {
             {
                 window.close();
             }
+            if (const auto* resize = event->getIf<sf::Event::Resized>()) {
+                const sf::Vector2f current_center = view.getCenter();
+                view.setSize({static_cast<float>(resize->size.x), static_cast<float>(resize->size.y)});
+                view.setCenter(current_center);
+                window.setView(view);
+            }
 
             if (ImGui::GetIO().WantCaptureMouse)
                 continue;
 
             game.process_input_events(window, event);
         }
+
+        // Sync local view with any changes made during input handling (pan/zoom).
+        view = window.getView();
 
         ImGui::SFML::Update(window, deltaClock.restart());
 
@@ -67,6 +77,7 @@ int main() {
 
         window.clear();
 
+        window.setView(view);
         game.draw(window);
 
         ImGui::SFML::Render(window);
