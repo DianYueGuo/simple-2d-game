@@ -2,10 +2,11 @@
 #define EATER_CIRCLE_HPP
 
 #include "eatable_circle.hpp"
-#include "eater_brain.hpp"
+#include <NEAT/genome.hpp>
 
 #include <algorithm>
 #include <array>
+#include <vector>
 
 class Game;
 
@@ -24,13 +25,15 @@ public:
                 float init_remove_node_probability = 0.0f,
                 float init_add_connection_probability = 1.0f,
                 float init_remove_connection_probability = 0.0f,
-                const EaterBrain* base_brain = nullptr);
+                const neat::Genome* base_brain = nullptr,
+                std::vector<std::vector<int>>* innov_ids = nullptr,
+                int* last_innov_id = nullptr);
 
     void set_minimum_area(float area) { minimum_area = area; }
     float get_minimum_area() const { return minimum_area; }
     int get_generation() const { return generation; }
     void set_generation(int g) { generation = std::max(0, g); }
-    const EaterBrain& get_brain() const { return brain; }
+    const neat::Genome& get_brain() const { return brain; }
 
     void process_eating(const b2WorldId &worldId, float poison_death_probability_toxic, float poison_death_probability_normal);
 
@@ -50,7 +53,11 @@ private:
     void update_brain_inputs_from_touching();
     void update_color_from_brain();
 
-    EaterBrain brain;
+    neat::Genome brain;
+    std::array<float, 24> brain_inputs{};
+    std::array<float, 7> brain_outputs{};
+    std::vector<std::vector<int>>* neat_innovations = nullptr;
+    int* neat_last_innov_id = nullptr;
     float minimum_area = 1.0f;
     bool poisoned = false;
     int generation = 0;

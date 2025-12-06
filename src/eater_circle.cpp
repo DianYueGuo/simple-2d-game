@@ -6,6 +6,12 @@
 
 #include <cstdlib>
 
+namespace {
+float neat_activation(float x) {
+    return 1.0f / (1.0f + std::exp(-x));
+}
+} // namespace
+
 EaterCircle::EaterCircle(const b2WorldId &worldId,
                          float position_x,
                          float position_y,
@@ -18,9 +24,13 @@ EaterCircle::EaterCircle(const b2WorldId &worldId,
                          float init_remove_node_probability,
                          float init_add_connection_probability,
                          float init_remove_connection_probability,
-                         const EaterBrain* base_brain) :
+                         const neat::Genome* base_brain,
+                         std::vector<std::vector<int>>* innov_ids,
+                         int* last_innov_id) :
     EatableCircle(worldId, position_x, position_y, radius, density, false, angle),
-    brain(base_brain ? *base_brain : EaterBrain(24, 7)) {
+    brain(base_brain ? *base_brain : neat::Genome(24, 7, 0, 0.5f, innov_ids, last_innov_id)) {
+    neat_innovations = innov_ids;
+    neat_last_innov_id = last_innov_id;
     set_generation(generation);
     initialize_brain(
         init_mutation_rounds,
@@ -29,7 +39,9 @@ EaterCircle::EaterCircle(const b2WorldId &worldId,
         init_add_connection_probability,
         init_remove_connection_probability);
     update_brain_inputs_from_touching();
-    brain.update();
+    brain.loadInputs(brain_inputs.data());
+    brain.runNetwork(neat_activation);
+    brain.getOutputs(brain_outputs.data());
     update_color_from_brain();
     smooth_display_color(1.0f); // start display at brain-driven color immediately
 }
@@ -105,19 +117,21 @@ void EaterCircle::move_randomly(const b2WorldId &worldId, Game &game) {
 
 void EaterCircle::move_intelligently(const b2WorldId &worldId, Game &game, float dt) {
     update_brain_inputs_from_touching();
-    brain.update();
+    brain.loadInputs(brain_inputs.data());
+    brain.runNetwork(neat_activation);
+    brain.getOutputs(brain_outputs.data());
     update_color_from_brain();
 
-    if (brain.read_output(0) >= 1.0f) {
+    if (brain_outputs[0] >= 0.5f) {
         this->boost_forward(worldId, game);
     }
-    if (brain.read_output(1) >= 1.0f) {
+    if (brain_outputs[1] >= 0.5f) {
         this->apply_left_turn_impulse();
     }
-    if (brain.read_output(2) >= 1.0f) {
+    if (brain_outputs[2] >= 0.5f) {
         this->apply_right_turn_impulse();
     }
-    if (brain.read_output(3) >= 1.0f) {
+    if (brain_outputs[3] >= 0.5f) {
         this->divide(worldId, game);
     }
 
@@ -136,11 +150,20 @@ void EaterCircle::move_intelligently(const b2WorldId &worldId, Game &game, float
         }
     }
 
-    brain.mutate(
-        game.get_tick_add_node_probability(),
-        game.get_tick_remove_node_probability(),
-        game.get_tick_add_connection_probability(),
-        game.get_tick_remove_connection_probability());
+    if (neat_innovations && neat_last_innov_id) {
+        brain.mutate(
+            neat_innovations,
+            neat_last_innov_id,
+            false,
+            0.8f,
+            0.1f,
+            1.2f,
+            game.get_tick_add_connection_probability(),
+            20,
+            0.25f,
+            game.get_tick_add_node_probability(),
+            20);
+    }
 }
 
 void EaterCircle::boost_forward(const b2WorldId &worldId, Game& game) {
@@ -179,7 +202,20 @@ void EaterCircle::initialize_brain(int mutation_rounds, float add_node_p, float 
     // Mutate repeatedly to seed a non-trivial brain topology.
     int rounds = std::max(0, mutation_rounds);
     for (int i = 0; i < rounds; ++i) {
-        brain.mutate(add_node_p, remove_node_p, add_connection_p, remove_connection_p);
+        if (neat_innovations && neat_last_innov_id) {
+            brain.mutate(
+                neat_innovations,
+                neat_last_innov_id,
+                false,
+                0.8f,
+                0.1f,
+                1.2f,
+                add_connection_p,
+                20,
+                0.25f,
+                add_node_p,
+                20);
+        }
     }
 }
 
@@ -193,7 +229,7 @@ void EaterCircle::divide(const b2WorldId &worldId, Game& game) {
 
     const float new_radius = std::sqrt(divided_area / 3.14159f);
 
-    EaterBrain parent_brain_copy = brain;
+    neat::Genome parent_brain_copy = brain;
 
     const b2Vec2 original_pos = this->getPosition();
 
@@ -223,7 +259,9 @@ void EaterCircle::divide(const b2WorldId &worldId, Game& game) {
         game.get_init_remove_node_probability(),
         game.get_init_add_connection_probability(),
         game.get_init_remove_connection_probability(),
-        &brain);
+        &brain,
+        game.get_neat_innovations(),
+        game.get_neat_last_innovation_id());
     EaterCircle* new_circle_ptr = new_circle.get();
     if (new_circle_ptr) {
         new_circle_ptr->brain = parent_brain_copy;
@@ -247,17 +285,33 @@ void EaterCircle::divide(const b2WorldId &worldId, Game& game) {
 
     const int mutation_rounds = std::max(0, game.get_mutation_rounds());
     for (int i = 0; i < mutation_rounds; ++i) {
-        brain.mutate(
-            game.get_add_node_probability(),
-            game.get_remove_node_probability(),
-            game.get_add_connection_probability(),
-            game.get_remove_connection_probability());
-        if (new_circle_ptr) {
-            new_circle_ptr->brain.mutate(
-                game.get_add_node_probability(),
-                game.get_remove_node_probability(),
+        if (neat_innovations && neat_last_innov_id) {
+            brain.mutate(
+                neat_innovations,
+                neat_last_innov_id,
+                false,
+                0.8f,
+                0.1f,
+                1.2f,
                 game.get_add_connection_probability(),
-                game.get_remove_connection_probability());
+                20,
+                0.25f,
+                game.get_add_node_probability(),
+                20);
+        }
+        if (new_circle_ptr && new_circle_ptr->neat_innovations && new_circle_ptr->neat_last_innov_id) {
+            new_circle_ptr->brain.mutate(
+                new_circle_ptr->neat_innovations,
+                new_circle_ptr->neat_last_innov_id,
+                false,
+                0.8f,
+                0.1f,
+                1.2f,
+                game.get_add_connection_probability(),
+                20,
+                0.25f,
+                game.get_add_node_probability(),
+                20);
         }
     }
 
@@ -266,9 +320,9 @@ void EaterCircle::divide(const b2WorldId &worldId, Game& game) {
 }
 
 void EaterCircle::update_color_from_brain() {
-    float target_r = std::clamp(brain.read_output_input_register(4), 0.0f, 1.0f);
-    float target_g = std::clamp(brain.read_output_input_register(5), 0.0f, 1.0f);
-    float target_b = std::clamp(brain.read_output_input_register(6), 0.0f, 1.0f);
+    float target_r = std::clamp(brain_outputs[4], 0.0f, 1.0f);
+    float target_g = std::clamp(brain_outputs[5], 0.0f, 1.0f);
+    float target_b = std::clamp(brain_outputs[6], 0.0f, 1.0f);
     set_color_rgb(target_r, target_g, target_b); // keep the signal exact
     constexpr float smoothing = 0.1f; // exponential smoothing factor for display only
     smooth_display_color(smoothing);
@@ -334,13 +388,13 @@ void EaterCircle::update_brain_inputs_from_touching() {
     auto set_inputs_for_sector = [&](int base_index, const std::array<float, 3>& color_sum, int count) {
         if (count > 0) {
             float inv = 1.0f / static_cast<float>(count);
-            brain.set_input(base_index,     color_sum[0] * inv);
-            brain.set_input(base_index + 1, color_sum[1] * inv);
-            brain.set_input(base_index + 2, color_sum[2] * inv);
+            brain_inputs[base_index]     = color_sum[0] * inv;
+            brain_inputs[base_index + 1] = color_sum[1] * inv;
+            brain_inputs[base_index + 2] = color_sum[2] * inv;
         } else {
-            brain.set_input(base_index,     0.0f);
-            brain.set_input(base_index + 1, 0.0f);
-            brain.set_input(base_index + 2, 0.0f);
+            brain_inputs[base_index]     = 0.0f;
+            brain_inputs[base_index + 1] = 0.0f;
+            brain_inputs[base_index + 2] = 0.0f;
         }
     };
 

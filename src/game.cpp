@@ -269,7 +269,7 @@ void Game::update_max_generation_from_circle(const EatableCircle* circle) {
 
 void Game::recompute_max_generation() {
     int new_max = 0;
-    std::optional<EaterBrain> new_brain;
+    std::optional<neat::Genome> new_brain;
     for (const auto& circle : circles) {
         if (auto* eater = dynamic_cast<const EaterCircle*>(circle.get())) {
             if (eater->get_generation() >= new_max) {
@@ -325,12 +325,12 @@ b2Vec2 Game::random_point_in_petri() const {
     return b2Vec2{radius * std::cos(angle), radius * std::sin(angle)};
 }
 
-std::unique_ptr<EaterCircle> Game::create_eater_at(const b2Vec2& pos) const {
+std::unique_ptr<EaterCircle> Game::create_eater_at(const b2Vec2& pos) {
     float base_area = std::max(average_eater_area, 0.0001f);
     float varied_area = base_area * (0.5f + random_unit()); // random scale around the average
     float radius = radius_from_area(varied_area);
     float angle = random_unit() * 2.0f * PI;
-    const EaterBrain* base_brain = get_max_generation_brain();
+    const neat::Genome* base_brain = get_max_generation_brain();
     auto circle = std::make_unique<EaterCircle>(
         worldId,
         pos.x,
@@ -344,7 +344,9 @@ std::unique_ptr<EaterCircle> Game::create_eater_at(const b2Vec2& pos) const {
         init_remove_node_probability,
         init_add_connection_probability,
         init_remove_connection_probability,
-        base_brain);
+        base_brain,
+        &neat_innovations,
+        &neat_last_innov_id);
     circle->set_impulse_magnitudes(linear_impulse_magnitude, angular_impulse_magnitude);
     circle->set_linear_damping(linear_damping, worldId);
     circle->set_angular_damping(angular_damping, worldId);

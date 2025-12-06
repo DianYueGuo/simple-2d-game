@@ -9,7 +9,7 @@
 #include <box2d/box2d.h>
 
 #include "eatable_circle.hpp"
-#include "eater_brain.hpp"
+#include <NEAT/genome.hpp>
 
 class EaterCircle;
 
@@ -80,7 +80,9 @@ public:
     void set_mutation_rounds(int rounds) { mutation_rounds = std::max(0, rounds); }
     int get_mutation_rounds() const { return mutation_rounds; }
     int get_max_generation() const { return max_generation; }
-    const EaterBrain* get_max_generation_brain() const { return max_generation_brain ? &(*max_generation_brain) : nullptr; }
+    const neat::Genome* get_max_generation_brain() const { return max_generation_brain ? &(*max_generation_brain) : nullptr; }
+    std::vector<std::vector<int>>* get_neat_innovations() { return &neat_innovations; }
+    int* get_neat_last_innovation_id() { return &neat_last_innov_id; }
     void set_inactivity_timeout(float t) { inactivity_timeout = std::max(0.0f, t); }
     float get_inactivity_timeout() const { return inactivity_timeout; }
     void set_linear_impulse_magnitude(float m);
@@ -123,7 +125,7 @@ private:
     void update_eaters(const b2WorldId& worldId);
     void run_brain_updates(const b2WorldId& worldId, float timeStep);
     void cull_consumed();
-    std::unique_ptr<EaterCircle> create_eater_at(const b2Vec2& pos) const;
+    std::unique_ptr<EaterCircle> create_eater_at(const b2Vec2& pos);
     std::unique_ptr<EatableCircle> create_eatable_at(const b2Vec2& pos, bool toxic) const;
     void apply_impulse_magnitudes_to_circles();
     void apply_damping_to_circles();
@@ -170,7 +172,9 @@ private:
     int init_mutation_rounds = 300;
     int mutation_rounds = 30;
     int max_generation = 0;
-    std::optional<EaterBrain> max_generation_brain;
+    std::optional<neat::Genome> max_generation_brain;
+    std::vector<std::vector<int>> neat_innovations;
+    int neat_last_innov_id = 0;
     bool show_true_color = false;
     float inactivity_timeout = 10.0f;
     bool auto_remove_outside = true;
