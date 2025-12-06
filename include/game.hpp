@@ -36,6 +36,8 @@ public:
     float get_pixles_per_meter() const { return pixles_per_meter; }
     void set_time_scale(float scale) { time_scale = scale; }
     float get_time_scale() const { return time_scale; }
+    void set_paused(bool p) { paused = p; }
+    bool is_paused() const { return paused; }
     void set_brain_updates_per_sim_second(float hz) { brain_updates_per_sim_second = hz; }
     float get_brain_updates_per_sim_second() const { return brain_updates_per_sim_second; }
     void set_minimum_area(float area) { minimum_area = area; }
@@ -192,6 +194,7 @@ private:
     float linear_damping = 0.5f;
     float angular_damping = 0.5f;
     std::optional<std::size_t> selected_index;
+    bool paused = false;
 };
 
 #endif

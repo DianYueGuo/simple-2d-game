@@ -137,6 +137,11 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
         if (ImGui::BeginTabItem("Overview")) {
             ImGui::Text("Active circles: %zu", game.get_circle_count());
             show_hover_text("How many circles currently exist inside the dish.");
+            bool paused = game.is_paused();
+            if (ImGui::Checkbox("Pause simulation", &paused)) {
+                game.set_paused(paused);
+            }
+            show_hover_text("Stop simulation updates so you can inspect selected eater info.");
             ImGui::Text("Max generation: %d", game.get_max_generation());
             show_hover_text("Highest division count reached by any eater so far.");
             const neat::Genome* selected_brain = game.get_selected_brain();
