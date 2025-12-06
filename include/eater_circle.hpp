@@ -54,7 +54,7 @@ private:
     void update_color_from_brain();
 
     neat::Genome brain;
-    std::array<float, 24> brain_inputs{};
+    std::array<float, 25> brain_inputs{};
     std::array<float, 7> brain_outputs{};
     std::vector<std::vector<int>>* neat_innovations = nullptr;
     int* neat_last_innov_id = nullptr;
