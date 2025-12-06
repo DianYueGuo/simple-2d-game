@@ -20,6 +20,7 @@ public:
     CirclePhysics& operator=(CirclePhysics&& other_circle_physics) noexcept;
 
     b2Vec2 getPosition() const;
+    b2Vec2 getLinearVelocity() const;
 
     float getRadius() const;
     float getArea() const;

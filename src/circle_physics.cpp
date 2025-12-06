@@ -140,6 +140,10 @@ b2Vec2 CirclePhysics::getPosition() const {
     return b2Body_GetPosition(bodyId);
 }
 
+b2Vec2 CirclePhysics::getLinearVelocity() const {
+    return b2Body_GetLinearVelocity(bodyId);
+}
+
 float CirclePhysics::getRadius() const {
     b2ShapeId shapeId;
     b2Body_GetShapes(bodyId, &shapeId, 1);
