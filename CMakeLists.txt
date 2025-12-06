@@ -44,6 +44,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(box2d)
 
+set(MULTINEAT_ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
+
+FetchContent_Declare(
+    MultiNEAT
+    GIT_REPOSITORY https://github.com/DianYueGuo/MultiNEAT.git
+    GIT_TAG cmake-version-issue
+)
+FetchContent_MakeAvailable(MultiNEAT)
+
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 add_executable(
