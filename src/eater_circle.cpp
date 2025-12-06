@@ -218,10 +218,12 @@ void EaterCircle::divide(const b2WorldId &worldId, Game& game) {
 }
 
 void EaterCircle::update_color_from_brain() {
-    float r = std::clamp(brain.read_output_input_register(4), 0.0f, 1.0f);
-    float g = std::clamp(brain.read_output_input_register(5), 0.0f, 1.0f);
-    float b = std::clamp(brain.read_output_input_register(6), 0.0f, 1.0f);
-    set_color_rgb(r, g, b);
+    float target_r = std::clamp(brain.read_output_input_register(4), 0.0f, 1.0f);
+    float target_g = std::clamp(brain.read_output_input_register(5), 0.0f, 1.0f);
+    float target_b = std::clamp(brain.read_output_input_register(6), 0.0f, 1.0f);
+    set_color_rgb(target_r, target_g, target_b); // keep the signal exact
+    constexpr float smoothing = 0.1f; // exponential smoothing factor for display only
+    smooth_display_color(smoothing);
 }
 
 void EaterCircle::update_brain_inputs_from_touching() {

@@ -14,8 +14,12 @@ public:
     void draw(sf::RenderWindow& window, float pixle_per_meter) const;
     void set_color_rgb(float r, float g, float b);
     std::array<float, 3> get_color_rgb() const { return color_rgb; }
+    std::array<float, 3> get_display_color_rgb() const { return display_color_rgb; }
+    void smooth_display_color(float factor);
 protected:
     std::array<float, 3> color_rgb{};
+    std::array<float, 3> display_color_rgb{};
+    bool display_color_initialized = false;
 
     virtual bool should_draw_direction_indicator() const { return false; }
 };
