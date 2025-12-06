@@ -171,6 +171,13 @@ void EaterCircle::boost_forward(const b2WorldId &worldId, Game& game) {
     float boost_cost = std::max(game.get_boost_area(), 0.0f);
     float new_area = current_area - boost_cost;
 
+    if (boost_cost <= 0.0f) {
+        // No cost, just apply impulse without leaving a circle.
+        this->apply_forward_impulse();
+        inactivity_timer = 0.0f;
+        return;
+    }
+
     if (new_area > minimum_area) {
         this->setArea(new_area, worldId);
         this->apply_forward_impulse();
