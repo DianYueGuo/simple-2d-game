@@ -8,7 +8,7 @@
 
 EaterCircle::EaterCircle(const b2WorldId &worldId, float position_x, float position_y, float radius, float density, float angle, int generation) :
     EatableCircle(worldId, position_x, position_y, radius, density, false, angle),
-    brain(12, 7) {
+    brain(24, 7) {
     set_generation(generation);
     initialize_brain();
     update_brain_inputs_from_touching();
@@ -220,11 +220,12 @@ void EaterCircle::update_color_from_brain() {
 
 void EaterCircle::update_brain_inputs_from_touching() {
     constexpr float PI = 3.14159f;
-    constexpr float HALF_PI = PI * 0.5f;
-    constexpr float QUARTER_PI = PI * 0.25f;
+    constexpr int SENSOR_COUNT = 8;
+    constexpr float SECTOR_WIDTH = PI / 4.0f; // 45 degrees
+    constexpr float SECTOR_HALF = SECTOR_WIDTH * 0.5f;
 
-    std::array<std::array<float, 3>, 4> summed_colors{};
-    std::array<int, 4> counts{};
+    std::array<std::array<float, 3>, SENSOR_COUNT> summed_colors{};
+    std::array<int, SENSOR_COUNT> counts{};
 
     if (!touching_circles.empty()) {
         const b2Vec2 self_pos = this->getPosition();
@@ -241,15 +242,11 @@ void EaterCircle::update_brain_inputs_from_touching() {
             return angle;
         };
 
-        auto classify_quadrant = [&](float relative_angle) {
-            if (relative_angle >= -QUARTER_PI && relative_angle < QUARTER_PI) {
-                return 0; // front
-            } else if (relative_angle >= QUARTER_PI && relative_angle < (QUARTER_PI + HALF_PI)) {
-                return 1; // right
-            } else if (relative_angle >= -(QUARTER_PI + HALF_PI) && relative_angle < -QUARTER_PI) {
-                return 2; // left
-            }
-            return 3; // back
+        auto classify_sector = [&](float relative_angle) {
+            // Offset by half sector so sector 0 is centered on the heading direction.
+            int sector = static_cast<int>(std::floor((relative_angle + SECTOR_HALF) / SECTOR_WIDTH));
+            sector = (sector % SENSOR_COUNT + SENSOR_COUNT) % SENSOR_COUNT;
+            return sector;
         };
 
         for (auto* circle : touching_circles) {
@@ -269,16 +266,16 @@ void EaterCircle::update_brain_inputs_from_touching() {
             float relative_angle = std::atan2(dy, dx) - heading;
             relative_angle = normalize_angle(relative_angle);
 
-            int quadrant = classify_quadrant(relative_angle);
+            int sector = classify_sector(relative_angle);
             const auto color = drawable->get_color_rgb();
-            summed_colors[quadrant][0] += color[0];
-            summed_colors[quadrant][1] += color[1];
-            summed_colors[quadrant][2] += color[2];
-            ++counts[quadrant];
+            summed_colors[sector][0] += color[0];
+            summed_colors[sector][1] += color[1];
+            summed_colors[sector][2] += color[2];
+            ++counts[sector];
         }
     }
 
-    auto set_inputs_for_quadrant = [&](int base_index, const std::array<float, 3>& color_sum, int count) {
+    auto set_inputs_for_sector = [&](int base_index, const std::array<float, 3>& color_sum, int count) {
         if (count > 0) {
             float inv = 1.0f / static_cast<float>(count);
             brain.set_input(base_index,     color_sum[0] * inv);
@@ -291,8 +288,8 @@ void EaterCircle::update_brain_inputs_from_touching() {
         }
     };
 
-    set_inputs_for_quadrant(0,  summed_colors[0], counts[0]); // front
-    set_inputs_for_quadrant(3,  summed_colors[3], counts[3]); // back
-    set_inputs_for_quadrant(6,  summed_colors[2], counts[2]); // left
-    set_inputs_for_quadrant(9,  summed_colors[1], counts[1]); // right
+    // Order sensors clockwise starting from front: front, front-right, right, back-right, back, back-left, left, front-left.
+    for (int i = 0; i < SENSOR_COUNT; ++i) {
+        set_inputs_for_sector(i * 3, summed_colors[i], counts[i]);
+    }
 }
