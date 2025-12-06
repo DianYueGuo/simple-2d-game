@@ -23,12 +23,14 @@ public:
                 float init_add_node_probability = 0.8f,
                 float init_remove_node_probability = 0.0f,
                 float init_add_connection_probability = 1.0f,
-                float init_remove_connection_probability = 0.0f);
+                float init_remove_connection_probability = 0.0f,
+                const EaterBrain* base_brain = nullptr);
 
     void set_minimum_area(float area) { minimum_area = area; }
     float get_minimum_area() const { return minimum_area; }
     int get_generation() const { return generation; }
     void set_generation(int g) { generation = std::max(0, g); }
+    const EaterBrain& get_brain() const { return brain; }
 
     void process_eating(const b2WorldId &worldId, float poison_death_probability_toxic, float poison_death_probability_normal);
 

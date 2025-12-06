@@ -9,6 +9,7 @@
 #include <box2d/box2d.h>
 
 #include "eatable_circle.hpp"
+#include "eater_brain.hpp"
 
 class EaterCircle;
 
@@ -79,6 +80,7 @@ public:
     void set_mutation_rounds(int rounds) { mutation_rounds = std::max(0, rounds); }
     int get_mutation_rounds() const { return mutation_rounds; }
     int get_max_generation() const { return max_generation; }
+    const EaterBrain* get_max_generation_brain() const { return max_generation_brain ? &(*max_generation_brain) : nullptr; }
     void set_inactivity_timeout(float t) { inactivity_timeout = std::max(0.0f, t); }
     float get_inactivity_timeout() const { return inactivity_timeout; }
     void set_linear_impulse_magnitude(float m);
@@ -168,6 +170,7 @@ private:
     int init_mutation_rounds = 300;
     int mutation_rounds = 30;
     int max_generation = 0;
+    std::optional<EaterBrain> max_generation_brain;
     bool show_true_color = false;
     float inactivity_timeout = 10.0f;
     bool auto_remove_outside = true;

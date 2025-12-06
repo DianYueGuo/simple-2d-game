@@ -17,9 +17,10 @@ EaterCircle::EaterCircle(const b2WorldId &worldId,
                          float init_add_node_probability,
                          float init_remove_node_probability,
                          float init_add_connection_probability,
-                         float init_remove_connection_probability) :
+                         float init_remove_connection_probability,
+                         const EaterBrain* base_brain) :
     EatableCircle(worldId, position_x, position_y, radius, density, false, angle),
-    brain(24, 7) {
+    brain(base_brain ? *base_brain : EaterBrain(24, 7)) {
     set_generation(generation);
     initialize_brain(
         init_mutation_rounds,
@@ -221,7 +222,8 @@ void EaterCircle::divide(const b2WorldId &worldId, Game& game) {
         game.get_init_add_node_probability(),
         game.get_init_remove_node_probability(),
         game.get_init_add_connection_probability(),
-        game.get_init_remove_connection_probability());
+        game.get_init_remove_connection_probability(),
+        &brain);
     EaterCircle* new_circle_ptr = new_circle.get();
     if (new_circle_ptr) {
         new_circle_ptr->brain = parent_brain_copy;
