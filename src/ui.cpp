@@ -501,9 +501,11 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 bool movement_changed = false;
                 movement_changed |= ImGui::SliderFloat("Circle density", &state.circle_density, 0.01f, 10.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
                 show_hover_text("Mass density for all circles; heavier circles resist movement more.");
+                ImGui::Separator();
                 movement_changed |= ImGui::SliderFloat("Forward impulse", &state.linear_impulse, 0.01f, 50.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
                 show_hover_text("Force applied when brains choose to move straight ahead.");
                 movement_changed |= ImGui::SliderFloat("Turn impulse", &state.angular_impulse, 0.01f, 50.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
+                ImGui::Separator();
                 show_hover_text("Strength of turning pulses from AI decisions.");
                 movement_changed |= ImGui::SliderFloat("Linear damping", &state.linear_damping, 0.0f, 10.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
                 show_hover_text("How quickly forward motion bleeds off (like friction).");
