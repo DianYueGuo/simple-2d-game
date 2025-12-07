@@ -221,10 +221,18 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
             }
             show_hover_text("Stop simulation updates so you can inspect selected eater info.");
             if (ImGui::Checkbox("Follow selected eater", &state.follow_selected)) {
+                if (state.follow_selected) {
+                    state.follow_oldest = false;
+                    game.set_follow_oldest_largest(false);
+                }
                 game.set_follow_selected(state.follow_selected);
             }
             show_hover_text("Automatically center the view on the selected eater until it disappears.");
             if (ImGui::Checkbox("Follow oldest eater (largest if tie)", &state.follow_oldest)) {
+                if (state.follow_oldest) {
+                    state.follow_selected = false;
+                    game.set_follow_selected(false);
+                }
                 game.set_follow_oldest_largest(state.follow_oldest);
             }
             show_hover_text("Auto-center on the oldest eater; if multiple share the age, the largest area wins.");

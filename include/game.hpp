@@ -129,9 +129,9 @@ public:
     float get_last_fps() const { return fps_last; }
     float get_longest_life_since_creation() const { return max_age_since_creation; }
     float get_longest_life_since_division() const { return max_age_since_division; }
-    void set_follow_selected(bool v) { follow_selected = v; }
+    void set_follow_selected(bool v) { follow_selected = v; if (v) follow_oldest_largest = false; }
     bool get_follow_selected() const { return follow_selected; }
-    void set_follow_oldest_largest(bool v) { follow_oldest_largest = v; }
+    void set_follow_oldest_largest(bool v) { follow_oldest_largest = v; if (v) follow_selected = false; }
     bool get_follow_oldest_largest() const { return follow_oldest_largest; }
     void accumulate_real_time(float dt);
     void frame_rendered();
