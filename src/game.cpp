@@ -334,6 +334,63 @@ const EaterCircle* Game::get_oldest_largest_eater() const {
     return best;
 }
 
+const EaterCircle* Game::get_oldest_smallest_eater() const {
+    const EaterCircle* best = nullptr;
+    float best_age = -1.0f;
+    float best_area = std::numeric_limits<float>::max();
+    constexpr float eps = 1e-6f;
+    for (const auto& c : circles) {
+        if (auto* eater = dynamic_cast<const EaterCircle*>(c.get())) {
+            float age = std::max(0.0f, sim_time_accum - eater->get_creation_time());
+            float area = eater->getArea();
+            if (age > best_age + eps || (std::abs(age - best_age) <= eps && area < best_area)) {
+                best_age = age;
+                best_area = area;
+                best = eater;
+            }
+        }
+    }
+    return best;
+}
+
+const EaterCircle* Game::get_oldest_middle_eater() const {
+    std::vector<std::pair<float, const EaterCircle*>> candidates;
+    float best_age = -1.0f;
+    constexpr float eps = 1e-6f;
+    for (const auto& c : circles) {
+        if (auto* eater = dynamic_cast<const EaterCircle*>(c.get())) {
+            float age = std::max(0.0f, sim_time_accum - eater->get_creation_time());
+            float area = eater->getArea();
+            if (age > best_age + eps) {
+                best_age = age;
+                candidates.clear();
+                candidates.emplace_back(area, eater);
+            } else if (std::abs(age - best_age) <= eps) {
+                candidates.emplace_back(area, eater);
+            }
+        }
+    }
+    if (candidates.empty()) return nullptr;
+    std::sort(candidates.begin(), candidates.end(), [](auto& a, auto& b) { return a.first < b.first; });
+    return candidates[candidates.size() / 2].second;
+}
+
+const EaterCircle* Game::get_follow_target_eater() const {
+    if (follow_selected) {
+        if (const auto* sel = get_selected_eater()) return sel;
+    }
+    if (follow_oldest_largest) {
+        if (const auto* e = get_oldest_largest_eater()) return e;
+    }
+    if (follow_oldest_smallest) {
+        if (const auto* e = get_oldest_smallest_eater()) return e;
+    }
+    if (follow_oldest_middle) {
+        if (const auto* e = get_oldest_middle_eater()) return e;
+    }
+    return nullptr;
+}
+
 int Game::get_selected_generation() const {
     if (!selected_index || *selected_index >= circles.size()) {
         return -1;
@@ -473,6 +530,38 @@ void Game::revalidate_selection(const EatableCircle* previously_selected) {
     }
 }
 
+void Game::set_selection_to_eater(const EaterCircle* eater) {
+    if (!eater) {
+        selected_index.reset();
+        return;
+    }
+    for (std::size_t i = 0; i < circles.size(); ++i) {
+        if (circles[i].get() == eater) {
+            selected_index = i;
+            return;
+        }
+    }
+    selected_index.reset();
+}
+
+const EaterCircle* Game::find_nearest_eater(const b2Vec2& pos) const {
+    const EaterCircle* best = nullptr;
+    float best_dist2 = std::numeric_limits<float>::max();
+    for (const auto& c : circles) {
+        if (auto* eater = dynamic_cast<const EaterCircle*>(c.get())) {
+            b2Vec2 p = eater->getPosition();
+            float dx = p.x - pos.x;
+            float dy = p.y - pos.y;
+            float d2 = dx * dx + dy * dy;
+            if (d2 < best_dist2) {
+                best_dist2 = d2;
+                best = eater;
+            }
+        }
+    }
+    return best;
+}
+
 void Game::sprinkle_with_rate(float rate, AddType type, float dt) {
     if (rate <= 0.0f || dt <= 0.0f || petri_radius <= 0.0f) {
         return;
@@ -587,8 +676,10 @@ void Game::run_brain_updates(const b2WorldId& worldId, float timeStep) {
 void Game::cull_consumed() {
     std::vector<std::unique_ptr<EatableCircle>> spawned_cloud;
     const EatableCircle* prev_selected = nullptr;
+    b2Vec2 prev_pos{0,0};
     if (selected_index && *selected_index < circles.size()) {
         prev_selected = circles[*selected_index].get();
+        prev_pos = prev_selected->getPosition();
     }
 
     for (auto it = circles.begin(); it != circles.end(); ) {
@@ -612,7 +703,26 @@ void Game::cull_consumed() {
         }
     }
 
-    revalidate_selection(prev_selected);
+    bool lost_selection = false;
+    if (prev_selected) {
+        revalidate_selection(prev_selected);
+        if (!selected_index || *selected_index >= circles.size() || circles[*selected_index].get() != prev_selected) {
+            lost_selection = true;
+        }
+    }
+    if (lost_selection && follow_selected) {
+        const EaterCircle* fallback = nullptr;
+        if (const auto* eater_prev = dynamic_cast<const EaterCircle*>(prev_selected)) {
+            const EaterCircle* killer = eater_prev->get_eaten_by();
+            if (killer) {
+                fallback = killer;
+            }
+        }
+        if (!fallback) {
+            fallback = find_nearest_eater(prev_pos);
+        }
+        set_selection_to_eater(fallback);
+    }
     recompute_max_generation();
     update_max_ages();
 

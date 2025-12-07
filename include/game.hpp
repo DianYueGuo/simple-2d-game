@@ -160,6 +160,9 @@ public:
     const neat::Genome* get_selected_brain() const;
     const EaterCircle* get_selected_eater() const;
     const EaterCircle* get_oldest_largest_eater() const;
+    const EaterCircle* get_oldest_smallest_eater() const;
+    const EaterCircle* get_oldest_middle_eater() const;
+    const EaterCircle* get_follow_target_eater() const;
     int get_selected_generation() const;
     bool select_circle_at_world(const b2Vec2& pos);
     CursorMode get_cursor_mode() const { return cursor_mode; }

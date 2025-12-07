@@ -296,12 +296,12 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
             show_hover_text("Longest survival among eaters since spawn and since their last division.");
             ImGui::Text("Max generation: %d", game.get_max_generation());
             show_hover_text("Highest division count reached by any eater so far.");
-            if (const auto* oldest = game.get_oldest_largest_eater()) {
+            if (const auto* followed = game.get_follow_target_eater()) {
                 ImGui::Separator();
-                ImGui::Text("Oldest eater");
-                ImGui::Text("Age: %.2fs  Generation: %d", game.get_sim_time() - oldest->get_creation_time(), oldest->get_generation());
-                ImGui::Text("Area: %.3f  Radius: %.3f", oldest->getArea(), oldest->getRadius());
-                const neat::Genome& brain = oldest->get_brain();
+                ImGui::Text("Followed eater");
+                ImGui::Text("Age: %.2fs  Generation: %d", game.get_sim_time() - followed->get_creation_time(), followed->get_generation());
+                ImGui::Text("Area: %.3f  Radius: %.3f", followed->getArea(), followed->getRadius());
+                const neat::Genome& brain = followed->get_brain();
                 ImGui::Text("Nodes: %zu  Connections: %zu", brain.nodes.size(), brain.connections.size());
                 render_brain_graph(brain);
             }
