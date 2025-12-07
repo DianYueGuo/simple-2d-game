@@ -532,6 +532,10 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 show_hover_text("Probability an eater divides after eating a blue division pellet.");
             }
 
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Mutation")) {
             if (ImGui::CollapsingHeader("Mutation tuning", ImGuiTreeNodeFlags_DefaultOpen)) {
                 ImGui::SeparatorText("NEAT mutate parameters");
                 bool mutate_changed = false;
