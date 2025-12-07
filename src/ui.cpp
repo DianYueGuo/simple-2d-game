@@ -230,7 +230,7 @@ void render_cursor_controls(Game& game, UiState& state) {
 
     if (state.cursor_mode == static_cast<int>(Game::CursorMode::Add)) {
         bool add_type_changed = false;
-        if (ImGui::RadioButton("Eater (hunter)", state.add_type == static_cast<int>(Game::AddType::Eater))) {
+        if (ImGui::RadioButton("Eater", state.add_type == static_cast<int>(Game::AddType::Eater))) {
             state.add_type = static_cast<int>(Game::AddType::Eater);
             add_type_changed = true;
         }
