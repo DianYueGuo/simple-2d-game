@@ -219,8 +219,8 @@ private:
     float sprinkle_rate_eater = 5.0f;
     float average_eater_area = 5.0f;
     float sprinkle_rate_eatable = 50.0f;
-    float sprinkle_rate_toxic = 1.5f;
-    float sprinkle_rate_division = 0.0f;
+    float sprinkle_rate_toxic = 1.0f;
+    float sprinkle_rate_division = 1.0f;
     float eater_cloud_area_percentage = 70.0f;
     float division_pellet_divide_probability = 1.0f;
     float add_node_probability = 0.1f;
