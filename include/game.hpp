@@ -141,6 +141,7 @@ private:
     void update_eaters(const b2WorldId& worldId);
     void run_brain_updates(const b2WorldId& worldId, float timeStep);
     void cull_consumed();
+    void remove_stopped_boost_particles();
     std::unique_ptr<EaterCircle> create_eater_at(const b2Vec2& pos);
     std::unique_ptr<EatableCircle> create_eatable_at(const b2Vec2& pos, bool toxic) const;
     void apply_impulse_magnitudes_to_circles();

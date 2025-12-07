@@ -71,6 +71,7 @@ void Game::process_game_logic() {
     update_eaters(worldId);
     run_brain_updates(worldId, timeStep);
     cull_consumed();
+    remove_stopped_boost_particles();
     if (auto_remove_outside) {
         remove_outside_petri();
     }
@@ -560,6 +561,25 @@ void Game::remove_random_percentage(float percentage) {
 
     clear_selection();
     recompute_max_generation();
+}
+
+void Game::remove_stopped_boost_particles() {
+    constexpr float vel_epsilon = 1e-3f;
+    circles.erase(
+        std::remove_if(
+            circles.begin(),
+            circles.end(),
+            [&](const std::unique_ptr<EatableCircle>& circle) {
+                if (!circle->is_boost_particle()) {
+                    return false;
+                }
+                b2Vec2 v = circle->getLinearVelocity();
+                return (std::fabs(v.x) <= vel_epsilon && std::fabs(v.y) <= vel_epsilon);
+            }),
+        circles.end());
+    if (selected_index && *selected_index >= circles.size()) {
+        selected_index.reset();
+    }
 }
 
 void Game::accumulate_real_time(float dt) {

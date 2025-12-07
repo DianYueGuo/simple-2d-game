@@ -194,7 +194,7 @@ void EaterCircle::boost_forward(const b2WorldId &worldId, Game& game) {
         b2Vec2 back_position = {pos.x - direction.x * (this->getRadius() + boost_radius), 
                     pos.y - direction.y * (this->getRadius() + boost_radius)};
 
-        auto boost_circle = std::make_unique<EatableCircle>(worldId, back_position.x, back_position.y, boost_radius, game.get_circle_density(), false, 0.0f);
+        auto boost_circle = std::make_unique<EatableCircle>(worldId, back_position.x, back_position.y, boost_radius, game.get_circle_density(), false, 0.0f, true);
         EatableCircle* boost_circle_ptr = boost_circle.get();
         const auto eater_signal_color = get_color_rgb(); // use true signal, not smoothed display
         boost_circle_ptr->set_color_rgb(eater_signal_color[0], eater_signal_color[1], eater_signal_color[2]);
