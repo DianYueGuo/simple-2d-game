@@ -10,7 +10,6 @@ struct UiState {
     int add_type = static_cast<int>(Game::AddType::Eater);
     float eatable_area = 1.0f;
     float delete_percentage = 10.0f;
-    float pixel_per_meter = 0.0f;
     float petri_radius = 0.0f;
     float time_scale = 0.0f;
     float brain_updates_per_sim_second = 0.0f;
@@ -274,7 +273,6 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
         state.cursor_mode = static_cast<int>(game.get_cursor_mode());
         state.add_type = static_cast<int>(game.get_add_type());
         state.eatable_area = game.get_add_eatable_area();
-        state.pixel_per_meter = game.get_pixles_per_meter();
         state.petri_radius = game.get_petri_radius();
         state.time_scale = game.get_time_scale();
         state.brain_updates_per_sim_second = game.get_brain_updates_per_sim_second();
@@ -462,11 +460,6 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
         }
 
         if (ImGui::BeginTabItem("World")) {
-            if (ImGui::SliderFloat("World scale (px per m)", &state.pixel_per_meter, 0.1f, 100.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
-                game.set_pixles_per_meter(state.pixel_per_meter);
-            }
-            show_hover_text("Rendering scale only; higher values zoom in without altering physics.");
-
             if (ImGui::SliderFloat("Dish radius (m)", &state.petri_radius, 1.0f, 100.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
                 game.set_petri_radius(state.petri_radius);
             }
@@ -480,11 +473,14 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
 
             if (ImGui::Button("Reset view to center")) {
                 view = window.getView();
-                view.setSize({static_cast<float>(window.getSize().x), static_cast<float>(window.getSize().y)});
+                float aspect = static_cast<float>(window.getSize().x) / static_cast<float>(window.getSize().y);
+                float world_height = game.get_petri_radius() * 2.0f;
+                float world_width = world_height * aspect;
+                view.setSize({world_width, world_height});
                 view.setCenter({0.0f, 0.0f});
                 window.setView(view);
             }
-            show_hover_text("Recenter and reset the camera zoom.");
+            show_hover_text("Recenter and reset the camera zoom to fit the dish.");
             ImGui::EndTabItem();
         }
 

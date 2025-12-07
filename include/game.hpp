@@ -33,8 +33,6 @@ public:
     void process_game_logic();
     void draw(sf::RenderWindow& window) const;
     void process_input_events(sf::RenderWindow& window, const std::optional<sf::Event>& event);
-    void set_pixles_per_meter(float ppm) { pixles_per_meter = ppm; }
-    float get_pixles_per_meter() const { return pixles_per_meter; }
     void set_time_scale(float scale) { time_scale = scale; }
     float get_time_scale() const { return time_scale; }
     void set_paused(bool p) { paused = p; }
@@ -235,7 +233,6 @@ private:
 
     b2WorldId worldId;
     std::vector<std::unique_ptr<EatableCircle>> circles;
-    float pixles_per_meter = 15.0f;
     float time_scale = 1.0f;
     float sim_time_accum = 0.0f;
     float real_time_accum = 0.0f;

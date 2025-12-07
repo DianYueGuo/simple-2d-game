@@ -105,16 +105,16 @@ void Game::process_game_logic() {
 
 void Game::draw(sf::RenderWindow& window) const {
     // Draw petri dish boundary
-    sf::CircleShape boundary(petri_radius * pixles_per_meter);
-    boundary.setOrigin({petri_radius * pixles_per_meter, petri_radius * pixles_per_meter});
+    sf::CircleShape boundary(petri_radius);
+    boundary.setOrigin({petri_radius, petri_radius});
     boundary.setPosition({0.0f, 0.0f});
     boundary.setOutlineColor(sf::Color::White);
-    boundary.setOutlineThickness(2.0f);
+    boundary.setOutlineThickness(0.2f);
     boundary.setFillColor(sf::Color::Transparent);
     window.draw(boundary);
 
     for (const auto& circle : circles) {
-        circle->draw(window, pixles_per_meter);
+        circle->draw(window);
     }
 }
 
@@ -149,7 +149,7 @@ void Game::process_input_events(sf::RenderWindow& window, const std::optional<sf
 
 sf::Vector2f Game::pixel_to_world(sf::RenderWindow& window, const sf::Vector2i& pixel) const {
     sf::Vector2f viewPos = window.mapPixelToCoords(pixel);
-    return {viewPos.x / pixles_per_meter, viewPos.y / pixles_per_meter};
+    return viewPos;
 }
 
 void Game::try_add_circle_at(const sf::Vector2f& worldPos) {
@@ -283,21 +283,23 @@ void Game::handle_mouse_move(sf::RenderWindow& window, const sf::Event::MouseMov
 
 void Game::handle_key_press(sf::RenderWindow& window, const sf::Event::KeyPressed& e) {
     sf::View view = window.getView();
-    constexpr float pan_pixels = 20.0f;
+    const float pan_fraction = 0.02f;
+    const float pan_x = view.getSize().x * pan_fraction;
+    const float pan_y = view.getSize().y * pan_fraction;
     constexpr float zoom_step = 1.05f;
 
     switch (e.scancode) {
         case sf::Keyboard::Scancode::W:
-            view.move({0.0f, -pan_pixels});
+            view.move({0.0f, -pan_y});
             break;
         case sf::Keyboard::Scancode::S:
-            view.move({0.0f, pan_pixels});
+            view.move({0.0f, pan_y});
             break;
         case sf::Keyboard::Scancode::A:
-            view.move({-pan_pixels, 0.0f});
+            view.move({-pan_x, 0.0f});
             break;
         case sf::Keyboard::Scancode::D:
-            view.move({pan_pixels, 0.0f});
+            view.move({pan_x, 0.0f});
             break;
         case sf::Keyboard::Scancode::Q:
             view.zoom(1.0f / zoom_step);
@@ -465,7 +467,7 @@ int Game::get_selected_generation() const {
 void Game::update_follow_view(sf::View& view) const {
     if (const EaterCircle* eater = get_follow_target_eater()) {
         b2Vec2 p = eater->getPosition();
-        view.setCenter({p.x * pixles_per_meter, p.y * pixles_per_meter});
+        view.setCenter({p.x, p.y});
     }
 }
 

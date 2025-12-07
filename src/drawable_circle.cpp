@@ -12,8 +12,8 @@ DrawableCircle::DrawableCircle(const b2WorldId &worldId, float position_x, float
     display_color_initialized = true;
 }
 
-void DrawableCircle::draw(sf::RenderWindow& window, float pixle_per_meter) const {
-    sf::CircleShape shape(getRadius() * pixle_per_meter);
+void DrawableCircle::draw(sf::RenderWindow& window) const {
+    sf::CircleShape shape(getRadius());
     sf::Color fill{
         static_cast<std::uint8_t>((use_smoothed_display ? display_color_rgb[0] : color_rgb[0]) * 255.0f),
         static_cast<std::uint8_t>((use_smoothed_display ? display_color_rgb[1] : color_rgb[1]) * 255.0f),
@@ -21,17 +21,17 @@ void DrawableCircle::draw(sf::RenderWindow& window, float pixle_per_meter) const
     };
     shape.setFillColor(fill);
 
-    shape.setOrigin({getRadius() * pixle_per_meter, getRadius() * pixle_per_meter});
-    shape.setPosition({getPosition().x * pixle_per_meter, getPosition().y * pixle_per_meter});
+    shape.setOrigin({getRadius(), getRadius()});
+    shape.setPosition({getPosition().x, getPosition().y});
     window.draw(shape);
 
     if (should_draw_direction_indicator()) {
-        sf::RectangleShape line({getRadius() * pixle_per_meter, getRadius() * pixle_per_meter / 4.0f});
+        sf::RectangleShape line({getRadius(), getRadius() / 4.0f});
         line.setFillColor(sf::Color::White);
         line.rotate(sf::radians(getAngle()));
 
-        line.setOrigin({0, getRadius() * pixle_per_meter / 4.0f / 2.0f});
-        line.setPosition({getPosition().x * pixle_per_meter, getPosition().y * pixle_per_meter});
+        line.setOrigin({0, getRadius() / 4.0f / 2.0f});
+        line.setPosition({getPosition().x, getPosition().y});
 
         window.draw(line);
     }

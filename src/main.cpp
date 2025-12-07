@@ -28,6 +28,10 @@ int main() {
 
     sf::Clock deltaClock;
     sf::View view = window.getDefaultView();
+    float aspect = static_cast<float>(window.getSize().x) / static_cast<float>(window.getSize().y);
+    float world_height = game.get_petri_radius() * 2.0f;
+    float world_width = world_height * aspect;
+    view.setSize({world_width, world_height});
     view.setCenter({0.0f, 0.0f});
     window.setView(view);
     while (window.isOpen()) {
