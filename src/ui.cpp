@@ -57,6 +57,73 @@ void show_hover_text(const char* description) {
     }
 }
 
+void render_brain_graph(const neat::Genome& brain) {
+    if (ImGui::BeginChild("BrainGraphGeneric", ImVec2(0, 220), true)) {
+        // Layout nodes by layer: inputs (layer 0), hidden (1..max), outputs (max+1).
+        int maxLayer = 1;
+        for (const auto& n : brain.nodes) {
+            if (n.layer > maxLayer) maxLayer = n.layer;
+        }
+        ImVec2 avail = ImGui::GetContentRegionAvail();
+        ImVec2 origin = ImGui::GetCursorScreenPos();
+        float pad = 10.0f;
+        ImVec2 min = {origin.x + pad, origin.y + pad};
+        ImVec2 max = {origin.x + std::max(avail.x - pad, 10.0f), origin.y + std::max(avail.y - pad, 10.0f)};
+
+        struct DrawNode { ImVec2 pos; int id; int layer; };
+        std::vector<DrawNode> drawNodes;
+        drawNodes.reserve(brain.nodes.size());
+
+        // Bucket nodes by layer
+        std::vector<std::vector<int>> layerBuckets(maxLayer + 1);
+        for (size_t i = 0; i < brain.nodes.size(); ++i) {
+            int layer = std::max(0, brain.nodes[i].layer);
+            if (layer >= (int)layerBuckets.size()) layerBuckets.resize(layer + 1);
+            layerBuckets[layer].push_back(static_cast<int>(i));
+        }
+
+        // Position nodes
+        for (int layer = 0; layer < (int)layerBuckets.size(); ++layer) {
+            float x = (layerBuckets.size() > 1)
+                          ? min.x + (max.x - min.x) * (float(layer) / float(layerBuckets.size() - 1))
+                          : (min.x + max.x) * 0.5f;
+            int count = (int)layerBuckets[layer].size();
+            for (int idx = 0; idx < count; ++idx) {
+                float y = (count > 1)
+                              ? min.y + (max.y - min.y) * (float(idx) / float(count - 1))
+                              : (min.y + max.y) * 0.5f;
+                drawNodes.push_back({ImVec2{x, y}, layerBuckets[layer][idx], layer});
+            }
+        }
+
+        auto findPos = [&](int nodeId) -> ImVec2 {
+            for (auto& dn : drawNodes) {
+                if (dn.id == nodeId) return dn.pos;
+            }
+            return ImVec2{min.x, min.y};
+        };
+
+        ImDrawList* dl = ImGui::GetWindowDrawList();
+        // Draw connections first
+        for (const auto& c : brain.connections) {
+            if (!c.enabled) continue;
+            ImVec2 p1 = findPos(c.inNodeId);
+            ImVec2 p2 = findPos(c.outNodeId);
+            float w = std::clamp(std::fabs(c.weight), 0.0f, 5.0f);
+            float alpha = std::clamp(std::fabs(c.weight), 0.1f, 1.0f);
+            ImU32 col = ImGui::GetColorU32(ImVec4(c.weight >= 0 ? 0.2f : 0.8f, c.weight >= 0 ? 0.8f : 0.2f, 0.2f, alpha));
+            dl->AddLine(p1, p2, col, 1.0f + w * 0.3f);
+        }
+
+        // Draw nodes
+        for (auto& dn : drawNodes) {
+            ImU32 col = ImGui::GetColorU32(ImVec4(0.8f, 0.8f, 0.2f, 1.0f));
+            dl->AddCircleFilled(dn.pos, 6.0f, col);
+        }
+    }
+    ImGui::EndChild();
+}
+
 void render_cursor_controls(Game& game, UiState& state) {
     if (ImGui::RadioButton("Add circles", state.cursor_mode == static_cast<int>(Game::CursorMode::Add))) {
         state.cursor_mode = static_cast<int>(Game::CursorMode::Add);
@@ -176,6 +243,7 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 ImGui::Text("Area: %.3f  Radius: %.3f", oldest->getArea(), oldest->getRadius());
                 const neat::Genome& brain = oldest->get_brain();
                 ImGui::Text("Nodes: %zu  Connections: %zu", brain.nodes.size(), brain.connections.size());
+                render_brain_graph(brain);
             }
             const neat::Genome* selected_brain = game.get_selected_brain();
             int selected_gen = game.get_selected_generation();
@@ -189,73 +257,7 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                     ImGui::Text("Area: %.3f  Radius: %.3f", eater->getArea(), eater->getRadius());
                 }
 
-                if (ImGui::BeginChild("BrainGraph", ImVec2(0, 220), true)) {
-                    // Layout nodes by layer: inputs (layer 0), hidden (1..max), outputs (max+1).
-                    int maxLayer = 1;
-                    for (const auto& n : selected_brain->nodes) {
-                        if (n.layer > maxLayer) maxLayer = n.layer;
-                    }
-                    ImVec2 avail = ImGui::GetContentRegionAvail();
-                    ImVec2 origin = ImGui::GetCursorScreenPos();
-                    float pad = 10.0f;
-                    ImVec2 min = {origin.x + pad, origin.y + pad};
-                    ImVec2 max = {origin.x + std::max(avail.x - pad, 10.0f), origin.y + std::max(avail.y - pad, 10.0f)};
-
-                    struct DrawNode { ImVec2 pos; int id; int layer; };
-                    std::vector<DrawNode> drawNodes;
-                    drawNodes.reserve(selected_brain->nodes.size());
-
-                    // Bucket nodes by layer
-                    std::vector<std::vector<int>> layerBuckets(maxLayer + 1);
-                    for (size_t i = 0; i < selected_brain->nodes.size(); ++i) {
-                        int layer = std::max(0, selected_brain->nodes[i].layer);
-                        if (layer >= (int)layerBuckets.size()) layerBuckets.resize(layer + 1);
-                        layerBuckets[layer].push_back(static_cast<int>(i));
-                    }
-
-                    // Position nodes
-                    for (int layer = 0; layer < (int)layerBuckets.size(); ++layer) {
-                        float x = (layerBuckets.size() > 1)
-                                      ? min.x + (max.x - min.x) * (float(layer) / float(layerBuckets.size() - 1))
-                                      : (min.x + max.x) * 0.5f;
-                        int count = (int)layerBuckets[layer].size();
-                        for (int idx = 0; idx < count; ++idx) {
-                            float y = (count > 1)
-                                          ? min.y + (max.y - min.y) * (float(idx) / float(count - 1))
-                                          : (min.y + max.y) * 0.5f;
-                            drawNodes.push_back({ImVec2{x, y}, layerBuckets[layer][idx], layer});
-                        }
-                    }
-
-                    auto findPos = [&](int nodeId) -> ImVec2 {
-                        for (auto& dn : drawNodes) {
-                            if (dn.id == nodeId) return dn.pos;
-                        }
-                        return ImVec2{min.x, min.y};
-                    };
-
-                    ImDrawList* dl = ImGui::GetWindowDrawList();
-                    // Draw connections first
-                    for (const auto& c : selected_brain->connections) {
-                        if (!c.enabled) continue;
-                        ImVec2 p1 = findPos(c.inNodeId);
-                        ImVec2 p2 = findPos(c.outNodeId);
-                        float w = std::clamp(std::fabs(c.weight), 0.0f, 5.0f);
-                        float alpha = std::clamp(std::fabs(c.weight), 0.1f, 1.0f);
-                        ImU32 col = c.weight >= 0 ? IM_COL32(0, (int)(255 * alpha), 0, 200) : IM_COL32((int)(255 * alpha), 0, 0, 200);
-                        dl->AddLine(p1, p2, col, 1.0f + w * 0.3f);
-                    }
-                    // Draw nodes on top
-                    float radius = 6.0f;
-                    for (const auto& dn : drawNodes) {
-                        ImU32 col = IM_COL32(200, 200, 200, 255);
-                        if (dn.layer == 0) col = IM_COL32(100, 180, 255, 255);          // inputs/bias
-                        else if (dn.layer == maxLayer) col = IM_COL32(255, 200, 50, 255); // outputs
-                        dl->AddCircleFilled(dn.pos, radius, col);
-                        dl->AddText(ImVec2(dn.pos.x + radius + 2, dn.pos.y - radius), IM_COL32(255,255,255,200), std::to_string(dn.id).c_str());
-                    }
-                }
-                ImGui::EndChild();
+                render_brain_graph(*selected_brain);
             } else {
                 ImGui::Separator();
                 ImGui::Text("No eater selected");
