@@ -178,8 +178,8 @@ private:
     float petri_radius = 50.0f;
     float sprinkle_rate_eater = 5.0f;
     float average_eater_area = 5.0f;
-    float sprinkle_rate_eatable = 0.3f;
-    float sprinkle_rate_toxic = 0.3f;
+    float sprinkle_rate_eatable = 10.0f;
+    float sprinkle_rate_toxic = 1.5f;
     float eater_cloud_area_percentage = 70.0f;
     float add_node_probability = 0.1f;
     float remove_node_probability = 0.05f;
