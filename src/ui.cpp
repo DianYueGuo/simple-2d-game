@@ -361,6 +361,11 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 show_hover_text("How many circles currently exist inside the dish.");
                 ImGui::Text("Eaters: %zu", game.get_eater_count());
                 show_hover_text("Number of eater circles currently alive.");
+                ImGui::Text("Current pellets - food: %zu  toxic: %zu  division: %zu",
+                            game.get_food_pellet_count(),
+                            game.get_toxic_pellet_count(),
+                            game.get_division_pellet_count());
+                show_hover_text("Live counts for pellet types currently in the dish.");
                 ImGui::Text("Sim time: %.2fs  Real time: %.2fs  FPS: %.1f", game.get_sim_time(), game.get_real_time(), game.get_last_fps());
                 show_hover_text("Sim time is the accumulated simulated seconds; real is wall time since start.");
                 ImGui::Text("Longest life  creation/division: %.2fs / %.2fs",
@@ -646,10 +651,6 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                     game.set_toxic_pellet_density(state.toxic_density);
                     game.set_division_pellet_density(state.division_density);
                 }
-                ImGui::Text("Current pellets - food: %zu  toxic: %zu  division: %zu",
-                            game.get_food_pellet_count(),
-                            game.get_toxic_pellet_count(),
-                            game.get_division_pellet_count());
             }
 
             if (ImGui::CollapsingHeader("Cleanup & utilities", ImGuiTreeNodeFlags_DefaultOpen)) {
