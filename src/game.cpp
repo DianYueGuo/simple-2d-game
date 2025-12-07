@@ -70,6 +70,16 @@ void Game::process_game_logic() {
     sprinkle_entities(timeStep);
     update_eaters(worldId, timeStep);
     run_brain_updates(worldId, timeStep);
+    // periodic pellet cleanup
+    if (cleanup_interval > 0.0f) {
+        cleanup_timer += timeStep;
+        if (cleanup_timer >= cleanup_interval) {
+            cleanup_timer = 0.0f;
+            remove_percentage_pellets(cleanup_pct_food, false, false);
+            remove_percentage_pellets(cleanup_pct_toxic, true, false);
+            remove_percentage_pellets(cleanup_pct_division, false, true);
+        }
+    }
     cull_consumed();
     remove_stopped_boost_particles();
     if (auto_remove_outside) {
@@ -818,6 +828,54 @@ void Game::remove_random_percentage(float percentage) {
     static std::mt19937 rng{std::random_device{}()};
     std::shuffle(indices.begin(), indices.end(), rng);
 
+    indices.resize(target);
+    std::sort(indices.begin(), indices.end(), std::greater<std::size_t>());
+
+    const EatableCircle* prev_selected = nullptr;
+    if (selected_index && *selected_index < circles.size()) {
+        prev_selected = circles[*selected_index].get();
+    }
+
+    for (std::size_t idx : indices) {
+        circles.erase(circles.begin() + static_cast<std::ptrdiff_t>(idx));
+    }
+
+    revalidate_selection(prev_selected);
+    recompute_max_generation();
+    update_max_ages();
+}
+
+void Game::remove_percentage_pellets(float percentage, bool toxic, bool division_boost) {
+    if (circles.empty() || percentage <= 0.0f) {
+        return;
+    }
+
+    std::vector<std::size_t> indices;
+    indices.reserve(circles.size());
+    for (std::size_t i = 0; i < circles.size(); ++i) {
+        if (auto* e = dynamic_cast<EatableCircle*>(circles[i].get())) {
+            if (e->is_boost_particle()) continue;
+            if (auto* eater = dynamic_cast<EaterCircle*>(e)) {
+                (void)eater;
+                continue;
+            }
+            if (e->is_toxic() == toxic && e->is_division_boost() == division_boost) {
+                indices.push_back(i);
+            }
+        }
+    }
+    if (indices.empty()) {
+        return;
+    }
+
+    float clamped = std::clamp(percentage, 0.0f, 100.0f);
+    std::size_t target = static_cast<std::size_t>(std::round(indices.size() * (clamped / 100.0f)));
+    if (target == 0) {
+        return;
+    }
+
+    static std::mt19937 rng{std::random_device{}()};
+    std::shuffle(indices.begin(), indices.end(), rng);
     indices.resize(target);
     std::sort(indices.begin(), indices.end(), std::greater<std::size_t>());
 

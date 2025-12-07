@@ -134,6 +134,14 @@ public:
     float get_eater_cloud_area_percentage() const { return eater_cloud_area_percentage; }
     void set_division_pellet_divide_probability(float p) { division_pellet_divide_probability = std::clamp(p, 0.0f, 1.0f); }
     float get_division_pellet_divide_probability() const { return division_pellet_divide_probability; }
+    void set_cleanup_interval(float seconds) { cleanup_interval = std::max(0.0f, seconds); }
+    float get_cleanup_interval() const { return cleanup_interval; }
+    void set_cleanup_pct_food(float pct) { cleanup_pct_food = std::clamp(pct, 0.0f, 100.0f); }
+    float get_cleanup_pct_food() const { return cleanup_pct_food; }
+    void set_cleanup_pct_toxic(float pct) { cleanup_pct_toxic = std::clamp(pct, 0.0f, 100.0f); }
+    float get_cleanup_pct_toxic() const { return cleanup_pct_toxic; }
+    void set_cleanup_pct_division(float pct) { cleanup_pct_division = std::clamp(pct, 0.0f, 100.0f); }
+    float get_cleanup_pct_division() const { return cleanup_pct_division; }
     void update_max_generation_from_circle(const EatableCircle* circle);
     void recompute_max_generation();
     void set_show_true_color(bool value) { show_true_color = value; }
@@ -141,6 +149,7 @@ public:
     void add_circle(std::unique_ptr<EatableCircle> circle);
     std::size_t get_eater_count() const;
     void remove_random_percentage(float percentage);
+    void remove_percentage_pellets(float percentage, bool toxic, bool division_boost);
     void remove_outside_petri();
     void set_auto_remove_outside(bool enabled) { auto_remove_outside = enabled; }
     bool get_auto_remove_outside() const { return auto_remove_outside; }
@@ -223,6 +232,11 @@ private:
     float sprinkle_rate_division = 1.0f;
     float eater_cloud_area_percentage = 70.0f;
     float division_pellet_divide_probability = 1.0f;
+    float cleanup_interval = 30.0f;
+    float cleanup_timer = 0.0f;
+    float cleanup_pct_food = 10.0f;
+    float cleanup_pct_toxic = 10.0f;
+    float cleanup_pct_division = 10.0f;
     float add_node_probability = 0.1f;
     float remove_node_probability = 0.05f;
     float add_connection_probability = 0.1f;
