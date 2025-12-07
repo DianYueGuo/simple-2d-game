@@ -98,6 +98,8 @@ public:
     float get_linear_damping() const { return linear_damping; }
     void set_angular_damping(float d);
     float get_angular_damping() const { return angular_damping; }
+    void set_boost_particle_linear_damping(float d) { boost_particle_linear_damping = std::max(0.0f, d); }
+    float get_boost_particle_linear_damping() const { return boost_particle_linear_damping; }
     float get_boost_area() const { return boost_area; }
     void set_petri_radius(float r) { petri_radius = r; }
     float get_petri_radius() const { return petri_radius; }
@@ -211,6 +213,7 @@ private:
     std::optional<std::size_t> selected_index;
     bool paused = false;
     float boost_particle_impulse_fraction = 0.003f;
+    float boost_particle_linear_damping = 3.0f;
 };
 
 #endif
