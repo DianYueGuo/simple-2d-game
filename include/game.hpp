@@ -250,7 +250,7 @@ private:
     std::vector<std::vector<int>> neat_innovations;
     int neat_last_innov_id = 0;
     bool show_true_color = false;
-    float inactivity_timeout = 10.0f;
+    float inactivity_timeout = 0.0f;
     bool auto_remove_outside = true;
     bool dragging = false;
     bool right_dragging = false;
