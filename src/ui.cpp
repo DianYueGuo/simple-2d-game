@@ -366,6 +366,10 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                     game.set_paused(paused);
                 }
                 show_hover_text("Stop simulation updates so you can inspect selected eater info.");
+                if (ImGui::SliderFloat("Simulation speed", &state.time_scale, 0.01f, 8.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
+                    game.set_time_scale(state.time_scale);
+                }
+                show_hover_text("Multiplies the physics time step; lower values slow everything down.");
                 ImGui::Text("Sim time: %.2fs  Real time: %.2fs  FPS: %.1f", game.get_sim_time(), game.get_real_time(), game.get_last_fps());
                 show_hover_text("Sim time is the accumulated simulated seconds; real is wall time since start.");
                 ImGui::Text("Longest life  creation/division: %.2fs / %.2fs",
@@ -461,11 +465,6 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
 
         if (ImGui::BeginTabItem("Simulation")) {
             if (ImGui::CollapsingHeader("Time & base sizes", ImGuiTreeNodeFlags_DefaultOpen)) {
-                if (ImGui::SliderFloat("Simulation speed", &state.time_scale, 0.01f, 8.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
-                    game.set_time_scale(state.time_scale);
-                }
-                show_hover_text("Multiplies the physics time step; lower values slow everything down.");
-
                 if (ImGui::SliderFloat("AI updates per sim second", &state.brain_updates_per_sim_second, 0.1f, 60.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
                     game.set_brain_updates_per_sim_second(state.brain_updates_per_sim_second);
                 }
