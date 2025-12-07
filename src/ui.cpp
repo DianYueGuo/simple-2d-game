@@ -534,8 +534,8 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 }
             }
 
-            if (ImGui::CollapsingHeader("Hazards & division outcomes", ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::SeparatorText("Hazards & failure");
+            if (ImGui::CollapsingHeader("Death & division", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::SeparatorText("Death");
                 if (ImGui::SliderFloat("Toxic pellet death prob", &state.poison_death_probability, 0.0f, 1.0f, "%.2f")) {
                     game.set_poison_death_probability(state.poison_death_probability);
                 }
@@ -553,7 +553,7 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 }
                 show_hover_text("If an eater fails to boost forward for this many seconds, it dies like poison.");
 
-                ImGui::SeparatorText("Division triggers");
+                ImGui::SeparatorText("Division");
                 if (ImGui::SliderFloat("Division pellet divide prob", &state.division_pellet_divide_probability, 0.0f, 1.0f, "%.2f")) {
                     game.set_division_pellet_divide_probability(state.division_pellet_divide_probability);
                 }
