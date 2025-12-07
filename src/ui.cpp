@@ -258,11 +258,6 @@ void render_cursor_controls(Game& game, UiState& state) {
         if (add_type_changed) {
             game.set_add_type(static_cast<Game::AddType>(state.add_type));
         }
-
-        if (ImGui::SliderFloat("Spawned food area", &state.eatable_area, 0.1f, 10.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
-            game.set_add_eatable_area(state.eatable_area);
-        }
-        show_hover_text("Area given to each food pellet you add or drag out.");
     }
 }
 } // namespace
@@ -505,6 +500,11 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                     game.set_average_eater_area(state.average_eater_area);
                 }
                 show_hover_text("Area given to newly created eater circles.");
+
+                if (ImGui::SliderFloat("Spawned food area", &state.eatable_area, 0.1f, 10.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
+                    game.set_add_eatable_area(state.eatable_area);
+                }
+                show_hover_text("Area given to each food pellet you add or drag out.");
             }
 
             if (ImGui::CollapsingHeader("Boost & hazards", ImGuiTreeNodeFlags_DefaultOpen)) {
