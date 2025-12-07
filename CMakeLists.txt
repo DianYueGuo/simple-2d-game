@@ -87,7 +87,6 @@ add_executable(
     src/drawable_circle.cpp
     src/eatable_circle.cpp
     src/eater_circle.cpp
-    src/eater_brain.cpp
     src/ui.cpp
 )
 target_include_directories(${APP_TARGET} PRIVATE ${CMAKE_SOURCE_DIR}/include)
