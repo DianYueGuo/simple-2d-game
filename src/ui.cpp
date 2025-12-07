@@ -149,6 +149,11 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 game.set_paused(paused);
             }
             show_hover_text("Stop simulation updates so you can inspect selected eater info.");
+            bool follow = game.get_follow_selected();
+            if (ImGui::Checkbox("Follow selected eater", &follow)) {
+                game.set_follow_selected(follow);
+            }
+            show_hover_text("Automatically center the view on the selected eater until it disappears.");
             ImGui::Text("Sim time: %.2fs  Real time: %.2fs  FPS: %.1f", game.get_sim_time(), game.get_real_time(), game.get_last_fps());
             show_hover_text("Sim time is the accumulated simulated seconds; real is wall time since start.");
             ImGui::Text("Longest life  creation/division: %.2fs / %.2fs",

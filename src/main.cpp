@@ -39,6 +39,8 @@ int main() {
         handle_events(window, view, game);
 
         view = window.getView(); // sync view after input handling
+        game.update_follow_view(view);
+        window.setView(view);
         ImGui::SFML::Update(window, sf::seconds(dt));
 
         render_ui(window, view, game);

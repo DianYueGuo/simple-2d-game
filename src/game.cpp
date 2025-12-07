@@ -326,6 +326,18 @@ int Game::get_selected_generation() const {
     return -1;
 }
 
+void Game::update_follow_view(sf::View& view) const {
+    if (!follow_selected) {
+        return;
+    }
+    const EaterCircle* eater = get_selected_eater();
+    if (!eater) {
+        return;
+    }
+    b2Vec2 p = eater->getPosition();
+    view.setCenter({p.x * pixles_per_meter, p.y * pixles_per_meter});
+}
+
 void Game::update_max_generation_from_circle(const EatableCircle* circle) {
     if (auto* eater = dynamic_cast<const EaterCircle*>(circle)) {
         if (eater->get_generation() > max_generation) {

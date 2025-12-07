@@ -129,8 +129,11 @@ public:
     float get_last_fps() const { return fps_last; }
     float get_longest_life_since_creation() const { return max_age_since_creation; }
     float get_longest_life_since_division() const { return max_age_since_division; }
+    void set_follow_selected(bool v) { follow_selected = v; }
+    bool get_follow_selected() const { return follow_selected; }
     void accumulate_real_time(float dt);
     void frame_rendered();
+    void update_follow_view(sf::View& view) const;
     void clear_selection();
     const neat::Genome* get_selected_brain() const;
     const EaterCircle* get_selected_eater() const;
@@ -219,6 +222,7 @@ private:
     float boost_particle_linear_damping = 3.0f;
     float max_age_since_creation = 0.0f;
     float max_age_since_division = 0.0f;
+    bool follow_selected = false;
 };
 
 #endif
