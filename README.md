@@ -11,37 +11,14 @@ Each phase should compile, run, and be stable before continuing.
 
 ---
 
-## Phase 0 — Project Skeleton
-
-**Goal:** Integrate SFML + ImGui + Box2D cleanly.
-
-- Set up build system (CMake recommended).
-- Create SFML window.
-- Add ImGui overlay window.
-- Initialize Box2D world.
-- Spawn a single circle body and step physics.
-- Render via SFML and show an ImGui window.
-
-**Completion Check:**  
-A window appears with a Box2D body being simulated and an ImGui panel visible.
-
----
-
 ## Phase 1 — Core World: Cells, Physics, Eating, Camera
 
 **Goal:** Basic world simulation with player-controlled cells.
 
-- Add `Cell` and `Food` structs.
-- Create one Box2D body per cell (circular fixture, usually sensor-only).
-- Allow manual spawning of cells at cursor.
-- Implement keyboard control: thrust + torque.
-- Implement simple eating logic:
-  - If cell radius > distance to food → consume it.
-  - Increase mass → recalc radius.
-- Add camera controls (pan, zoom, follow selected cell).
+- Implement keyboard control: thrust + torque for a cell.
 
 **Completion Check:**  
-You can spawn a cell, move it, eat food, and watch it grow.
+You can move a cell with the keyboard, eat food, and watch it grow.
 
 ---
 
@@ -82,20 +59,14 @@ A cell’s movement is driven entirely by its neural graph.
 
 - Add energy/mass metabolism:
   - Costs for thrust, torque, signal emission, and living.
-- Eating restores mass.
-- Reproduction logic:
+- Reproduction thresholds:
   - If reproduce output > threshold and mass > minimum:
     - Split mass, create child.
     - Copy neural graph → mutate.
-- Mutation operators:
-  - Weight perturbation  
-  - Add/remove connection  
-  - Add/remove node  
-  - Node type mutation  
 - Add generation and parent tracking.
 
 **Completion Check:**  
-Cells live, move, eat, shrink, reproduce, and mutate over generations.
+Cells live, move, shrink, reproduce, and mutate over generations under explicit energy constraints.
 
 ---
 
@@ -103,10 +74,6 @@ Cells live, move, eat, shrink, reproduce, and mutate over generations.
 
 **Goal:** Enable simulation control, inspection, and debugging.
 
-- Global controls:
-  - Play / Pause / Step
-  - Time acceleration
-  - Mutation rates
 - Cell inspector:
   - ID, parent ID, generation, mass, energy
   - Current outputs
