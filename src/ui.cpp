@@ -352,6 +352,29 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
     ImGui::SeparatorText("Cursor & Tools");
     render_cursor_controls(game, state);
 
+    ImGui::SeparatorText("World");
+    if (ImGui::SliderFloat("Dish radius (m)", &state.petri_radius, 1.0f, 100.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
+        game.set_petri_radius(state.petri_radius);
+    }
+    show_hover_text("Size of the petri dish in world meters.");
+
+    bool auto_remove_outside = game.get_auto_remove_outside();
+    if (ImGui::Checkbox("Auto-remove outside dish", &auto_remove_outside)) {
+        game.set_auto_remove_outside(auto_remove_outside);
+    }
+    show_hover_text("Automatically culls any circle that leaves the dish boundary.");
+
+    if (ImGui::Button("Reset view to center")) {
+        view = window.getView();
+        float aspect = static_cast<float>(window.getSize().x) / static_cast<float>(window.getSize().y);
+        float world_height = game.get_petri_radius() * 2.0f;
+        float world_width = world_height * aspect;
+        view.setSize({world_width, world_height});
+        view.setCenter({0.0f, 0.0f});
+        window.setView(view);
+    }
+    show_hover_text("Recenter and reset the camera zoom to fit the dish.");
+
     if (ImGui::BeginTabBar("ControlsTabs")) {
         if (ImGui::BeginTabItem("Overview")) {
             if (ImGui::CollapsingHeader("Status", ImGuiTreeNodeFlags_DefaultOpen)) {
