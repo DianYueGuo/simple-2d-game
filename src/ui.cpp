@@ -340,24 +340,18 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
             show_hover_text("Percent of an eater's area that returns as pellets when it dies to poison.");
             game.set_eater_cloud_area_percentage(state.eater_cloud_area_percentage);
 
-            ImGui::SeparatorText("Division mutation probabilities");
-            ImGui::SliderFloat("Add node %", &state.add_node_probability, 0.0f, 1.0f, "%.2f");
-            show_hover_text("Chance each division step adds a node to the eater brain.");
-            ImGui::SliderFloat("Remove node %", &state.remove_node_probability, 0.0f, 1.0f, "%.2f");
-            show_hover_text("Chance each division step removes a hidden node from the eater brain.");
-            ImGui::SliderFloat("Add connection %", &state.add_connection_probability, 0.0f, 1.0f, "%.2f");
-            show_hover_text("Chance each division step adds a connection between brain nodes.");
-            ImGui::SliderFloat("Remove connection %", &state.remove_connection_probability, 0.0f, 1.0f, "%.2f");
-            show_hover_text("Chance each division step removes an existing brain connection.");
+            ImGui::SeparatorText("Division mutation (matches NEAT mutate)");
+            ImGui::SliderFloat("Add node % (mutate add node)", &state.add_node_probability, 0.0f, 1.0f, "%.2f");
+            show_hover_text("Probability passed to NEAT mutate for adding a node during division.");
+            ImGui::SliderFloat("Add connection % (mutate add link)", &state.add_connection_probability, 0.0f, 1.0f, "%.2f");
+            show_hover_text("Probability passed to NEAT mutate for adding a connection during division.");
             game.set_add_node_probability(state.add_node_probability);
-            game.set_remove_node_probability(state.remove_node_probability);
             game.set_add_connection_probability(state.add_connection_probability);
-            game.set_remove_connection_probability(state.remove_connection_probability);
             ImGui::SliderInt("Mutation rounds", &state.mutation_rounds, 0, 50);
             show_hover_text("How many times to roll the mutation probabilities when an eater divides.");
             game.set_mutation_rounds(state.mutation_rounds);
 
-            ImGui::SeparatorText("Live mutation probabilities");
+            ImGui::SeparatorText("Live mutation (matches NEAT mutate)");
             if (ImGui::Checkbox("Enable live mutation", &state.live_mutation_enabled)) {
                 game.set_live_mutation_enabled(state.live_mutation_enabled);
             }
@@ -365,33 +359,21 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
             ImGui::BeginDisabled(!state.live_mutation_enabled);
             ImGui::SliderFloat("Live add node %", &state.tick_add_node_probability, 0.0f, 1.0f, "%.2f");
             show_hover_text("Chance an eater adds a brain node each behavior tick.");
-            ImGui::SliderFloat("Live remove node %", &state.tick_remove_node_probability, 0.0f, 1.0f, "%.2f");
-            show_hover_text("Chance an eater removes a brain node each behavior tick.");
             ImGui::SliderFloat("Live add connection %", &state.tick_add_connection_probability, 0.0f, 1.0f, "%.2f");
             show_hover_text("Chance an eater adds a brain connection each behavior tick.");
-            ImGui::SliderFloat("Live remove connection %", &state.tick_remove_connection_probability, 0.0f, 1.0f, "%.2f");
-            show_hover_text("Chance an eater removes a brain connection each behavior tick.");
             game.set_tick_add_node_probability(state.tick_add_node_probability);
-            game.set_tick_remove_node_probability(state.tick_remove_node_probability);
             game.set_tick_add_connection_probability(state.tick_add_connection_probability);
-            game.set_tick_remove_connection_probability(state.tick_remove_connection_probability);
             ImGui::EndDisabled();
 
-            ImGui::SeparatorText("Initialization mutation");
+            ImGui::SeparatorText("Initialization mutation (matches NEAT mutate)");
             ImGui::SliderFloat("Init add node %", &state.init_add_node_probability, 0.0f, 1.0f, "%.2f");
-            show_hover_text("Chance each initialization step adds a node to the eater brain.");
-            ImGui::SliderFloat("Init remove node %", &state.init_remove_node_probability, 0.0f, 1.0f, "%.2f");
-            show_hover_text("Chance each initialization step removes a node from the eater brain.");
+            show_hover_text("Probability passed to NEAT mutate for adding a node during initial seeding.");
             ImGui::SliderFloat("Init add connection %", &state.init_add_connection_probability, 0.0f, 1.0f, "%.2f");
-            show_hover_text("Chance each initialization step adds a connection between brain nodes.");
-            ImGui::SliderFloat("Init remove connection %", &state.init_remove_connection_probability, 0.0f, 1.0f, "%.2f");
-            show_hover_text("Chance each initialization step removes a connection between brain nodes.");
+            show_hover_text("Probability passed to NEAT mutate for adding a connection during initial seeding.");
             ImGui::SliderInt("Init mutation rounds", &state.init_mutation_rounds, 0, 100);
             show_hover_text("How many initialization iterations to perform when an eater is created.");
             game.set_init_add_node_probability(state.init_add_node_probability);
-            game.set_init_remove_node_probability(state.init_remove_node_probability);
             game.set_init_add_connection_probability(state.init_add_connection_probability);
-            game.set_init_remove_connection_probability(state.init_remove_connection_probability);
             game.set_init_mutation_rounds(state.init_mutation_rounds);
 
             ImGui::Checkbox("Show true color (disable smoothing)", &state.show_true_color);
