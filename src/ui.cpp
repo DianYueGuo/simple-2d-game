@@ -492,6 +492,28 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 show_hover_text("Area given to each food pellet you add or drag out.");
             }
 
+            if (ImGui::CollapsingHeader("Movement (forces & damping)", ImGuiTreeNodeFlags_DefaultOpen)) {
+                bool movement_changed = false;
+                movement_changed |= ImGui::SliderFloat("Circle density", &state.circle_density, 0.01f, 10.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
+                show_hover_text("Mass density for all circles; heavier circles resist movement more.");
+                movement_changed |= ImGui::SliderFloat("Forward impulse", &state.linear_impulse, 0.01f, 50.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
+                show_hover_text("Force applied when brains choose to move straight ahead.");
+                movement_changed |= ImGui::SliderFloat("Turn impulse", &state.angular_impulse, 0.01f, 50.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
+                show_hover_text("Strength of turning pulses from AI decisions.");
+                movement_changed |= ImGui::SliderFloat("Linear damping", &state.linear_damping, 0.0f, 10.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
+                show_hover_text("How quickly forward motion bleeds off (like friction).");
+                movement_changed |= ImGui::SliderFloat("Angular damping", &state.angular_damping, 0.0f, 10.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
+                show_hover_text("How quickly spinning slows down.");
+
+                if (movement_changed) {
+                    game.set_circle_density(state.circle_density);
+                    game.set_linear_impulse_magnitude(state.linear_impulse);
+                    game.set_angular_impulse_magnitude(state.angular_impulse);
+                    game.set_linear_damping(state.linear_damping);
+                    game.set_angular_damping(state.angular_damping);
+                }
+            }
+
             if (ImGui::CollapsingHeader("Boosts, hazards & division", ImGuiTreeNodeFlags_DefaultOpen)) {
                 ImGui::SeparatorText("Boost");
                 if (ImGui::SliderFloat("Boost cost (area)", &state.boost_area, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_Logarithmic)) {
@@ -612,31 +634,6 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                     game.set_show_true_color(state.show_true_color);
                 }
                 show_hover_text("Toggle between smoothed display color and raw brain output color.");
-            }
-            ImGui::EndTabItem();
-        }
-
-        if (ImGui::BeginTabItem("Movement")) {
-            if (ImGui::CollapsingHeader("Forces & damping", ImGuiTreeNodeFlags_DefaultOpen)) {
-                bool movement_changed = false;
-                movement_changed |= ImGui::SliderFloat("Circle density", &state.circle_density, 0.01f, 10.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
-                show_hover_text("Mass density for all circles; heavier circles resist movement more.");
-                movement_changed |= ImGui::SliderFloat("Forward impulse", &state.linear_impulse, 0.01f, 50.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
-                show_hover_text("Force applied when brains choose to move straight ahead.");
-                movement_changed |= ImGui::SliderFloat("Turn impulse", &state.angular_impulse, 0.01f, 50.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
-                show_hover_text("Strength of turning pulses from AI decisions.");
-                movement_changed |= ImGui::SliderFloat("Linear damping", &state.linear_damping, 0.0f, 10.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
-                show_hover_text("How quickly forward motion bleeds off (like friction).");
-                movement_changed |= ImGui::SliderFloat("Angular damping", &state.angular_damping, 0.0f, 10.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
-                show_hover_text("How quickly spinning slows down.");
-
-                if (movement_changed) {
-                    game.set_circle_density(state.circle_density);
-                    game.set_linear_impulse_magnitude(state.linear_impulse);
-                    game.set_angular_impulse_magnitude(state.angular_impulse);
-                    game.set_linear_damping(state.linear_damping);
-                    game.set_angular_damping(state.angular_damping);
-                }
             }
             ImGui::EndTabItem();
         }
