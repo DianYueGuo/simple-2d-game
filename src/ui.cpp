@@ -62,6 +62,9 @@ struct UiState {
     int max_food_pellets = 0;
     int max_toxic_pellets = 0;
     int max_division_pellets = 0;
+    float food_density = 0.0f;
+    float toxic_density = 0.0f;
+    float division_density = 0.0f;
     bool initialized = false;
     bool follow_selected = false;
     bool follow_oldest = false;
@@ -243,6 +246,9 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
         state.max_food_pellets = game.get_max_food_pellets();
         state.max_toxic_pellets = game.get_max_toxic_pellets();
         state.max_division_pellets = game.get_max_division_pellets();
+        state.food_density = game.get_food_pellet_density();
+        state.toxic_density = game.get_toxic_pellet_density();
+        state.division_density = game.get_division_pellet_density();
         state.follow_selected = game.get_follow_selected();
         state.follow_oldest = game.get_follow_oldest_largest();
         state.follow_oldest_smallest = game.get_follow_oldest_smallest();
@@ -522,16 +528,20 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
         if (ImGui::BeginTabItem("Spawning")) {
             ImGui::SliderFloat("Eater spawn rate (per s)", &state.sprinkle_rate_eater, 0.0f, 10.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
             show_hover_text("How many eater circles are added each second.");
-            ImGui::SliderFloat("Food spawn rate (per s)", &state.sprinkle_rate_eatable, 0.0f, 100.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
-            show_hover_text("Automatic feed rate for non-toxic food pellets.");
-            ImGui::SliderFloat("Toxic spawn rate (per s)", &state.sprinkle_rate_toxic, 0.0f, 10.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
-            show_hover_text("Automatic spawn rate for poisonous pellets.");
-            ImGui::SliderFloat("Division pellet spawn rate (per s)", &state.sprinkle_rate_division, 0.0f, 10.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
-            show_hover_text("Automatic spawn rate for division-triggering blue pellets.");
+            ImGui::SliderFloat("Food area density (m^2 per m^2)", &state.food_density, 0.0f, 0.1f, "%.4f", ImGuiSliderFlags_Logarithmic);
+            show_hover_text("Target area fraction for non-toxic pellets; the system adjusts spawn/cleanup automatically.");
+            ImGui::SliderFloat("Toxic area density (m^2 per m^2)", &state.toxic_density, 0.0f, 0.02f, "%.4f", ImGuiSliderFlags_Logarithmic);
+            show_hover_text("Target area fraction for toxic pellets.");
+            ImGui::SliderFloat("Division area density (m^2 per m^2)", &state.division_density, 0.0f, 0.02f, "%.4f", ImGuiSliderFlags_Logarithmic);
+            show_hover_text("Target area fraction for division-triggering blue pellets.");
             game.set_sprinkle_rate_eater(state.sprinkle_rate_eater);
-            game.set_sprinkle_rate_eatable(state.sprinkle_rate_eatable);
-            game.set_sprinkle_rate_toxic(state.sprinkle_rate_toxic);
-            game.set_sprinkle_rate_division(state.sprinkle_rate_division);
+            game.set_food_pellet_density(state.food_density);
+            game.set_toxic_pellet_density(state.toxic_density);
+            game.set_division_pellet_density(state.division_density);
+            ImGui::Text("Current pellets - food: %zu  toxic: %zu  division: %zu",
+                        game.get_food_pellet_count(),
+                        game.get_toxic_pellet_count(),
+                        game.get_division_pellet_count());
             ImGui::EndTabItem();
         }
 

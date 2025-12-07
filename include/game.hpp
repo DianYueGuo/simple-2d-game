@@ -140,6 +140,15 @@ public:
     int get_max_toxic_pellets() const { return max_toxic_pellets; }
     void set_max_division_pellets(int v) { max_division_pellets = std::max(0, v); }
     int get_max_division_pellets() const { return max_division_pellets; }
+    void set_food_pellet_density(float d) { food_pellet_density = std::max(0.0f, d); }
+    float get_food_pellet_density() const { return food_pellet_density; }
+    void set_toxic_pellet_density(float d) { toxic_pellet_density = std::max(0.0f, d); }
+    float get_toxic_pellet_density() const { return toxic_pellet_density; }
+    void set_division_pellet_density(float d) { division_pellet_density = std::max(0.0f, d); }
+    float get_division_pellet_density() const { return division_pellet_density; }
+    std::size_t get_food_pellet_count() const;
+    std::size_t get_toxic_pellet_count() const;
+    std::size_t get_division_pellet_count() const;
     void update_max_generation_from_circle(const EatableCircle* circle);
     void recompute_max_generation();
     void set_show_true_color(bool value) { show_true_color = value; }
@@ -238,6 +247,9 @@ private:
     int max_food_pellets = 200;
     int max_toxic_pellets = 50;
     int max_division_pellets = 50;
+    float food_pellet_density = 0.005f;      // area per area (m^2 per m^2)
+    float toxic_pellet_density = 0.0005f;    // area per area (m^2 per m^2)
+    float division_pellet_density = 0.0005f; // area per area (m^2 per m^2)
     float add_node_probability = 0.1f;
     float remove_node_probability = 0.05f;
     float add_connection_probability = 0.1f;

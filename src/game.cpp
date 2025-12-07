@@ -900,12 +900,28 @@ std::size_t Game::count_pellets(bool toxic, bool division_boost) const {
         if (auto* e = dynamic_cast<const EatableCircle*>(c.get())) {
             if (e->is_boost_particle()) continue;
             if (dynamic_cast<const EaterCircle*>(c.get())) continue;
+            // Only count pellets inside the petri dish.
+            b2Vec2 pos = e->getPosition();
+            float dist = std::sqrt(pos.x * pos.x + pos.y * pos.y);
+            if (dist + e->getRadius() > petri_radius) continue;
             if (e->is_toxic() == toxic && e->is_division_boost() == division_boost) {
                 ++count;
             }
         }
     }
     return count;
+}
+
+std::size_t Game::get_food_pellet_count() const {
+    return count_pellets(false, false);
+}
+
+std::size_t Game::get_toxic_pellet_count() const {
+    return count_pellets(true, false);
+}
+
+std::size_t Game::get_division_pellet_count() const {
+    return count_pellets(false, true);
 }
 
 void Game::adjust_cleanup_rates() {
@@ -920,6 +936,28 @@ void Game::adjust_cleanup_rates() {
     cleanup_rate_food = compute_rate(count_pellets(false, false), max_food_pellets);
     cleanup_rate_toxic = compute_rate(count_pellets(true, false), max_toxic_pellets);
     cleanup_rate_division = compute_rate(count_pellets(false, true), max_division_pellets);
+
+    // Adjust sprinkle rates to converge to target densities.
+    constexpr float PI = 3.14159f;
+    float area = PI * petri_radius * petri_radius;
+    auto adjust_spawn = [&](bool toxic, bool division_boost, float density_target, float& sprinkle_rate_out, float /*cleanup_rate_current*/) {
+        float pellet_area = std::max(add_eatable_area, 1e-6f);
+        float desired_area = std::max(0.0f, density_target) * area;
+        float desired_count = desired_area / pellet_area;
+        std::size_t count = count_pellets(toxic, division_boost);
+        float diff = desired_count - static_cast<float>(count);
+        if (diff > 0.0f) {
+            // Need to add
+            sprinkle_rate_out = std::min(diff * 0.5f, 200.0f);
+        } else {
+            // Let cleanup handle surplus
+            sprinkle_rate_out = 0.0f;
+        }
+    };
+
+    adjust_spawn(false, false, food_pellet_density, sprinkle_rate_eatable, cleanup_rate_food);
+    adjust_spawn(true, false, toxic_pellet_density, sprinkle_rate_toxic, cleanup_rate_toxic);
+    adjust_spawn(false, true, division_pellet_density, sprinkle_rate_division, cleanup_rate_division);
 }
 
 void Game::remove_stopped_boost_particles() {
