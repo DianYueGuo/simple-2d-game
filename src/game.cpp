@@ -678,6 +678,10 @@ void Game::cull_consumed() {
     const EatableCircle* prev_selected = (selected_index && *selected_index < circles.size())
                                              ? circles[*selected_index].get()
                                              : nullptr;
+    b2Vec2 prev_pos{0, 0};
+    if (prev_selected) {
+        prev_pos = prev_selected->getPosition();
+    }
     bool selected_was_removed = false;
     const EaterCircle* selected_killer = nullptr;
 
@@ -709,7 +713,11 @@ void Game::cull_consumed() {
     }
 
     if (selected_was_removed && follow_selected) {
-        set_selection_to_eater(selected_killer);
+        const EaterCircle* fallback = selected_killer;
+        if (!fallback) {
+            fallback = find_nearest_eater(prev_pos);
+        }
+        set_selection_to_eater(fallback);
     } else if (!selected_was_removed && prev_selected) {
         revalidate_selection(prev_selected);
     }
