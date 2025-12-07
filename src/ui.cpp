@@ -344,6 +344,10 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
         window.setView(view);
     }
     show_hover_text("Recenter and reset the camera zoom to fit the dish.");
+    if (ImGui::Checkbox("Show true color (disable smoothing)", &state.show_true_color)) {
+        game.set_show_true_color(state.show_true_color);
+    }
+    show_hover_text("Toggle between smoothed display color and raw brain output color.");
 
     ImGui::SeparatorText("Cursor mode");
     render_cursor_controls(game, state);
@@ -632,10 +636,6 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                     game.set_init_mutation_rounds(state.init_mutation_rounds);
                 }
 
-                if (ImGui::Checkbox("Show true color (disable smoothing)", &state.show_true_color)) {
-                    game.set_show_true_color(state.show_true_color);
-                }
-                show_hover_text("Toggle between smoothed display color and raw brain output color.");
             }
             ImGui::EndTabItem();
         }
