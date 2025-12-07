@@ -354,6 +354,9 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
     if (ImGui::Button("Division stress test")) {
         apply_preset(Preset::DivisionTest, state, game);
     }
+    ImGui::SeparatorText("Cursor & Tools");
+    render_cursor_controls(game, state);
+
     if (ImGui::BeginTabBar("ControlsTabs")) {
         if (ImGui::BeginTabItem("Overview")) {
             if (ImGui::CollapsingHeader("Status", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -674,12 +677,7 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                     game.set_max_toxic_pellets(state.max_toxic_pellets);
                     game.set_max_division_pellets(state.max_division_pellets);
                 }
-            }
-            ImGui::EndTabItem();
         }
-
-        if (ImGui::BeginTabItem("Cursor & Tools")) {
-            render_cursor_controls(game, state);
             ImGui::EndTabItem();
         }
 
