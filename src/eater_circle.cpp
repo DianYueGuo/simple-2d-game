@@ -369,11 +369,23 @@ void EaterCircle::update_brain_inputs_from_touching() {
             return angle;
         };
 
-        auto classify_sector = [&](float relative_angle) {
-            // Offset by half sector so sector 0 is centered on the heading direction.
-            int sector = static_cast<int>(std::floor((relative_angle + SECTOR_HALF) / SECTOR_WIDTH));
-            sector = (sector % SENSOR_COUNT + SENSOR_COUNT) % SENSOR_COUNT;
-            return sector;
+        // Split an angular interval that may wrap into one or two non-wrapping segments in [-PI, PI].
+        auto split_interval = [&](float start, float end) {
+            std::vector<std::pair<float, float>> segments;
+            start = normalize_angle(start);
+            end = normalize_angle(end);
+            if (end < start) {
+                // Wrapped past PI -> split
+                segments.emplace_back(start, PI);
+                segments.emplace_back(-PI, end);
+            } else {
+                segments.emplace_back(start, end);
+            }
+            return segments;
+        };
+
+        auto intervals_overlap = [](const std::pair<float, float>& a, const std::pair<float, float>& b) {
+            return a.second > b.first && b.second > a.first;
         };
 
         for (auto* circle : touching_circles) {
@@ -387,19 +399,73 @@ void EaterCircle::update_brain_inputs_from_touching() {
             const float dy = other_pos.y - self_pos.y;
 
             if (dx == 0.0f && dy == 0.0f) {
+                // Coincident centers: assume it touches all sectors.
+                const auto color = drawable->get_color_rgb();
+                float w = std::max(circle->getArea(), 0.0f);
+                for (int sector = 0; sector < SENSOR_COUNT; ++sector) {
+                    summed_colors[sector][0] += color[0] * w;
+                    summed_colors[sector][1] += color[1] * w;
+                    summed_colors[sector][2] += color[2] * w;
+                    weights[sector] += w;
+                }
                 continue;
             }
 
             float relative_angle = std::atan2(dy, dx) - heading;
             relative_angle = normalize_angle(relative_angle);
 
-            int sector = classify_sector(relative_angle);
             const auto color = drawable->get_color_rgb();
             float w = std::max(circle->getArea(), 0.0f);
-            summed_colors[sector][0] += color[0] * w;
-            summed_colors[sector][1] += color[1] * w;
-            summed_colors[sector][2] += color[2] * w;
-            weights[sector] += w;
+            float distance = std::sqrt(dx * dx + dy * dy);
+            float other_r = circle->getRadius();
+
+            float half_span = PI; // default covers everything if overlapping deeply
+            if (distance > other_r) {
+                float ratio = std::clamp(other_r / distance, -1.0f, 1.0f);
+                half_span = std::asin(ratio);
+            }
+
+            float span_start = relative_angle - half_span;
+            float span_end = relative_angle + half_span;
+            auto span_segments = split_interval(span_start, span_end);
+
+            // Build sector segments once per circle check
+            std::array<std::vector<std::pair<float, float>>, SENSOR_COUNT> sector_segments;
+            for (int i = 0; i < SENSOR_COUNT; ++i) {
+                float s_start = -SECTOR_HALF + i * SECTOR_WIDTH;
+                float s_end = s_start + SECTOR_WIDTH;
+                sector_segments[i] = split_interval(s_start, s_end);
+            }
+
+            std::vector<int> overlapped;
+            overlapped.reserve(SENSOR_COUNT);
+            for (int i = 0; i < SENSOR_COUNT; ++i) {
+                bool hit = false;
+                for (const auto& ss : sector_segments[i]) {
+                    for (const auto& sp : span_segments) {
+                        if (intervals_overlap(ss, sp)) {
+                            hit = true;
+                            break;
+                        }
+                    }
+                    if (hit) break;
+                }
+                if (hit) {
+                    overlapped.push_back(i);
+                }
+            }
+
+            if (overlapped.empty()) {
+                continue;
+            }
+
+            float w_per = w / static_cast<float>(overlapped.size());
+            for (int sector : overlapped) {
+                summed_colors[sector][0] += color[0] * w_per;
+                summed_colors[sector][1] += color[1] * w_per;
+                summed_colors[sector][2] += color[2] * w_per;
+                weights[sector] += w_per;
+            }
         }
     }
 
