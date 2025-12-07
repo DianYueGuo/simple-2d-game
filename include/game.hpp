@@ -166,7 +166,7 @@ private:
     std::optional<sf::Vector2f> last_drag_world_pos;
     float add_drag_distance = 0.0f;
     float add_eatable_area = 0.3f;
-    float boost_area = 0.3f;
+    float boost_area = 0.003f;
     float poison_death_probability = 1.0f;
     float poison_death_probability_normal = 0.01f;
     float petri_radius = 100.0f;
