@@ -57,6 +57,7 @@ struct UiState {
     bool follow_selected = false;
     bool follow_oldest = false;
     bool follow_oldest_smallest = false;
+    bool follow_oldest_middle = false;
     bool live_mutation_enabled = false;
 };
 
@@ -223,6 +224,7 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
         state.follow_selected = game.get_follow_selected();
         state.follow_oldest = game.get_follow_oldest_largest();
         state.follow_oldest_smallest = game.get_follow_oldest_smallest();
+        state.follow_oldest_middle = game.get_follow_oldest_middle();
         state.initialized = true;
     }
 
@@ -242,8 +244,10 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 if (state.follow_selected) {
                     state.follow_oldest = false;
                     state.follow_oldest_smallest = false;
+                    state.follow_oldest_middle = false;
                     game.set_follow_oldest_largest(false);
                     game.set_follow_oldest_smallest(false);
+                    game.set_follow_oldest_middle(false);
                 }
                 game.set_follow_selected(state.follow_selected);
             }
@@ -252,8 +256,10 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 if (state.follow_oldest) {
                     state.follow_selected = false;
                     state.follow_oldest_smallest = false;
+                    state.follow_oldest_middle = false;
                     game.set_follow_selected(false);
                     game.set_follow_oldest_smallest(false);
+                    game.set_follow_oldest_middle(false);
                 }
                 game.set_follow_oldest_largest(state.follow_oldest);
             }
@@ -262,12 +268,26 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 if (state.follow_oldest_smallest) {
                     state.follow_selected = false;
                     state.follow_oldest = false;
+                    state.follow_oldest_middle = false;
                     game.set_follow_selected(false);
                     game.set_follow_oldest_largest(false);
+                    game.set_follow_oldest_middle(false);
                 }
                 game.set_follow_oldest_smallest(state.follow_oldest_smallest);
             }
             show_hover_text("Auto-center on the oldest eater; if multiple share the age, the smallest area wins.");
+            if (ImGui::Checkbox("Follow oldest eater (middle size)", &state.follow_oldest_middle)) {
+                if (state.follow_oldest_middle) {
+                    state.follow_selected = false;
+                    state.follow_oldest = false;
+                    state.follow_oldest_smallest = false;
+                    game.set_follow_selected(false);
+                    game.set_follow_oldest_largest(false);
+                    game.set_follow_oldest_smallest(false);
+                }
+                game.set_follow_oldest_middle(state.follow_oldest_middle);
+            }
+            show_hover_text("Auto-center on the oldest eater; if multiple share the age, choose the median area.");
             ImGui::Text("Sim time: %.2fs  Real time: %.2fs  FPS: %.1f", game.get_sim_time(), game.get_real_time(), game.get_last_fps());
             show_hover_text("Sim time is the accumulated simulated seconds; real is wall time since start.");
             ImGui::Text("Longest life  creation/division: %.2fs / %.2fs",

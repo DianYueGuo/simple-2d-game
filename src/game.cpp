@@ -394,6 +394,30 @@ void Game::update_follow_view(sf::View& view) const {
             }
         }
         center_on(best);
+        return;
+    }
+
+    if (follow_oldest_middle) {
+        std::vector<std::pair<float, const EaterCircle*>> candidates;
+        float best_age = -1.0f;
+        constexpr float age_eps = 1e-6f;
+        for (const auto& c : circles) {
+            if (auto* eater = dynamic_cast<const EaterCircle*>(c.get())) {
+                float age = std::max(0.0f, sim_time_accum - eater->get_creation_time());
+                if (age > best_age + age_eps) {
+                    best_age = age;
+                    candidates.clear();
+                    candidates.emplace_back(eater->getArea(), eater);
+                } else if (std::abs(age - best_age) <= age_eps) {
+                    candidates.emplace_back(eater->getArea(), eater);
+                }
+            }
+        }
+        if (!candidates.empty()) {
+            std::sort(candidates.begin(), candidates.end(), [](auto& a, auto& b) { return a.first < b.first; });
+            const EaterCircle* mid = candidates[candidates.size() / 2].second;
+            center_on(mid);
+        }
     }
 }
 

@@ -147,10 +147,12 @@ public:
     float get_longest_life_since_division() const { return max_age_since_division; }
     void set_follow_selected(bool v) { follow_selected = v; if (v) { follow_oldest_largest = false; follow_oldest_smallest = false; } }
     bool get_follow_selected() const { return follow_selected; }
-    void set_follow_oldest_largest(bool v) { follow_oldest_largest = v; if (v) { follow_selected = false; follow_oldest_smallest = false; } }
+    void set_follow_oldest_largest(bool v) { follow_oldest_largest = v; if (v) { follow_selected = false; follow_oldest_smallest = false; follow_oldest_middle = false; } }
     bool get_follow_oldest_largest() const { return follow_oldest_largest; }
-    void set_follow_oldest_smallest(bool v) { follow_oldest_smallest = v; if (v) { follow_selected = false; follow_oldest_largest = false; } }
+    void set_follow_oldest_smallest(bool v) { follow_oldest_smallest = v; if (v) { follow_selected = false; follow_oldest_largest = false; follow_oldest_middle = false; } }
     bool get_follow_oldest_smallest() const { return follow_oldest_smallest; }
+    void set_follow_oldest_middle(bool v) { follow_oldest_middle = v; if (v) { follow_selected = false; follow_oldest_largest = false; follow_oldest_smallest = false; } }
+    bool get_follow_oldest_middle() const { return follow_oldest_middle; }
     void accumulate_real_time(float dt);
     void frame_rendered();
     void update_follow_view(sf::View& view) const;
@@ -255,6 +257,7 @@ private:
     bool follow_selected = false;
     bool follow_oldest_largest = false;
     bool follow_oldest_smallest = false;
+    bool follow_oldest_middle = false;
 };
 
 #endif
