@@ -384,8 +384,10 @@ void EaterCircle::update_brain_inputs_from_touching() {
             return segments;
         };
 
-        auto intervals_overlap = [](const std::pair<float, float>& a, const std::pair<float, float>& b) {
-            return a.second > b.first && b.second > a.first;
+        auto overlap_length = [](const std::pair<float, float>& a, const std::pair<float, float>& b) {
+            float start = std::max(a.first, b.first);
+            float end = std::min(a.second, b.second);
+            return std::max(0.0f, end - start);
         };
 
         for (auto* circle : touching_circles) {
@@ -399,14 +401,15 @@ void EaterCircle::update_brain_inputs_from_touching() {
             const float dy = other_pos.y - self_pos.y;
 
             if (dx == 0.0f && dy == 0.0f) {
-                // Coincident centers: assume it touches all sectors.
+                // Coincident centers: distribute by sector angular size.
                 const auto color = drawable->get_color_rgb();
                 float w = std::max(circle->getArea(), 0.0f);
+                float per_sector_w = w * (SECTOR_WIDTH / (2.0f * PI));
                 for (int sector = 0; sector < SENSOR_COUNT; ++sector) {
-                    summed_colors[sector][0] += color[0] * w;
-                    summed_colors[sector][1] += color[1] * w;
-                    summed_colors[sector][2] += color[2] * w;
-                    weights[sector] += w;
+                    summed_colors[sector][0] += color[0] * per_sector_w;
+                    summed_colors[sector][1] += color[1] * per_sector_w;
+                    summed_colors[sector][2] += color[2] * per_sector_w;
+                    weights[sector] += per_sector_w;
                 }
                 continue;
             }
@@ -415,7 +418,7 @@ void EaterCircle::update_brain_inputs_from_touching() {
             relative_angle = normalize_angle(relative_angle);
 
             const auto color = drawable->get_color_rgb();
-            float w = std::max(circle->getArea(), 0.0f);
+            float area = std::max(circle->getArea(), 0.0f);
             float distance = std::sqrt(dx * dx + dy * dy);
             float other_r = circle->getRadius();
 
@@ -437,34 +440,25 @@ void EaterCircle::update_brain_inputs_from_touching() {
                 sector_segments[i] = split_interval(s_start, s_end);
             }
 
-            std::vector<int> overlapped;
-            overlapped.reserve(SENSOR_COUNT);
+            std::array<float, SENSOR_COUNT> overlap_angles{};
             for (int i = 0; i < SENSOR_COUNT; ++i) {
-                bool hit = false;
+                float total_overlap = 0.0f;
                 for (const auto& ss : sector_segments[i]) {
                     for (const auto& sp : span_segments) {
-                        if (intervals_overlap(ss, sp)) {
-                            hit = true;
-                            break;
-                        }
+                        total_overlap += overlap_length(ss, sp);
                     }
-                    if (hit) break;
                 }
-                if (hit) {
-                    overlapped.push_back(i);
-                }
+                overlap_angles[i] = total_overlap;
             }
 
-            if (overlapped.empty()) {
-                continue;
-            }
-
-            float w_per = w / static_cast<float>(overlapped.size());
-            for (int sector : overlapped) {
-                summed_colors[sector][0] += color[0] * w_per;
-                summed_colors[sector][1] += color[1] * w_per;
-                summed_colors[sector][2] += color[2] * w_per;
-                weights[sector] += w_per;
+            for (int sector = 0; sector < SENSOR_COUNT; ++sector) {
+                float ang = overlap_angles[sector];
+                if (ang <= 0.0f) continue;
+                float w_sector = area * (ang / (2.0f * PI));
+                summed_colors[sector][0] += color[0] * w_sector;
+                summed_colors[sector][1] += color[1] * w_sector;
+                summed_colors[sector][2] += color[2] * w_sector;
+                weights[sector] += w_sector;
             }
         }
     }
