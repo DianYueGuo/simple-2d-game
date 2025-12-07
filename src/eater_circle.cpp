@@ -348,7 +348,7 @@ void EaterCircle::update_brain_inputs_from_touching() {
     constexpr float SECTOR_HALF = SECTOR_WIDTH * 0.5f;
 
     std::array<std::array<float, 3>, SENSOR_COUNT> summed_colors{};
-    std::array<int, SENSOR_COUNT> counts{};
+    std::array<float, SENSOR_COUNT> weights{};
 
     if (!touching_circles.empty()) {
         const b2Vec2 self_pos = this->getPosition();
@@ -391,16 +391,17 @@ void EaterCircle::update_brain_inputs_from_touching() {
 
             int sector = classify_sector(relative_angle);
             const auto color = drawable->get_color_rgb();
-            summed_colors[sector][0] += color[0];
-            summed_colors[sector][1] += color[1];
-            summed_colors[sector][2] += color[2];
-            ++counts[sector];
+            float w = std::max(circle->getArea(), 0.0f);
+            summed_colors[sector][0] += color[0] * w;
+            summed_colors[sector][1] += color[1] * w;
+            summed_colors[sector][2] += color[2] * w;
+            weights[sector] += w;
         }
     }
 
-    auto set_inputs_for_sector = [&](int base_index, const std::array<float, 3>& color_sum, int count) {
-        if (count > 0) {
-            float inv = 1.0f / static_cast<float>(count);
+    auto set_inputs_for_sector = [&](int base_index, const std::array<float, 3>& color_sum, float weight) {
+        if (weight > 0.0f) {
+            float inv = 1.0f / weight;
             brain_inputs[base_index]     = color_sum[0] * inv;
             brain_inputs[base_index + 1] = color_sum[1] * inv;
             brain_inputs[base_index + 2] = color_sum[2] * inv;
@@ -413,7 +414,7 @@ void EaterCircle::update_brain_inputs_from_touching() {
 
     // Order sensors clockwise starting from front: front, front-right, right, back-right, back, back-left, left, front-left.
     for (int i = 0; i < SENSOR_COUNT; ++i) {
-        set_inputs_for_sector(i * 3, summed_colors[i], counts[i]);
+        set_inputs_for_sector(i * 3, summed_colors[i], weights[i]);
     }
 
     // Size input at the end: normalized area to [0,1]
