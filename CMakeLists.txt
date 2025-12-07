@@ -2,6 +2,22 @@ cmake_minimum_required(VERSION 3.11)
 
 project(simple-2d-game)
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
+    set(
+        CMAKE_BUILD_TYPE
+        Debug
+        CACHE STRING "Choose the type of build." FORCE
+    )
+    set_property(
+        CACHE CMAKE_BUILD_TYPE
+        PROPERTY STRINGS "Debug" "Release" "RelWithDebInfo" "MinSizeRel"
+    )
+endif()
+
 include(FetchContent)
 
 FetchContent_Declare(
@@ -19,6 +35,7 @@ FetchContent_Populate(
 file(
     GLOB
     IMGUI_SOURCES
+    CONFIGURE_DEPENDS
     "${imgui_SOURCE_DIR}/imgui*.cpp"
     "${imgui_SOURCE_DIR}/imgui*.h"
 )
@@ -27,6 +44,7 @@ add_library(
     STATIC
     ${IMGUI_SOURCES}
 )
+target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR})
 
 FetchContent_Declare(
     imgui-sfml
@@ -53,8 +71,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(NEAT)
 
-include_directories(${CMAKE_SOURCE_DIR}/include)
-
 add_executable(
     app
     src/main.cpp
@@ -66,8 +82,26 @@ add_executable(
     src/eater_brain.cpp
     src/ui.cpp
 )
+target_include_directories(app PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(app PRIVATE SFML::Graphics SFML::Audio SFML::Network)
 target_link_libraries(app PRIVATE imgui)
 target_link_libraries(app PRIVATE ImGui-SFML::ImGui-SFML)
 target_link_libraries(app PRIVATE box2d)
 target_link_libraries(app PRIVATE neat)
+
+option(ENABLE_WARNINGS "Enable compiler warnings" ON)
+option(ENABLE_WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
+
+if(ENABLE_WARNINGS)
+    if(MSVC)
+        target_compile_options(app PRIVATE /W4)
+        if(ENABLE_WARNINGS_AS_ERRORS)
+            target_compile_options(app PRIVATE /WX)
+        endif()
+    else()
+        target_compile_options(app PRIVATE -Wall -Wextra -Wpedantic)
+        if(ENABLE_WARNINGS_AS_ERRORS)
+            target_compile_options(app PRIVATE -Werror)
+        endif()
+    endif()
+endif()
