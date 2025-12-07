@@ -84,11 +84,13 @@ void EaterCircle::process_eating(const b2WorldId &worldId, float poison_death_pr
                             poisoned = true;
                         }
                         eatable->be_eaten();
+                        eatable->set_eaten_by(this);
                     } else {
                         if (roll < poison_death_probability_normal) {
                             poisoned = true;
                         }
                         eatable->be_eaten();
+                        eatable->set_eaten_by(this);
                     }
                 }
 
