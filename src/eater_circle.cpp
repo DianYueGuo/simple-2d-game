@@ -153,7 +153,13 @@ void EaterCircle::move_intelligently(const b2WorldId &worldId, Game &game, float
         inactivity_timer = 0.0f;
     } else {
         float timeout = game.get_inactivity_timeout();
-        if (timeout > 0.0f && inactivity_timer >= timeout && !is_eaten()) {
+        if (timeout <= 0.0f) {
+            if (!is_eaten()) {
+                poisoned = true;
+                this->be_eaten();
+            }
+            inactivity_timer = 0.0f;
+        } else if (inactivity_timer >= timeout && !is_eaten()) {
             poisoned = true;
             this->be_eaten();
             inactivity_timer = 0.0f;
