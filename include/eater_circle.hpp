@@ -59,7 +59,7 @@ private:
 
     neat::Genome brain;
     std::array<float, 29> brain_inputs{};
-    std::array<float, 7> brain_outputs{};
+    std::array<float, 11> brain_outputs{};
     std::array<float, 4> memory_state{};
     std::vector<std::vector<int>>* neat_innovations = nullptr;
     int* neat_last_innov_id = nullptr;

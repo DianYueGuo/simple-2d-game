@@ -28,7 +28,7 @@ EaterCircle::EaterCircle(const b2WorldId &worldId,
                          std::vector<std::vector<int>>* innov_ids,
                          int* last_innov_id) :
     EatableCircle(worldId, position_x, position_y, radius, density, false, angle),
-    brain(base_brain ? *base_brain : neat::Genome(29, 7, 0, 0.5f, innov_ids, last_innov_id)) {
+    brain(base_brain ? *base_brain : neat::Genome(29, 11, 0, 0.5f, innov_ids, last_innov_id)) {
     neat_innovations = innov_ids;
     neat_last_innov_id = last_innov_id;
     set_generation(generation);
@@ -166,8 +166,9 @@ void EaterCircle::move_intelligently(const b2WorldId &worldId, Game &game, float
     }
 
     // Update memory from the first four outputs (clamped).
+    // Memory outputs are distinct: outputs 7-10.
     for (int i = 0; i < 4; ++i) {
-        memory_state[i] = std::clamp(brain_outputs[i], 0.0f, 1.0f);
+        memory_state[i] = std::clamp(brain_outputs[7 + i], 0.0f, 1.0f);
     }
 }
 
