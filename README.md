@@ -148,3 +148,13 @@ This roadmap ensures:
 3. A working evolutionary ecosystem with clarity and tooling.  
 
 Follow the phases strictly and the project will remain maintainable and scalable.
+
+---
+
+## Releasing (macOS bundle)
+
+1. Configure Release: `cmake -B build -DCMAKE_BUILD_TYPE=Release`
+2. Build: `cmake --build build --config Release`
+3. Install the bundle: `cmake --install build --prefix dist`
+4. Run or ship `dist/Simple2DGame.app` (double-clickable); zip that folder or wrap it in a DMG for distribution.
+5. Optional sanity check: `otool -L dist/Simple2DGame.app/Contents/MacOS/Simple2DGame` should show `@executable_path/../Frameworks` for deps.

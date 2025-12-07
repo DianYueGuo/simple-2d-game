@@ -1,10 +1,16 @@
 cmake_minimum_required(VERSION 3.11)
 
-project(simple-2d-game)
+project(simple-2d-game VERSION 0.1.0)
+
+set(APP_BUNDLE_NAME "Simple2DGame")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+if(APPLE)
+    set(CMAKE_INSTALL_RPATH "@executable_path/../Frameworks")
+endif()
 
 if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
     set(
@@ -73,6 +79,7 @@ FetchContent_MakeAvailable(NEAT)
 
 add_executable(
     app
+    MACOSX_BUNDLE
     src/main.cpp
     src/game.cpp
     src/circle_physics.cpp
@@ -101,7 +108,34 @@ if(ENABLE_WARNINGS)
     else()
         target_compile_options(app PRIVATE -Wall -Wextra -Wpedantic)
         if(ENABLE_WARNINGS_AS_ERRORS)
-            target_compile_options(app PRIVATE -Werror)
+        target_compile_options(app PRIVATE -Werror)
         endif()
     endif()
+endif()
+
+set_target_properties(
+    app
+    PROPERTIES
+        OUTPUT_NAME ${APP_BUNDLE_NAME}
+        MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_BUNDLE_NAME ${APP_BUNDLE_NAME}
+        MACOSX_BUNDLE_GUI_IDENTIFIER "com.example.simple2dgame"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
+        MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
+)
+
+install(
+    TARGETS app
+    BUNDLE DESTINATION .
+    RUNTIME DESTINATION .
+)
+
+if(APPLE)
+    install(
+        CODE "
+            include(BundleUtilities)
+            set(bundle \"${CMAKE_INSTALL_PREFIX}/${APP_BUNDLE_NAME}.app\")
+            fixup_bundle(\"${bundle}\" \"\" \"${CMAKE_BINARY_DIR}\")
+        "
+    )
 endif()
