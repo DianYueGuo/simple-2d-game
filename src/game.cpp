@@ -70,15 +70,15 @@ void Game::process_game_logic() {
     sprinkle_entities(timeStep);
     update_eaters(worldId, timeStep);
     run_brain_updates(worldId, timeStep);
-    // periodic pellet cleanup
-    if (cleanup_interval > 0.0f) {
-        cleanup_timer += timeStep;
-        if (cleanup_timer >= cleanup_interval) {
-            cleanup_timer = 0.0f;
-            remove_percentage_pellets(cleanup_pct_food, false, false);
-            remove_percentage_pellets(cleanup_pct_toxic, true, false);
-            remove_percentage_pellets(cleanup_pct_division, false, true);
-        }
+    // continuous pellet cleanup by rate (percent per second)
+    if (cleanup_rate_food > 0.0f) {
+        remove_percentage_pellets(cleanup_rate_food * timeStep, false, false);
+    }
+    if (cleanup_rate_toxic > 0.0f) {
+        remove_percentage_pellets(cleanup_rate_toxic * timeStep, true, false);
+    }
+    if (cleanup_rate_division > 0.0f) {
+        remove_percentage_pellets(cleanup_rate_division * timeStep, false, true);
     }
     cull_consumed();
     remove_stopped_boost_particles();

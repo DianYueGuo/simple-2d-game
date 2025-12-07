@@ -58,7 +58,7 @@ struct UiState {
     float cleanup_pct_food = 10.0f;
     float cleanup_pct_toxic = 10.0f;
     float cleanup_pct_division = 10.0f;
-    float cleanup_interval = 30.0f;
+    float cleanup_interval = 30.0f; // deprecated, kept for state init
     bool initialized = false;
     bool follow_selected = false;
     bool follow_oldest = false;
@@ -233,10 +233,10 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
         state.sprinkle_rate_eatable = game.get_sprinkle_rate_eatable();
         state.sprinkle_rate_toxic = game.get_sprinkle_rate_toxic();
         state.sprinkle_rate_division = game.get_sprinkle_rate_division();
-        state.cleanup_pct_food = game.get_cleanup_pct_food();
-        state.cleanup_pct_toxic = game.get_cleanup_pct_toxic();
-        state.cleanup_pct_division = game.get_cleanup_pct_division();
-        state.cleanup_interval = game.get_cleanup_interval();
+        state.cleanup_pct_food = game.get_cleanup_rate_food();
+        state.cleanup_pct_toxic = game.get_cleanup_rate_toxic();
+        state.cleanup_pct_division = game.get_cleanup_rate_division();
+        state.cleanup_interval = 0.0f;
         state.follow_selected = game.get_follow_selected();
         state.follow_oldest = game.get_follow_oldest_largest();
         state.follow_oldest_smallest = game.get_follow_oldest_smallest();
@@ -347,16 +347,16 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 game.remove_random_percentage(state.delete_percentage);
             }
             show_hover_text("Deletes a random selection of circles using the percentage above.");
-            ImGui::SeparatorText("Cleanup pellets (auto)");
-            ImGui::SliderFloat("Cleanup interval (s)", &state.cleanup_interval, 0.0f, 300.0f, "%.1f");
-            show_hover_text("How often to automatically remove a percentage of pellets; 0 disables.");
-            ImGui::SliderFloat("Cleanup food %", &state.cleanup_pct_food, 0.0f, 100.0f, "%.1f");
-            ImGui::SliderFloat("Cleanup toxic %", &state.cleanup_pct_toxic, 0.0f, 100.0f, "%.1f");
-            ImGui::SliderFloat("Cleanup division %", &state.cleanup_pct_division, 0.0f, 100.0f, "%.1f");
-            game.set_cleanup_interval(state.cleanup_interval);
-            game.set_cleanup_pct_food(state.cleanup_pct_food);
-            game.set_cleanup_pct_toxic(state.cleanup_pct_toxic);
-            game.set_cleanup_pct_division(state.cleanup_pct_division);
+            ImGui::SeparatorText("Cleanup pellets (rate per second)");
+            ImGui::SliderFloat("Cleanup food %/s", &state.cleanup_pct_food, 0.0f, 100.0f, "%.2f");
+            show_hover_text("Removes this percentage of food pellets each second.");
+            ImGui::SliderFloat("Cleanup toxic %/s", &state.cleanup_pct_toxic, 0.0f, 100.0f, "%.2f");
+            show_hover_text("Removes this percentage of toxic pellets each second.");
+            ImGui::SliderFloat("Cleanup division %/s", &state.cleanup_pct_division, 0.0f, 100.0f, "%.2f");
+            show_hover_text("Removes this percentage of division pellets each second.");
+            game.set_cleanup_rate_food(state.cleanup_pct_food);
+            game.set_cleanup_rate_toxic(state.cleanup_pct_toxic);
+            game.set_cleanup_rate_division(state.cleanup_pct_division);
             ImGui::EndTabItem();
         }
 
