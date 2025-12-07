@@ -254,6 +254,7 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 ImGui::Text("Connections: %zu", selected_brain->connections.size());
                 // Show area/radius if we still have the circle
                 if (const auto* eater = game.get_selected_eater()) {
+                    ImGui::Text("Age: %.2fs", game.get_sim_time() - eater->get_creation_time());
                     ImGui::Text("Area: %.3f  Radius: %.3f", eater->getArea(), eater->getRadius());
                 }
 
