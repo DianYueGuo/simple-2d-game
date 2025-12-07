@@ -138,6 +138,8 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
         if (ImGui::BeginTabItem("Overview")) {
             ImGui::Text("Active circles: %zu", game.get_circle_count());
             show_hover_text("How many circles currently exist inside the dish.");
+            ImGui::Text("Eaters: %zu", game.get_eater_count());
+            show_hover_text("Number of eater circles currently alive.");
             bool paused = game.is_paused();
             if (ImGui::Checkbox("Pause simulation", &paused)) {
                 game.set_paused(paused);

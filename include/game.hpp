@@ -114,6 +114,7 @@ public:
     void set_show_true_color(bool value) { show_true_color = value; }
     bool get_show_true_color() const { return show_true_color; }
     void add_circle(std::unique_ptr<EatableCircle> circle);
+    std::size_t get_eater_count() const;
     void remove_random_percentage(float percentage);
     void remove_outside_petri();
     void set_auto_remove_outside(bool enabled) { auto_remove_outside = enabled; }

@@ -266,6 +266,16 @@ void Game::add_circle(std::unique_ptr<EatableCircle> circle) {
     circles.push_back(std::move(circle));
 }
 
+std::size_t Game::get_eater_count() const {
+    std::size_t count = 0;
+    for (const auto& c : circles) {
+        if (dynamic_cast<EaterCircle*>(c.get())) {
+            ++count;
+        }
+    }
+    return count;
+}
+
 void Game::clear_selection() {
     selected_index.reset();
 }
