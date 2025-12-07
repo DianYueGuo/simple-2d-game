@@ -34,6 +34,13 @@ struct UiState {
     float init_remove_connection_probability = 0.0f;
     int init_mutation_rounds = 0;
     int mutation_rounds = 0;
+    float mutate_weight_thresh = 0.0f;
+    float mutate_weight_full_change_thresh = 0.0f;
+    float mutate_weight_factor = 0.0f;
+    int mutate_add_connection_iterations = 0;
+    float mutate_reactivate_connection_thresh = 0.0f;
+    int mutate_add_node_iterations = 0;
+    bool mutate_allow_recurrent = false;
     bool show_true_color = false;
     float inactivity_timeout = 0.0f;
     float boost_particle_impulse_fraction = 0.2f;
@@ -193,6 +200,13 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
         state.init_remove_connection_probability = game.get_init_remove_connection_probability();
         state.init_mutation_rounds = game.get_init_mutation_rounds();
         state.mutation_rounds = game.get_mutation_rounds();
+        state.mutate_weight_thresh = game.get_mutate_weight_thresh();
+        state.mutate_weight_full_change_thresh = game.get_mutate_weight_full_change_thresh();
+        state.mutate_weight_factor = game.get_mutate_weight_factor();
+        state.mutate_add_connection_iterations = game.get_mutate_add_connection_iterations();
+        state.mutate_reactivate_connection_thresh = game.get_mutate_reactivate_connection_thresh();
+        state.mutate_add_node_iterations = game.get_mutate_add_node_iterations();
+        state.mutate_allow_recurrent = game.get_mutate_allow_recurrent();
         state.show_true_color = game.get_show_true_color();
         state.inactivity_timeout = game.get_inactivity_timeout();
         state.boost_particle_impulse_fraction = game.get_boost_particle_impulse_fraction();
@@ -339,6 +353,29 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
             ImGui::SliderFloat("Poison cloud area %", &state.eater_cloud_area_percentage, 0.0f, 100.0f, "%.0f");
             show_hover_text("Percent of an eater's area that returns as pellets when it dies to poison.");
             game.set_eater_cloud_area_percentage(state.eater_cloud_area_percentage);
+
+            ImGui::SeparatorText("NEAT mutate parameters");
+            ImGui::Checkbox("Allow recurrent connections", &state.mutate_allow_recurrent);
+            show_hover_text("Passed to NEAT mutate as areRecurrentConnectionsAllowed.");
+            ImGui::SliderFloat("Weight mutate prob", &state.mutate_weight_thresh, 0.0f, 1.0f, "%.2f");
+            show_hover_text("mutateWeightThresh: probability to mutate a weight.");
+            ImGui::SliderFloat("Weight full-change prob", &state.mutate_weight_full_change_thresh, 0.0f, 1.0f, "%.2f");
+            show_hover_text("mutateWeightFullChangeThresh: chance a weight is completely reassigned.");
+            ImGui::SliderFloat("Weight factor", &state.mutate_weight_factor, 0.0f, 3.0f, "%.2f");
+            show_hover_text("mutateWeightFactor: scale factor for perturbations.");
+            ImGui::SliderInt("Max iter find connection", &state.mutate_add_connection_iterations, 1, 100);
+            show_hover_text("maxIterationsFindConnectionThresh passed to mutate.");
+            ImGui::SliderFloat("Reactivate connection prob", &state.mutate_reactivate_connection_thresh, 0.0f, 1.0f, "%.2f");
+            show_hover_text("reactivateConnectionThresh: chance to re-enable a disabled connection.");
+            ImGui::SliderInt("Max iter find node", &state.mutate_add_node_iterations, 1, 100);
+            show_hover_text("maxIterationsFindNodeThresh passed to mutate.");
+            game.set_mutate_allow_recurrent(state.mutate_allow_recurrent);
+            game.set_mutate_weight_thresh(state.mutate_weight_thresh);
+            game.set_mutate_weight_full_change_thresh(state.mutate_weight_full_change_thresh);
+            game.set_mutate_weight_factor(state.mutate_weight_factor);
+            game.set_mutate_add_connection_iterations(state.mutate_add_connection_iterations);
+            game.set_mutate_reactivate_connection_thresh(state.mutate_reactivate_connection_thresh);
+            game.set_mutate_add_node_iterations(state.mutate_add_node_iterations);
 
             ImGui::SeparatorText("Division mutation (matches NEAT mutate)");
             ImGui::SliderFloat("Add node % (mutate add node)", &state.add_node_probability, 0.0f, 1.0f, "%.2f");

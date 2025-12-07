@@ -26,11 +26,13 @@ EaterCircle::EaterCircle(const b2WorldId &worldId,
                          float init_remove_connection_probability,
                          const neat::Genome* base_brain,
                          std::vector<std::vector<int>>* innov_ids,
-                         int* last_innov_id) :
+                         int* last_innov_id,
+                         Game* owner) :
     EatableCircle(worldId, position_x, position_y, radius, density, false, angle),
     brain(base_brain ? *base_brain : neat::Genome(29, 11, 0, 0.5f, innov_ids, last_innov_id)) {
     neat_innovations = innov_ids;
     neat_last_innov_id = last_innov_id;
+    owner_game = owner;
     set_generation(generation);
     initialize_brain(
         init_mutation_rounds,
@@ -154,15 +156,15 @@ void EaterCircle::move_intelligently(const b2WorldId &worldId, Game &game, float
         brain.mutate(
             neat_innovations,
             neat_last_innov_id,
-            false,
-            0.8f,
-            0.1f,
-            1.2f,
+            game.get_mutate_allow_recurrent(),
+            game.get_mutate_weight_thresh(),
+            game.get_mutate_weight_full_change_thresh(),
+            game.get_mutate_weight_factor(),
             game.get_tick_add_connection_probability(),
-            20,
-            0.25f,
+            game.get_mutate_add_connection_iterations(),
+            game.get_mutate_reactivate_connection_thresh(),
             game.get_tick_add_node_probability(),
-            20);
+            game.get_mutate_add_node_iterations());
     }
 
     // Update memory from the first four outputs (clamped).
@@ -217,18 +219,34 @@ void EaterCircle::initialize_brain(int mutation_rounds, float add_node_p, float 
     int rounds = std::max(0, mutation_rounds);
     for (int i = 0; i < rounds; ++i) {
         if (neat_innovations && neat_last_innov_id) {
+            float weight_thresh = 0.8f;
+            float weight_full = 0.1f;
+            float weight_factor = 1.2f;
+            float reactivate = 0.25f;
+            int add_conn_iters = 20;
+            int add_node_iters = 20;
+            bool allow_recurrent = false;
+            if (owner_game) {
+                weight_thresh = owner_game->get_mutate_weight_thresh();
+                weight_full = owner_game->get_mutate_weight_full_change_thresh();
+                weight_factor = owner_game->get_mutate_weight_factor();
+                reactivate = owner_game->get_mutate_reactivate_connection_thresh();
+                add_conn_iters = owner_game->get_mutate_add_connection_iterations();
+                add_node_iters = owner_game->get_mutate_add_node_iterations();
+                allow_recurrent = owner_game->get_mutate_allow_recurrent();
+            }
             brain.mutate(
                 neat_innovations,
                 neat_last_innov_id,
-                false,
-                0.8f,
-                0.1f,
-                1.2f,
+                allow_recurrent,
+                weight_thresh,
+                weight_full,
+                weight_factor,
                 add_connection_p,
-                20,
-                0.25f,
+                add_conn_iters,
+                reactivate,
                 add_node_p,
-                20);
+                add_node_iters);
         }
     }
 }
@@ -275,7 +293,8 @@ void EaterCircle::divide(const b2WorldId &worldId, Game& game) {
         game.get_init_remove_connection_probability(),
         &brain,
         game.get_neat_innovations(),
-        game.get_neat_last_innovation_id());
+        game.get_neat_last_innovation_id(),
+        &game);
     EaterCircle* new_circle_ptr = new_circle.get();
     if (new_circle_ptr) {
         new_circle_ptr->brain = parent_brain_copy;
@@ -294,6 +313,7 @@ void EaterCircle::divide(const b2WorldId &worldId, Game& game) {
     if (new_circle_ptr) {
         new_circle_ptr->set_generation(next_generation);
     }
+    owner_game = &game;
     set_last_division_time(game.get_sim_time());
 
     game.update_max_generation_from_circle(this);
@@ -302,34 +322,41 @@ void EaterCircle::divide(const b2WorldId &worldId, Game& game) {
     this->apply_forward_impulse();
 
     const int mutation_rounds = std::max(0, game.get_mutation_rounds());
+    float weight_thresh = game.get_mutate_weight_thresh();
+    float weight_full = game.get_mutate_weight_full_change_thresh();
+    float weight_factor = game.get_mutate_weight_factor();
+    float reactivate = game.get_mutate_reactivate_connection_thresh();
+    int add_conn_iters = game.get_mutate_add_connection_iterations();
+    int add_node_iters = game.get_mutate_add_node_iterations();
+    bool allow_recurrent = game.get_mutate_allow_recurrent();
     for (int i = 0; i < mutation_rounds; ++i) {
         if (neat_innovations && neat_last_innov_id) {
             brain.mutate(
                 neat_innovations,
                 neat_last_innov_id,
-                false,
-                0.8f,
-                0.1f,
-                1.2f,
+                allow_recurrent,
+                weight_thresh,
+                weight_full,
+                weight_factor,
                 game.get_add_connection_probability(),
-                20,
-                0.25f,
+                add_conn_iters,
+                reactivate,
                 game.get_add_node_probability(),
-                20);
+                add_node_iters);
         }
         if (new_circle_ptr && new_circle_ptr->neat_innovations && new_circle_ptr->neat_last_innov_id) {
             new_circle_ptr->brain.mutate(
                 new_circle_ptr->neat_innovations,
                 new_circle_ptr->neat_last_innov_id,
-                false,
-                0.8f,
-                0.1f,
-                1.2f,
+                allow_recurrent,
+                weight_thresh,
+                weight_full,
+                weight_factor,
                 game.get_add_connection_probability(),
-                20,
-                0.25f,
+                add_conn_iters,
+                reactivate,
                 game.get_add_node_probability(),
-                20);
+                add_node_iters);
         }
     }
 

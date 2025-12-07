@@ -27,7 +27,8 @@ public:
                 float init_remove_connection_probability = 0.0f,
                 const neat::Genome* base_brain = nullptr,
                 std::vector<std::vector<int>>* innov_ids = nullptr,
-                int* last_innov_id = nullptr);
+                int* last_innov_id = nullptr,
+                Game* owner = nullptr);
 
     void set_minimum_area(float area) { minimum_area = area; }
     float get_minimum_area() const { return minimum_area; }
@@ -69,6 +70,7 @@ private:
     float inactivity_timer = 0.0f;
     float creation_time = 0.0f;
     float last_division_time = 0.0f;
+    Game* owner_game = nullptr;
 };
 
 #endif

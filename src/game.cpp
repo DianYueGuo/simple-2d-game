@@ -494,7 +494,8 @@ std::unique_ptr<EaterCircle> Game::create_eater_at(const b2Vec2& pos) {
         init_remove_connection_probability,
         base_brain,
         &neat_innovations,
-        &neat_last_innov_id);
+        &neat_last_innov_id,
+        this);
     circle->set_creation_time(sim_time_accum);
     circle->set_last_division_time(sim_time_accum);
     circle->set_impulse_magnitudes(linear_impulse_magnitude, angular_impulse_magnitude);
