@@ -493,6 +493,7 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
             }
 
             if (ImGui::CollapsingHeader("Boost & hazards", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::SeparatorText("Boost");
                 if (ImGui::SliderFloat("Boost cost (area)", &state.boost_area, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_Logarithmic)) {
                     game.set_boost_area(state.boost_area);
                 }
@@ -506,18 +507,7 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 }
                 show_hover_text("Linear damping applied to boost pellets only (broader range).");
 
-                if (ImGui::SliderFloat("Poison cloud area %", &state.eater_cloud_area_percentage, 0.0f, 100.0f, "%.0f")) {
-                    game.set_eater_cloud_area_percentage(state.eater_cloud_area_percentage);
-                }
-                show_hover_text("Percent of an eater's area that returns as pellets when it dies to poison.");
-                if (ImGui::SliderFloat("Division pellet divide prob", &state.division_pellet_divide_probability, 0.0f, 1.0f, "%.2f")) {
-                    game.set_division_pellet_divide_probability(state.division_pellet_divide_probability);
-                }
-                show_hover_text("Probability an eater divides after eating a blue division pellet.");
-                if (ImGui::SliderFloat("Inactivity timeout (s)", &state.inactivity_timeout, 0.0f, 60.0f, "%.1f")) {
-                    game.set_inactivity_timeout(state.inactivity_timeout);
-                }
-                show_hover_text("If an eater fails to boost forward for this many seconds, it dies like poison.");
+                ImGui::SeparatorText("Hazards & failure");
                 if (ImGui::SliderFloat("Toxic death chance", &state.poison_death_probability, 0.0f, 1.0f, "%.2f")) {
                     game.set_poison_death_probability(state.poison_death_probability);
                 }
@@ -526,6 +516,20 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                     game.set_poison_death_probability_normal(state.poison_death_probability_normal);
                 }
                 show_hover_text("Baseline toxic lethality when circles are not boosted.");
+                if (ImGui::SliderFloat("Poison cloud area %", &state.eater_cloud_area_percentage, 0.0f, 100.0f, "%.0f")) {
+                    game.set_eater_cloud_area_percentage(state.eater_cloud_area_percentage);
+                }
+                show_hover_text("Percent of an eater's area that returns as pellets when it dies to poison.");
+                if (ImGui::SliderFloat("Inactivity timeout (s)", &state.inactivity_timeout, 0.0f, 60.0f, "%.1f")) {
+                    game.set_inactivity_timeout(state.inactivity_timeout);
+                }
+                show_hover_text("If an eater fails to boost forward for this many seconds, it dies like poison.");
+
+                ImGui::SeparatorText("Division triggers");
+                if (ImGui::SliderFloat("Division pellet divide prob", &state.division_pellet_divide_probability, 0.0f, 1.0f, "%.2f")) {
+                    game.set_division_pellet_divide_probability(state.division_pellet_divide_probability);
+                }
+                show_hover_text("Probability an eater divides after eating a blue division pellet.");
             }
 
             if (ImGui::CollapsingHeader("Mutation tuning", ImGuiTreeNodeFlags_DefaultOpen)) {
