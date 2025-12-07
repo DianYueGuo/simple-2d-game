@@ -44,7 +44,7 @@ struct UiState {
     float linear_damping = 0.0f;
     float angular_damping = 0.0f;
     float sprinkle_rate_eater = 0.0f;
-    float sprinkle_rate_eatable = 0.0f;
+    float sprinkle_rate_eatable = 50.0f;
     float sprinkle_rate_toxic = 0.0f;
     bool initialized = false;
 };
