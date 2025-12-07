@@ -675,12 +675,11 @@ void Game::run_brain_updates(const b2WorldId& worldId, float timeStep) {
 
 void Game::cull_consumed() {
     std::vector<std::unique_ptr<EatableCircle>> spawned_cloud;
-    const EatableCircle* prev_selected = nullptr;
-    b2Vec2 prev_pos{0,0};
-    if (selected_index && *selected_index < circles.size()) {
-        prev_selected = circles[*selected_index].get();
-        prev_pos = prev_selected->getPosition();
-    }
+    const EatableCircle* prev_selected = (selected_index && *selected_index < circles.size())
+                                             ? circles[*selected_index].get()
+                                             : nullptr;
+    bool selected_was_removed = false;
+    const EaterCircle* selected_killer = nullptr;
 
     for (auto it = circles.begin(); it != circles.end(); ) {
         bool remove = false;
@@ -697,31 +696,22 @@ void Game::cull_consumed() {
         }
 
         if (remove) {
+            if (prev_selected && prev_selected == it->get()) {
+                selected_was_removed = true;
+                if (auto* eater_prev = dynamic_cast<EaterCircle*>(it->get())) {
+                    selected_killer = eater_prev->get_eaten_by();
+                }
+            }
             it = circles.erase(it);
         } else {
             ++it;
         }
     }
 
-    bool lost_selection = false;
-    if (prev_selected) {
+    if (selected_was_removed && follow_selected) {
+        set_selection_to_eater(selected_killer);
+    } else if (!selected_was_removed && prev_selected) {
         revalidate_selection(prev_selected);
-        if (!selected_index || *selected_index >= circles.size() || circles[*selected_index].get() != prev_selected) {
-            lost_selection = true;
-        }
-    }
-    if (lost_selection && follow_selected) {
-        const EaterCircle* fallback = nullptr;
-        if (const auto* eater_prev = dynamic_cast<const EaterCircle*>(prev_selected)) {
-            const EaterCircle* killer = eater_prev->get_eaten_by();
-            if (killer) {
-                fallback = killer;
-            }
-        }
-        if (!fallback) {
-            fallback = find_nearest_eater(prev_pos);
-        }
-        set_selection_to_eater(fallback);
     }
     recompute_max_generation();
     update_max_ages();
