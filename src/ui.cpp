@@ -119,7 +119,7 @@ void apply_preset(Preset preset, UiState& state, Game& game) {
             set_and_apply(state.division_pellet_divide_probability, 0.25f, [&](float v) { game.set_division_pellet_divide_probability(v); });
             break;
         case Preset::ToxicHeavy:
-            set_and_apply(state.time_scale, 1.2f, [&](float v) { game.set_time_scale(v); });
+            set_and_apply(state.time_scale, 1.0f, [&](float v) { game.set_time_scale(v); });
             set_and_apply(state.brain_updates_per_sim_second, 12.0f, [&](float v) { game.set_brain_updates_per_sim_second(v); });
             set_and_apply(state.boost_area, 0.08f, [&](float v) { game.set_boost_area(v); });
             set_and_apply(state.poison_death_probability, 0.7f, [&](float v) { game.set_poison_death_probability(v); });
