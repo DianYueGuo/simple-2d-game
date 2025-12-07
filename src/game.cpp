@@ -925,34 +925,36 @@ std::size_t Game::get_division_pellet_count() const {
 }
 
 void Game::adjust_cleanup_rates() {
-    auto compute_rate = [](std::size_t count, int max_allowed) {
-        if (max_allowed <= 0) return 100.0f;
-        if (count <= static_cast<std::size_t>(max_allowed)) return 0.0f;
-        float ratio = (static_cast<float>(count) - static_cast<float>(max_allowed)) / static_cast<float>(max_allowed);
-        float rate = ratio * 50.0f; // 50%/s when count is double the max
+    constexpr float PI = 3.14159f;
+    float area = PI * petri_radius * petri_radius;
+    float pellet_area = std::max(add_eatable_area, 1e-6f);
+
+    auto desired_count = [&](float density_target) {
+        float desired_area = std::max(0.0f, density_target) * area;
+        return desired_area / pellet_area;
+    };
+
+    auto compute_cleanup_rate = [&](std::size_t count, float desired) {
+        if (desired <= 0.0f) {
+            return count > 0 ? 100.0f : 0.0f;
+        }
+        if (count <= desired) return 0.0f;
+        float ratio = (static_cast<float>(count) - desired) / desired;
+        float rate = ratio * 50.0f; // 50%/s when double the desired
         return std::clamp(rate, 0.0f, 100.0f);
     };
 
-    cleanup_rate_food = compute_rate(count_pellets(false, false), max_food_pellets);
-    cleanup_rate_toxic = compute_rate(count_pellets(true, false), max_toxic_pellets);
-    cleanup_rate_division = compute_rate(count_pellets(false, true), max_division_pellets);
-
-    // Adjust sprinkle rates to converge to target densities.
-    constexpr float PI = 3.14159f;
-    float area = PI * petri_radius * petri_radius;
-    auto adjust_spawn = [&](bool toxic, bool division_boost, float density_target, float& sprinkle_rate_out, float /*cleanup_rate_current*/) {
-        float pellet_area = std::max(add_eatable_area, 1e-6f);
-        float desired_area = std::max(0.0f, density_target) * area;
-        float desired_count = desired_area / pellet_area;
+    auto adjust_spawn = [&](bool toxic, bool division_boost, float density_target, float& sprinkle_rate_out, float& cleanup_rate_out) {
+        float desired = desired_count(density_target);
         std::size_t count = count_pellets(toxic, division_boost);
-        float diff = desired_count - static_cast<float>(count);
+        float diff = desired - static_cast<float>(count);
         if (diff > 0.0f) {
             // Need to add
             sprinkle_rate_out = std::min(diff * 0.5f, 200.0f);
         } else {
-            // Let cleanup handle surplus
             sprinkle_rate_out = 0.0f;
         }
+        cleanup_rate_out = compute_cleanup_rate(count, desired);
     };
 
     adjust_spawn(false, false, food_pellet_density, sprinkle_rate_eatable, cleanup_rate_food);
