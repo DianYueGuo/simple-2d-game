@@ -460,7 +460,7 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
         }
 
         if (ImGui::BeginTabItem("Simulation")) {
-            if (ImGui::CollapsingHeader("Time & base sizes", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::CollapsingHeader("Simulation control", ImGuiTreeNodeFlags_DefaultOpen)) {
                 bool paused = game.is_paused();
                 if (ImGui::Checkbox("Pause simulation", &paused)) {
                     game.set_paused(paused);
@@ -476,6 +476,9 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                     game.set_brain_updates_per_sim_second(state.brain_updates_per_sim_second);
                 }
                 show_hover_text("How many times eater AI brains tick per simulated second.");
+            }
+
+            if (ImGui::CollapsingHeader("Base sizes", ImGuiTreeNodeFlags_DefaultOpen)) {
 
                 if (ImGui::SliderFloat("Minimum circle area", &state.minimum_area, 0.1f, 5.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
                     game.set_minimum_area(state.minimum_area);
