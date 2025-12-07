@@ -49,6 +49,7 @@ struct UiState {
     bool initialized = false;
     bool follow_selected = false;
     bool follow_oldest = false;
+    bool live_mutation_enabled = false;
 };
 
 void show_hover_text(const char* description) {
@@ -185,6 +186,7 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
         state.tick_remove_node_probability = game.get_tick_remove_node_probability();
         state.tick_add_connection_probability = game.get_tick_add_connection_probability();
         state.tick_remove_connection_probability = game.get_tick_remove_connection_probability();
+        state.live_mutation_enabled = game.get_live_mutation_enabled();
         state.init_add_node_probability = game.get_init_add_node_probability();
         state.init_remove_node_probability = game.get_init_remove_node_probability();
         state.init_add_connection_probability = game.get_init_add_connection_probability();
@@ -356,6 +358,11 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
             game.set_mutation_rounds(state.mutation_rounds);
 
             ImGui::SeparatorText("Live mutation probabilities");
+            if (ImGui::Checkbox("Enable live mutation", &state.live_mutation_enabled)) {
+                game.set_live_mutation_enabled(state.live_mutation_enabled);
+            }
+            show_hover_text("When off, no per-tick brain mutations happen. Off by default.");
+            ImGui::BeginDisabled(!state.live_mutation_enabled);
             ImGui::SliderFloat("Live add node %", &state.tick_add_node_probability, 0.0f, 1.0f, "%.2f");
             show_hover_text("Chance an eater adds a brain node each behavior tick.");
             ImGui::SliderFloat("Live remove node %", &state.tick_remove_node_probability, 0.0f, 1.0f, "%.2f");
@@ -368,6 +375,7 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
             game.set_tick_remove_node_probability(state.tick_remove_node_probability);
             game.set_tick_add_connection_probability(state.tick_add_connection_probability);
             game.set_tick_remove_connection_probability(state.tick_remove_connection_probability);
+            ImGui::EndDisabled();
 
             ImGui::SeparatorText("Initialization mutation");
             ImGui::SliderFloat("Init add node %", &state.init_add_node_probability, 0.0f, 1.0f, "%.2f");

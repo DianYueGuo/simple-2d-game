@@ -150,7 +150,7 @@ void EaterCircle::move_intelligently(const b2WorldId &worldId, Game &game, float
         }
     }
 
-    if (neat_innovations && neat_last_innov_id) {
+    if (game.get_live_mutation_enabled() && neat_innovations && neat_last_innov_id) {
         brain.mutate(
             neat_innovations,
             neat_last_innov_id,

@@ -70,6 +70,8 @@ public:
     float get_tick_add_connection_probability() const { return tick_add_connection_probability; }
     void set_tick_remove_connection_probability(float p) { tick_remove_connection_probability = std::clamp(p, 0.0f, 1.0f); }
     float get_tick_remove_connection_probability() const { return tick_remove_connection_probability; }
+    void set_live_mutation_enabled(bool enabled) { live_mutation_enabled = enabled; }
+    bool get_live_mutation_enabled() const { return live_mutation_enabled; }
     void set_init_add_node_probability(float p) { init_add_node_probability = std::clamp(p, 0.0f, 1.0f); }
     float get_init_add_node_probability() const { return init_add_node_probability; }
     void set_init_remove_node_probability(float p) { init_remove_node_probability = std::clamp(p, 0.0f, 1.0f); }
@@ -199,6 +201,7 @@ private:
     float tick_remove_node_probability = 0.0f;
     float tick_add_connection_probability = 0.0f;
     float tick_remove_connection_probability = 0.0f;
+    bool live_mutation_enabled = false;
     float init_add_node_probability = 0.1f;
     float init_remove_node_probability = 0.02f;
     float init_add_connection_probability = 0.15f;
