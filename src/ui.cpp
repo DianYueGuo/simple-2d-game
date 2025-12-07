@@ -467,14 +467,14 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
         }
 
         if (ImGui::BeginTabItem("Simulation")) {
-            if (ImGui::CollapsingHeader("Timing & brains", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::CollapsingHeader("Brain update rate", ImGuiTreeNodeFlags_DefaultOpen)) {
                 if (ImGui::SliderFloat("AI updates per sim second", &state.brain_updates_per_sim_second, 0.1f, 60.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
                     game.set_brain_updates_per_sim_second(state.brain_updates_per_sim_second);
                 }
                 show_hover_text("How many times eater AI brains tick per simulated second.");
             }
 
-            if (ImGui::CollapsingHeader("Sizes & spawn areas", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::CollapsingHeader("Sizes & costs", ImGuiTreeNodeFlags_DefaultOpen)) {
                 if (ImGui::SliderFloat("Minimum circle area", &state.minimum_area, 0.1f, 5.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
                     game.set_minimum_area(state.minimum_area);
                 }
@@ -495,7 +495,7 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 show_hover_text("Area an eater spends to dash forward; 0 means no pellet is left behind. Finer range.");
             }
 
-            if (ImGui::CollapsingHeader("Movement & boosts", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::CollapsingHeader("Movement & boosting", ImGuiTreeNodeFlags_DefaultOpen)) {
                 bool movement_changed = false;
                 movement_changed |= ImGui::SliderFloat("Circle density", &state.circle_density, 0.01f, 10.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
                 show_hover_text("Mass density for all circles; heavier circles resist movement more.");
@@ -526,7 +526,7 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 }
             }
 
-            if (ImGui::CollapsingHeader("Hazards & division", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::CollapsingHeader("Hazards & division outcomes", ImGuiTreeNodeFlags_DefaultOpen)) {
                 ImGui::SeparatorText("Hazards & failure");
                 if (ImGui::SliderFloat("Toxic death chance", &state.poison_death_probability, 0.0f, 1.0f, "%.2f")) {
                     game.set_poison_death_probability(state.poison_death_probability);
