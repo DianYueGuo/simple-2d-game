@@ -363,7 +363,7 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
     }
     show_hover_text("Multiplies the physics time step; lower values slow everything down.");
 
-    ImGui::SeparatorText("World");
+    ImGui::SeparatorText("Dish & view");
     if (ImGui::SliderFloat("Dish radius (m)", &state.petri_radius, 1.0f, 100.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
         game.set_petri_radius(state.petri_radius);
     }
