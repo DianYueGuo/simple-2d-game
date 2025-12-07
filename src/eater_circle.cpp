@@ -284,7 +284,8 @@ void EaterCircle::divide(const b2WorldId &worldId, Game& game) {
         new_circle_ptr->setAngle(angle + 3.14159f, worldId);
         new_circle_ptr->apply_forward_impulse();
         new_circle_ptr->update_color_from_brain();
-        new_circle_ptr->set_creation_time(game.get_sim_time());
+        // Keep the original creation age so lineage age persists across divisions.
+        new_circle_ptr->set_creation_time(get_creation_time());
         new_circle_ptr->set_last_division_time(game.get_sim_time());
     }
 
