@@ -86,9 +86,9 @@ private:
         std::size_t division_count_cached = 0;
     };
     struct MutationSettings {
-        float add_node_probability = 0.1f;
+        float add_node_probability = 0.03f;
         float remove_node_probability = 0.05f;
-        float add_connection_probability = 0.1f;
+        float add_connection_probability = 0.05f;
         float remove_connection_probability = 0.05f;
         float tick_add_node_probability = 0.0f;
         float tick_remove_node_probability = 0.0f;
@@ -102,11 +102,11 @@ private:
         float mutate_reactivate_connection_thresh = 0.25f;
         int mutate_add_node_iterations = 20;
         bool mutate_allow_recurrent = false;
-        float init_add_node_probability = 0.1f;
+        float init_add_node_probability = 0.0f;
         float init_remove_node_probability = 0.02f;
-        float init_add_connection_probability = 0.15f;
+        float init_add_connection_probability = 0.0f;
         float init_remove_connection_probability = 0.02f;
-        int init_mutation_rounds = 1;
+        int init_mutation_rounds = 0;
         int mutation_rounds = 1;
     };
     struct MovementSettings {
