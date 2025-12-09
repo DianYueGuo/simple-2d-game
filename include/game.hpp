@@ -9,12 +9,15 @@
 #include <box2d/box2d.h>
 
 #include "eatable_circle.hpp"
+#include "game/selection_manager.hpp"
+#include "game/spawner.hpp"
 #include <NEAT/genome.hpp>
 
 class EaterCircle;
 
 
 class Game {
+    friend class Spawner;
 public:
     enum class CursorMode {
         Add,
@@ -163,14 +166,14 @@ public:
     float get_last_fps() const { return fps_last; }
     float get_longest_life_since_creation() const { return max_age_since_creation; }
     float get_longest_life_since_division() const { return max_age_since_division; }
-    void set_follow_selected(bool v) { follow_selected = v; if (v) { follow_oldest_largest = false; follow_oldest_smallest = false; } }
-    bool get_follow_selected() const { return follow_selected; }
-    void set_follow_oldest_largest(bool v) { follow_oldest_largest = v; if (v) { follow_selected = false; follow_oldest_smallest = false; follow_oldest_middle = false; } }
-    bool get_follow_oldest_largest() const { return follow_oldest_largest; }
-    void set_follow_oldest_smallest(bool v) { follow_oldest_smallest = v; if (v) { follow_selected = false; follow_oldest_largest = false; follow_oldest_middle = false; } }
-    bool get_follow_oldest_smallest() const { return follow_oldest_smallest; }
-    void set_follow_oldest_middle(bool v) { follow_oldest_middle = v; if (v) { follow_selected = false; follow_oldest_largest = false; follow_oldest_smallest = false; } }
-    bool get_follow_oldest_middle() const { return follow_oldest_middle; }
+    void set_follow_selected(bool v);
+    bool get_follow_selected() const;
+    void set_follow_oldest_largest(bool v);
+    bool get_follow_oldest_largest() const;
+    void set_follow_oldest_smallest(bool v);
+    bool get_follow_oldest_smallest() const;
+    void set_follow_oldest_middle(bool v);
+    bool get_follow_oldest_middle() const;
     void accumulate_real_time(float dt);
     void frame_rendered();
     void update_follow_view(sf::View& view) const;
@@ -187,34 +190,18 @@ public:
     bool select_circle_at_world(const b2Vec2& pos);
     CursorMode get_cursor_mode() const { return cursor_mode; }
 private:
-    struct SelectionSnapshot {
-        const EatableCircle* circle = nullptr;
-        b2Vec2 position{0.0f, 0.0f};
-    };
-
     struct RemovalResult {
         bool should_remove = false;
         const EaterCircle* killer = nullptr;
     };
 
-    void spawn_eatable_cloud(const EaterCircle& eater, std::vector<std::unique_ptr<EatableCircle>>& out);
-    b2Vec2 random_point_in_petri() const;
-    void sprinkle_with_rate(float rate, AddType type, float dt);
-    void ensure_minimum_eaters();
-    void sprinkle_entities(float dt);
     sf::Vector2f pixel_to_world(sf::RenderWindow& window, const sf::Vector2i& pixel) const;
-    void try_add_circle_at(const sf::Vector2f& worldPos);
-    void begin_add_drag_if_applicable(const sf::Vector2f& worldPos);
-    void continue_add_drag(const sf::Vector2f& worldPos);
-    void reset_add_drag_state();
     void start_view_drag(const sf::Event::MouseButtonPressed& e, bool is_right_button);
     void pan_view(sf::RenderWindow& window, const sf::Event::MouseMoved& e);
     void update_eaters(const b2WorldId& worldId, float dt);
     void run_brain_updates(const b2WorldId& worldId, float timeStep);
     void cull_consumed();
     void remove_stopped_boost_particles();
-    std::unique_ptr<EaterCircle> create_eater_at(const b2Vec2& pos);
-    std::unique_ptr<EatableCircle> create_eatable_at(const b2Vec2& pos, bool toxic, bool division_boost = false) const;
     void apply_impulse_magnitudes_to_circles();
     void apply_damping_to_circles();
     void handle_mouse_press(sf::RenderWindow& window, const sf::Event::MouseButtonPressed& e);
@@ -222,12 +209,9 @@ private:
     void handle_mouse_move(sf::RenderWindow& window, const sf::Event::MouseMoved& e);
     void handle_key_press(sf::RenderWindow& window, const sf::Event::KeyPressed& e);
     void update_max_ages();
-    void revalidate_selection(const EatableCircle* previously_selected);
     void adjust_cleanup_rates();
     std::size_t count_pellets(bool toxic, bool division_boost) const;
     void erase_indices_descending(std::vector<std::size_t>& indices);
-    SelectionSnapshot capture_selection_state() const;
-    void handle_selection_after_removal(const SelectionSnapshot& snapshot, bool was_removed, const EaterCircle* preferred_fallback, const b2Vec2& fallback_position);
     void refresh_generation_and_age();
     RemovalResult evaluate_circle_removal(EatableCircle& circle, std::vector<std::unique_ptr<EatableCircle>>& spawned_cloud);
 
@@ -244,10 +228,6 @@ private:
     float minimum_area = 1.0f;
     CursorMode cursor_mode = CursorMode::Add;
     AddType add_type = AddType::Eater;
-    bool add_dragging = false;
-    std::optional<sf::Vector2f> last_add_world_pos;
-    std::optional<sf::Vector2f> last_drag_world_pos;
-    float add_drag_distance = 0.0f;
     float add_eatable_area = 0.3f;
     float boost_area = 0.003f;
     float poison_death_probability = 1.0f;
@@ -306,16 +286,13 @@ private:
     float angular_impulse_magnitude = 1.0f;
     float linear_damping = 0.5f;
     float angular_damping = 0.5f;
-    std::optional<std::size_t> selected_index;
-    bool paused = false;
     float boost_particle_impulse_fraction = 0.003f;
     float boost_particle_linear_damping = 3.0f;
     float max_age_since_creation = 0.0f;
     float max_age_since_division = 0.0f;
-    bool follow_selected = false;
-    bool follow_oldest_largest = false;
-    bool follow_oldest_smallest = false;
-    bool follow_oldest_middle = false;
+    SelectionManager selection;
+    Spawner spawner;
+    bool paused = false;
 };
 
 #endif

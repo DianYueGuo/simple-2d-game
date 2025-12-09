@@ -1,6 +1,4 @@
-#include <iostream>
 #include <cmath>
-#include <cstdlib>
 #include <algorithm>
 #include <limits>
 #include <numeric>
@@ -10,14 +8,6 @@
 #include "eater_circle.hpp"
 
 namespace {
-constexpr float PI = 3.14159f;
-inline float random_unit() {
-    return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
-}
-inline float radius_from_area(float area) {
-    return std::sqrt(std::max(area, 0.0f) / PI);
-}
-
 CirclePhysics* circle_from_shape(const b2ShapeId& shapeId) {
     return static_cast<CirclePhysics*>(b2Shape_GetUserData(shapeId));
 }
@@ -42,7 +32,9 @@ void handle_sensor_end_touch(const b2SensorEndTouchEvent& endTouch) {
 }
 } // namespace
 
-Game::Game() {
+Game::Game()
+    : selection(circles, sim_time_accum),
+      spawner(*this) {
     b2WorldDef worldDef = b2DefaultWorldDef();
     worldDef.gravity = b2Vec2{0.0f, 0.0f};
     worldId = b2CreateWorld(&worldDef);
@@ -81,7 +73,7 @@ void Game::process_game_logic() {
     process_touch_events(worldId);
 
     brain_time_accumulator += timeStep;
-    sprinkle_entities(timeStep);
+    spawner.sprinkle_entities(timeStep);
     update_eaters(worldId, timeStep);
     run_brain_updates(worldId, timeStep);
     adjust_cleanup_rates();
@@ -152,73 +144,6 @@ sf::Vector2f Game::pixel_to_world(sf::RenderWindow& window, const sf::Vector2i& 
     return viewPos;
 }
 
-void Game::try_add_circle_at(const sf::Vector2f& worldPos) {
-    switch (add_type) {
-        case AddType::Eater:
-            if (auto circle = create_eater_at({worldPos.x, worldPos.y})) {
-                update_max_generation_from_circle(circle.get());
-                circles.push_back(std::move(circle));
-            }
-            break;
-        case AddType::Eatable:
-        case AddType::ToxicEatable:
-        case AddType::DivisionEatable:
-            circles.push_back(create_eatable_at({worldPos.x, worldPos.y}, add_type == AddType::ToxicEatable, add_type == AddType::DivisionEatable));
-            break;
-        default:
-            break;
-    }
-}
-
-void Game::begin_add_drag_if_applicable(const sf::Vector2f& worldPos) {
-    if (add_type == AddType::Eater) {
-        reset_add_drag_state();
-        return;
-    }
-    add_dragging = true;
-    last_add_world_pos = worldPos;
-    last_drag_world_pos = worldPos;
-    add_drag_distance = 0.0f;
-}
-
-void Game::continue_add_drag(const sf::Vector2f& worldPos) {
-    if (!add_dragging || cursor_mode != CursorMode::Add) {
-        return;
-    }
-
-    if (!last_drag_world_pos) {
-        last_drag_world_pos = worldPos;
-    }
-
-    float dx_move = worldPos.x - last_drag_world_pos->x;
-    float dy_move = worldPos.y - last_drag_world_pos->y;
-    add_drag_distance += std::sqrt(dx_move * dx_move + dy_move * dy_move);
-    last_drag_world_pos = worldPos;
-
-    const float min_spacing = radius_from_area(add_eatable_area) * 2.0f;
-
-    if (add_drag_distance >= min_spacing) {
-        switch (add_type) {
-            case AddType::Eater:
-                break;
-            case AddType::Eatable:
-            case AddType::ToxicEatable:
-            case AddType::DivisionEatable:
-                circles.push_back(create_eatable_at({worldPos.x, worldPos.y}, add_type == AddType::ToxicEatable, true));
-                last_add_world_pos = worldPos;
-                break;
-        }
-        add_drag_distance = 0.0f;
-    }
-}
-
-void Game::reset_add_drag_state() {
-    add_dragging = false;
-    last_add_world_pos.reset();
-    last_drag_world_pos.reset();
-    add_drag_distance = 0.0f;
-}
-
 void Game::start_view_drag(const sf::Event::MouseButtonPressed& e, bool is_right_button) {
     dragging = true;
     right_dragging = is_right_button;
@@ -253,8 +178,8 @@ void Game::handle_mouse_press(sf::RenderWindow& window, const sf::Event::MouseBu
         sf::Vector2f worldPos = pixel_to_world(window, e.position);
 
         if (cursor_mode == CursorMode::Add) {
-            try_add_circle_at(worldPos);
-            begin_add_drag_if_applicable(worldPos);
+            spawner.try_add_circle_at(worldPos);
+            spawner.begin_add_drag_if_applicable(worldPos);
         } else if (cursor_mode == CursorMode::Select) {
             select_circle_at_world({worldPos.x, worldPos.y});
         }
@@ -269,12 +194,12 @@ void Game::handle_mouse_release(const sf::Event::MouseButtonReleased& e) {
         right_dragging = false;
     }
     if (e.button == sf::Mouse::Button::Left) {
-        reset_add_drag_state();
+        spawner.reset_add_drag_state();
     }
 }
 
 void Game::handle_mouse_move(sf::RenderWindow& window, const sf::Event::MouseMoved& e) {
-    continue_add_drag(pixel_to_world(window, {e.position.x, e.position.y}));
+    spawner.continue_add_drag(pixel_to_world(window, {e.position.x, e.position.y}));
     pan_view(window, e);
 }
 
@@ -327,145 +252,75 @@ std::size_t Game::get_eater_count() const {
 }
 
 void Game::clear_selection() {
-    selected_index.reset();
+    selection.clear();
 }
 
 bool Game::select_circle_at_world(const b2Vec2& pos) {
-    std::optional<std::size_t> hit;
-    float best_dist2 = std::numeric_limits<float>::max();
-    for (std::size_t i = 0; i < circles.size(); ++i) {
-        const auto& c = circles[i];
-        b2Vec2 p = c->getPosition();
-        float dx = p.x - pos.x;
-        float dy = p.y - pos.y;
-        float dist2 = dx * dx + dy * dy;
-        float r = c->getRadius();
-        if (dist2 <= r * r && dist2 < best_dist2) {
-            hit = i;
-            best_dist2 = dist2;
-        }
-    }
-    selected_index = hit;
-    return selected_index.has_value();
+    return selection.select_circle_at_world(pos);
 }
 
 const neat::Genome* Game::get_selected_brain() const {
-    if (!selected_index || *selected_index >= circles.size()) {
-        return nullptr;
-    }
-    auto* base = circles[*selected_index].get();
-    if (base && base->get_kind() == CircleKind::Eater) {
-        auto* eater = static_cast<EaterCircle*>(base);
-        return &eater->get_brain();
-    }
-    return nullptr;
+    return selection.get_selected_brain();
 }
 
 const EaterCircle* Game::get_selected_eater() const {
-    if (!selected_index || *selected_index >= circles.size()) {
-        return nullptr;
-    }
-    auto* base = circles[*selected_index].get();
-    if (base && base->get_kind() == CircleKind::Eater) {
-        return static_cast<EaterCircle*>(base);
-    }
-    return nullptr;
+    return selection.get_selected_eater();
 }
 
 const EaterCircle* Game::get_oldest_largest_eater() const {
-    const EaterCircle* best = nullptr;
-    float best_age = -1.0f;
-    float best_area = -1.0f;
-    for (const auto& c : circles) {
-        if (c && c->get_kind() == CircleKind::Eater) {
-            auto* eater = static_cast<const EaterCircle*>(c.get());
-            float age = std::max(0.0f, sim_time_accum - eater->get_creation_time());
-            float area = eater->getArea();
-            if (age > best_age || (std::abs(age - best_age) < 1e-6f && area > best_area)) {
-                best = eater;
-                best_age = age;
-                best_area = area;
-            }
-        }
-    }
-    return best;
+    return selection.get_oldest_largest_eater();
 }
 
 const EaterCircle* Game::get_oldest_smallest_eater() const {
-    const EaterCircle* best = nullptr;
-    float best_age = -1.0f;
-    float best_area = std::numeric_limits<float>::max();
-    constexpr float eps = 1e-6f;
-    for (const auto& c : circles) {
-        if (c && c->get_kind() == CircleKind::Eater) {
-            auto* eater = static_cast<const EaterCircle*>(c.get());
-            float age = std::max(0.0f, sim_time_accum - eater->get_creation_time());
-            float area = eater->getArea();
-            if (age > best_age + eps || (std::abs(age - best_age) <= eps && area < best_area)) {
-                best_age = age;
-                best_area = area;
-                best = eater;
-            }
-        }
-    }
-    return best;
+    return selection.get_oldest_smallest_eater();
 }
 
 const EaterCircle* Game::get_oldest_middle_eater() const {
-    std::vector<std::pair<float, const EaterCircle*>> candidates;
-    float best_age = -1.0f;
-    constexpr float eps = 1e-6f;
-    for (const auto& c : circles) {
-        if (c && c->get_kind() == CircleKind::Eater) {
-            auto* eater = static_cast<const EaterCircle*>(c.get());
-            float age = std::max(0.0f, sim_time_accum - eater->get_creation_time());
-            float area = eater->getArea();
-            if (age > best_age + eps) {
-                best_age = age;
-                candidates.clear();
-                candidates.emplace_back(area, eater);
-            } else if (std::abs(age - best_age) <= eps) {
-                candidates.emplace_back(area, eater);
-            }
-        }
-    }
-    if (candidates.empty()) return nullptr;
-    std::sort(candidates.begin(), candidates.end(), [](auto& a, auto& b) { return a.first < b.first; });
-    return candidates[candidates.size() / 2].second;
+    return selection.get_oldest_middle_eater();
 }
 
 const EaterCircle* Game::get_follow_target_eater() const {
-    if (follow_selected) {
-        if (const auto* sel = get_selected_eater()) return sel;
-    }
-    if (follow_oldest_largest) {
-        if (const auto* e = get_oldest_largest_eater()) return e;
-    }
-    if (follow_oldest_smallest) {
-        if (const auto* e = get_oldest_smallest_eater()) return e;
-    }
-    if (follow_oldest_middle) {
-        if (const auto* e = get_oldest_middle_eater()) return e;
-    }
-    return nullptr;
+    return selection.get_follow_target_eater();
 }
 
 int Game::get_selected_generation() const {
-    if (!selected_index || *selected_index >= circles.size()) {
-        return -1;
-    }
-    auto* base = circles[*selected_index].get();
-    if (base && base->get_kind() == CircleKind::Eater) {
-        return static_cast<EaterCircle*>(base)->get_generation();
-    }
-    return -1;
+    return selection.get_selected_generation();
+}
+
+void Game::set_follow_selected(bool v) {
+    selection.set_follow_selected(v);
+}
+
+bool Game::get_follow_selected() const {
+    return selection.get_follow_selected();
+}
+
+void Game::set_follow_oldest_largest(bool v) {
+    selection.set_follow_oldest_largest(v);
+}
+
+bool Game::get_follow_oldest_largest() const {
+    return selection.get_follow_oldest_largest();
+}
+
+void Game::set_follow_oldest_smallest(bool v) {
+    selection.set_follow_oldest_smallest(v);
+}
+
+bool Game::get_follow_oldest_smallest() const {
+    return selection.get_follow_oldest_smallest();
+}
+
+void Game::set_follow_oldest_middle(bool v) {
+    selection.set_follow_oldest_middle(v);
+}
+
+bool Game::get_follow_oldest_middle() const {
+    return selection.get_follow_oldest_middle();
 }
 
 void Game::update_follow_view(sf::View& view) const {
-    if (const EaterCircle* eater = get_follow_target_eater()) {
-        b2Vec2 p = eater->getPosition();
-        view.setCenter({p.x, p.y});
-    }
+    selection.update_follow_view(view);
 }
 
 void Game::update_max_generation_from_circle(const EatableCircle* circle) {
@@ -510,158 +365,12 @@ void Game::update_max_ages() {
     max_age_since_division = division_max;
 }
 
-void Game::revalidate_selection(const EatableCircle* previously_selected) {
-    if (!previously_selected) {
-        return;
-    }
-    selected_index.reset();
-    for (std::size_t i = 0; i < circles.size(); ++i) {
-        if (circles[i].get() == previously_selected) {
-            selected_index = i;
-            break;
-        }
-    }
-}
-
 void Game::set_selection_to_eater(const EaterCircle* eater) {
-    if (!eater) {
-        selected_index.reset();
-        return;
-    }
-    for (std::size_t i = 0; i < circles.size(); ++i) {
-        if (circles[i].get() == eater) {
-            selected_index = i;
-            return;
-        }
-    }
-    selected_index.reset();
+    selection.set_selection_to_eater(eater);
 }
 
 const EaterCircle* Game::find_nearest_eater(const b2Vec2& pos) const {
-    const EaterCircle* best = nullptr;
-    float best_dist2 = std::numeric_limits<float>::max();
-    for (const auto& c : circles) {
-        if (c && c->get_kind() == CircleKind::Eater) {
-            auto* eater = static_cast<const EaterCircle*>(c.get());
-            b2Vec2 p = eater->getPosition();
-            float dx = p.x - pos.x;
-            float dy = p.y - pos.y;
-            float d2 = dx * dx + dy * dy;
-            if (d2 < best_dist2) {
-                best_dist2 = d2;
-                best = eater;
-            }
-        }
-    }
-    return best;
-}
-
-void Game::sprinkle_with_rate(float rate, AddType type, float dt) {
-    if (rate <= 0.0f || dt <= 0.0f || petri_radius <= 0.0f) {
-        return;
-    }
-
-    float expected = rate * dt;
-    int guaranteed = static_cast<int>(expected);
-    float remainder = expected - static_cast<float>(guaranteed);
-
-    auto spawn_once = [&]() {
-        b2Vec2 pos = random_point_in_petri();
-        switch (type) {
-            case AddType::Eater:
-                if (auto eater = create_eater_at(pos)) {
-                    update_max_generation_from_circle(eater.get());
-                    circles.push_back(std::move(eater));
-                }
-                break;
-            case AddType::Eatable:
-                circles.push_back(create_eatable_at(pos, false));
-                break;
-            case AddType::ToxicEatable:
-                circles.push_back(create_eatable_at(pos, true));
-                break;
-            case AddType::DivisionEatable:
-                circles.push_back(create_eatable_at(pos, false, true));
-                break;
-        }
-    };
-
-    for (int i = 0; i < guaranteed; ++i) {
-        spawn_once();
-    }
-
-    float roll = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
-    if (roll < remainder) {
-        spawn_once();
-    }
-}
-
-void Game::ensure_minimum_eaters() {
-    int eater_count = static_cast<int>(get_eater_count());
-    if (eater_count >= minimum_eater_count) {
-        return;
-    }
-
-    int to_spawn = minimum_eater_count - eater_count;
-    for (int i = 0; i < to_spawn; ++i) {
-        if (auto eater = create_eater_at(random_point_in_petri())) {
-            update_max_generation_from_circle(eater.get());
-            circles.push_back(std::move(eater));
-        }
-    }
-}
-
-b2Vec2 Game::random_point_in_petri() const {
-    float angle = random_unit() * 2.0f * PI;
-    float radius = petri_radius * std::sqrt(random_unit());
-    return b2Vec2{radius * std::cos(angle), radius * std::sin(angle)};
-}
-
-std::unique_ptr<EaterCircle> Game::create_eater_at(const b2Vec2& pos) {
-    float base_area = std::max(average_eater_area, 0.0001f);
-    float varied_area = base_area * (0.5f + random_unit()); // random scale around the average
-    float radius = radius_from_area(varied_area);
-    float angle = random_unit() * 2.0f * PI;
-    const neat::Genome* base_brain = get_max_generation_brain();
-    auto circle = std::make_unique<EaterCircle>(
-        worldId,
-        pos.x,
-        pos.y,
-        radius,
-        circle_density,
-        angle,
-        0,
-        init_mutation_rounds,
-        init_add_node_probability,
-        init_remove_node_probability,
-        init_add_connection_probability,
-        init_remove_connection_probability,
-        base_brain,
-        &neat_innovations,
-        &neat_last_innov_id,
-        this);
-    circle->set_creation_time(sim_time_accum);
-    circle->set_last_division_time(sim_time_accum);
-    circle->set_impulse_magnitudes(linear_impulse_magnitude, angular_impulse_magnitude);
-    circle->set_linear_damping(linear_damping, worldId);
-    circle->set_angular_damping(angular_damping, worldId);
-    return circle;
-}
-
-std::unique_ptr<EatableCircle> Game::create_eatable_at(const b2Vec2& pos, bool toxic, bool division_boost) const {
-    float radius = radius_from_area(add_eatable_area);
-    auto circle = std::make_unique<EatableCircle>(worldId, pos.x, pos.y, radius, circle_density, toxic, division_boost, 0.0f);
-    circle->set_impulse_magnitudes(linear_impulse_magnitude, angular_impulse_magnitude);
-    circle->set_linear_damping(linear_damping, worldId);
-    circle->set_angular_damping(angular_damping, worldId);
-    return circle;
-}
-
-void Game::sprinkle_entities(float dt) {
-    ensure_minimum_eaters();
-    sprinkle_with_rate(sprinkle_rate_eatable, AddType::Eatable, dt);
-    sprinkle_with_rate(sprinkle_rate_toxic, AddType::ToxicEatable, dt);
-    sprinkle_with_rate(sprinkle_rate_division, AddType::DivisionEatable, dt);
+    return selection.find_nearest_eater(pos);
 }
 
 void Game::update_eaters(const b2WorldId& worldId, float dt) {
@@ -690,27 +399,6 @@ void Game::run_brain_updates(const b2WorldId& worldId, float timeStep) {
     }
 }
 
-Game::SelectionSnapshot Game::capture_selection_state() const {
-    SelectionSnapshot snapshot{};
-    if (selected_index && *selected_index < circles.size()) {
-        snapshot.circle = circles[*selected_index].get();
-        snapshot.position = snapshot.circle->getPosition();
-    }
-    return snapshot;
-}
-
-void Game::handle_selection_after_removal(const SelectionSnapshot& snapshot, bool was_removed, const EaterCircle* preferred_fallback, const b2Vec2& fallback_position) {
-    if (was_removed && follow_selected) {
-        const EaterCircle* fallback = preferred_fallback;
-        if (!fallback) {
-            fallback = find_nearest_eater(fallback_position);
-        }
-        set_selection_to_eater(fallback);
-    } else if (!was_removed && snapshot.circle) {
-        revalidate_selection(snapshot.circle);
-    }
-}
-
 void Game::refresh_generation_and_age() {
     recompute_max_generation();
     update_max_ages();
@@ -721,7 +409,7 @@ Game::RemovalResult Game::evaluate_circle_removal(EatableCircle& circle, std::ve
     if (circle.get_kind() == CircleKind::Eater) {
         auto* eater = static_cast<EaterCircle*>(&circle);
         if (eater->is_poisoned()) {
-            spawn_eatable_cloud(*eater, spawned_cloud);
+            spawner.spawn_eatable_cloud(*eater, spawned_cloud);
             result.should_remove = true;
             result.killer = eater->get_eaten_by();
         } else if (eater->is_eaten()) {
@@ -736,14 +424,14 @@ Game::RemovalResult Game::evaluate_circle_removal(EatableCircle& circle, std::ve
 
 void Game::cull_consumed() {
     std::vector<std::unique_ptr<EatableCircle>> spawned_cloud;
-    SelectionSnapshot selection = capture_selection_state();
+    auto selection_snapshot = selection.capture_snapshot();
     bool selected_was_removed = false;
     const EaterCircle* selected_killer = nullptr;
 
     for (auto it = circles.begin(); it != circles.end(); ) {
         RemovalResult removal = evaluate_circle_removal(**it, spawned_cloud);
         if (removal.should_remove) {
-            if (selection.circle && selection.circle == it->get()) {
+            if (selection_snapshot.circle && selection_snapshot.circle == it->get()) {
                 selected_was_removed = true;
                 selected_killer = removal.killer;
             }
@@ -753,7 +441,7 @@ void Game::cull_consumed() {
         }
     }
 
-    handle_selection_after_removal(selection, selected_was_removed, selected_killer, selection.position);
+    selection.handle_selection_after_removal(selection_snapshot, selected_was_removed, selected_killer, selection_snapshot.position);
     refresh_generation_and_age();
 
     for (auto& c : spawned_cloud) {
@@ -766,7 +454,7 @@ void Game::erase_indices_descending(std::vector<std::size_t>& indices) {
         return;
     }
 
-    SelectionSnapshot selection = capture_selection_state();
+    auto snapshot = selection.capture_snapshot();
 
     std::sort(indices.begin(), indices.end(), std::greater<std::size_t>());
     indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
@@ -777,34 +465,8 @@ void Game::erase_indices_descending(std::vector<std::size_t>& indices) {
         }
     }
 
-    revalidate_selection(selection.circle);
+    selection.revalidate_selection(snapshot.circle);
     refresh_generation_and_age();
-}
-
-void Game::spawn_eatable_cloud(const EaterCircle& eater, std::vector<std::unique_ptr<EatableCircle>>& out) {
-    float eater_radius = eater.getRadius();
-    float total_area = eater.getArea();
-    if (minimum_area <= 0.0f || total_area <= 0.0f) {
-        return;
-    }
-
-    float chunk_area = std::min(minimum_area, total_area);
-    float remaining_area = total_area * (std::clamp(eater_cloud_area_percentage, 0.0f, 100.0f) / 100.0f);
-
-    while (remaining_area > 0.0f) {
-        float use_area = std::min(chunk_area, remaining_area);
-        float piece_radius = radius_from_area(use_area);
-        float max_offset = std::max(0.0f, eater_radius - piece_radius);
-
-        float angle = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX) * 2.0f * PI;
-        float dist = max_offset * std::sqrt(random_unit());
-        b2Vec2 pos = eater.getPosition();
-        b2Vec2 piece_pos = {pos.x + std::cos(angle) * dist, pos.y + std::sin(angle) * dist};
-
-        out.push_back(create_eatable_at(piece_pos, false));
-
-        remaining_area -= use_area;
-    }
 }
 
 void Game::remove_outside_petri() {
@@ -812,7 +474,7 @@ void Game::remove_outside_petri() {
         return;
     }
 
-    SelectionSnapshot selection = capture_selection_state();
+    auto snapshot = selection.capture_snapshot();
 
     bool selected_removed = false;
     circles.erase(
@@ -823,14 +485,14 @@ void Game::remove_outside_petri() {
                 b2Vec2 pos = circle->getPosition();
                 float distance = std::sqrt(pos.x * pos.x + pos.y * pos.y);
                 bool out = distance + circle->getRadius() > petri_radius;
-                if (out && selection.circle && circle.get() == selection.circle) {
+                if (out && snapshot.circle && circle.get() == snapshot.circle) {
                     selected_removed = true;
                 }
                 return out;
             }),
         circles.end());
 
-    handle_selection_after_removal(selection, selected_removed, nullptr, selection.position);
+    selection.handle_selection_after_removal(snapshot, selected_removed, nullptr, snapshot.position);
     refresh_generation_and_age();
 }
 
@@ -957,7 +619,7 @@ void Game::adjust_cleanup_rates() {
 
 void Game::remove_stopped_boost_particles() {
     constexpr float vel_epsilon = 1e-3f;
-    SelectionSnapshot selection = capture_selection_state();
+    auto snapshot = selection.capture_snapshot();
     circles.erase(
         std::remove_if(
             circles.begin(),
@@ -970,7 +632,7 @@ void Game::remove_stopped_boost_particles() {
                 return (std::fabs(v.x) <= vel_epsilon && std::fabs(v.y) <= vel_epsilon);
             }),
         circles.end());
-    handle_selection_after_removal(selection, false, nullptr, selection.position);
+    selection.handle_selection_after_removal(snapshot, false, nullptr, snapshot.position);
     refresh_generation_and_age();
 }
 

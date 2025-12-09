@@ -88,6 +88,8 @@ add_executable(
     src/eatable_circle.cpp
     src/eater_circle.cpp
     src/ui.cpp
+    src/game/spawner.cpp
+    src/game/selection_manager.cpp
 )
 target_include_directories(${APP_TARGET} PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(${APP_TARGET} PRIVATE SFML::Graphics SFML::Audio SFML::Network)
