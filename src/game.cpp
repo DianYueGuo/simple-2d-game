@@ -33,7 +33,7 @@ void handle_sensor_end_touch(const b2SensorEndTouchEvent& endTouch) {
 } // namespace
 
 Game::Game()
-    : selection(circles, sim_time_accum),
+    : selection(circles, timing.sim_time_accum),
       spawner(*this) {
     b2WorldDef worldDef = b2DefaultWorldDef();
     worldDef.gravity = b2Vec2{0.0f, 0.0f};
@@ -61,39 +61,39 @@ void process_touch_events(const b2WorldId& worldId) {
 
 void Game::process_game_logic() {
     if (paused) {
-        last_sim_dt = 0.0f;
+        timing.last_sim_dt = 0.0f;
         update_actual_sim_speed();
         return;
     }
 
-    float timeStep = (1.0f / 60.0f) * time_scale;
+    float timeStep = (1.0f / 60.0f) * timing.time_scale;
     int subStepCount = 4;
     b2World_Step(worldId, timeStep, subStepCount);
-    sim_time_accum += timeStep;
-    last_sim_dt = timeStep;
+    timing.sim_time_accum += timeStep;
+    timing.last_sim_dt = timeStep;
     update_actual_sim_speed();
     // real_time_accum should be updated by caller using frame delta; leave as is here.
 
     process_touch_events(worldId);
 
-    brain_time_accumulator += timeStep;
+    brain.time_accumulator += timeStep;
     spawner.sprinkle_entities(timeStep);
     update_creatures(worldId, timeStep);
     run_brain_updates(worldId, timeStep);
     adjust_cleanup_rates();
     // continuous pellet cleanup by rate (percent per second)
-    if (cleanup_rate_food > 0.0f) {
-        remove_percentage_pellets(cleanup_rate_food * timeStep, false, false);
+    if (pellets.cleanup_rate_food > 0.0f) {
+        remove_percentage_pellets(pellets.cleanup_rate_food * timeStep, false, false);
     }
-    if (cleanup_rate_toxic > 0.0f) {
-        remove_percentage_pellets(cleanup_rate_toxic * timeStep, true, false);
+    if (pellets.cleanup_rate_toxic > 0.0f) {
+        remove_percentage_pellets(pellets.cleanup_rate_toxic * timeStep, true, false);
     }
-    if (cleanup_rate_division > 0.0f) {
-        remove_percentage_pellets(cleanup_rate_division * timeStep, false, true);
+    if (pellets.cleanup_rate_division > 0.0f) {
+        remove_percentage_pellets(pellets.cleanup_rate_division * timeStep, false, true);
     }
     cull_consumed();
     remove_stopped_boost_particles();
-    if (auto_remove_outside) {
+    if (dish.auto_remove_outside) {
         remove_outside_petri();
     }
     update_max_ages();
@@ -101,8 +101,8 @@ void Game::process_game_logic() {
 
 void Game::draw(sf::RenderWindow& window) const {
     // Draw petri dish boundary
-    sf::CircleShape boundary(petri_radius);
-    boundary.setOrigin({petri_radius, petri_radius});
+    sf::CircleShape boundary(dish.radius);
+    boundary.setOrigin({dish.radius, dish.radius});
     boundary.setPosition({0.0f, 0.0f});
     boundary.setOutlineColor(sf::Color::White);
     boundary.setOutlineThickness(0.2f);
@@ -149,13 +149,13 @@ sf::Vector2f Game::pixel_to_world(sf::RenderWindow& window, const sf::Vector2i& 
 }
 
 void Game::start_view_drag(const sf::Event::MouseButtonPressed& e, bool is_right_button) {
-    dragging = true;
-    right_dragging = is_right_button;
-    last_drag_pixels = e.position;
+    view_drag.dragging = true;
+    view_drag.right_dragging = is_right_button;
+    view_drag.last_drag_pixels = e.position;
 }
 
 void Game::pan_view(sf::RenderWindow& window, const sf::Event::MouseMoved& e) {
-    if (!dragging) {
+    if (!view_drag.dragging) {
         return;
     }
 
@@ -166,7 +166,7 @@ void Game::pan_view(sf::RenderWindow& window, const sf::Event::MouseMoved& e) {
     };
 
     sf::Vector2i current_pixels = e.position;
-    sf::Vector2i delta_pixels = last_drag_pixels - current_pixels;
+    sf::Vector2i delta_pixels = view_drag.last_drag_pixels - current_pixels;
     sf::Vector2f delta_world = {
         static_cast<float>(delta_pixels.x) * pixels_to_world.x,
         static_cast<float>(delta_pixels.y) * pixels_to_world.y
@@ -174,17 +174,17 @@ void Game::pan_view(sf::RenderWindow& window, const sf::Event::MouseMoved& e) {
 
     view.move(delta_world);
     window.setView(view);
-    last_drag_pixels = current_pixels;
+    view_drag.last_drag_pixels = current_pixels;
 }
 
 void Game::handle_mouse_press(sf::RenderWindow& window, const sf::Event::MouseButtonPressed& e) {
     if (e.button == sf::Mouse::Button::Left) {
         sf::Vector2f worldPos = pixel_to_world(window, e.position);
 
-        if (cursor_mode == CursorMode::Add) {
+        if (cursor.mode == CursorMode::Add) {
             spawner.spawn_selected_type_at(worldPos);
             spawner.begin_add_drag_if_applicable(worldPos);
-        } else if (cursor_mode == CursorMode::Select) {
+        } else if (cursor.mode == CursorMode::Select) {
             select_circle_at_world({worldPos.x, worldPos.y});
         }
     } else if (e.button == sf::Mouse::Button::Right) {
@@ -194,8 +194,8 @@ void Game::handle_mouse_press(sf::RenderWindow& window, const sf::Event::MouseBu
 
 void Game::handle_mouse_release(const sf::Event::MouseButtonReleased& e) {
     if (e.button == sf::Mouse::Button::Right) {
-        dragging = false;
-        right_dragging = false;
+        view_drag.dragging = false;
+        view_drag.right_dragging = false;
     }
     if (e.button == sf::Mouse::Button::Left) {
         spawner.reset_add_drag_state();
@@ -331,9 +331,9 @@ void Game::update_follow_view(sf::View& view) const {
 void Game::update_max_generation_from_circle(const EatableCircle* circle) {
     if (circle && circle->get_kind() == CircleKind::Creature) {
         auto* creature = static_cast<const CreatureCircle*>(circle);
-        if (creature->get_generation() > max_generation) {
-            max_generation = creature->get_generation();
-            max_generation_brain = creature->get_brain();
+        if (creature->get_generation() > generation.max_generation) {
+            generation.max_generation = creature->get_generation();
+            generation.brain = creature->get_brain();
         }
     }
 }
@@ -350,8 +350,8 @@ void Game::recompute_max_generation() {
             }
         }
     }
-    max_generation = new_max;
-    max_generation_brain = std::move(new_brain);
+    generation.max_generation = new_max;
+    generation.brain = std::move(new_brain);
 }
 
 void Game::update_max_ages() {
@@ -360,14 +360,14 @@ void Game::update_max_ages() {
     for (const auto& circle : circles) {
         if (circle && circle->get_kind() == CircleKind::Creature) {
             auto* creature = static_cast<const CreatureCircle*>(circle.get());
-            float age_creation = std::max(0.0f, sim_time_accum - creature->get_creation_time());
-            float age_division = std::max(0.0f, sim_time_accum - creature->get_last_division_time());
+            float age_creation = std::max(0.0f, timing.sim_time_accum - creature->get_creation_time());
+            float age_division = std::max(0.0f, timing.sim_time_accum - creature->get_last_division_time());
             if (age_creation > creation_max) creation_max = age_creation;
             if (age_division > division_max) division_max = age_division;
         }
     }
-    max_age_since_creation = creation_max;
-    max_age_since_division = division_max;
+    age.max_age_since_creation = creation_max;
+    age.max_age_since_division = division_max;
 }
 
 void Game::set_selection_to_creature(const CreatureCircle* creature) {
@@ -382,25 +382,25 @@ void Game::update_creatures(const b2WorldId& worldId, float dt) {
     for (size_t i = 0; i < circles.size(); ++i) {
         if (circles[i] && circles[i]->get_kind() == CircleKind::Creature) {
             auto* creature_circle = static_cast<CreatureCircle*>(circles[i].get());
-            creature_circle->process_eating(worldId, *this, poison_death_probability, poison_death_probability_normal);
-            creature_circle->update_inactivity(dt, inactivity_timeout);
+            creature_circle->process_eating(worldId, *this, death.poison_death_probability, death.poison_death_probability_normal);
+            creature_circle->update_inactivity(dt, death.inactivity_timeout);
         }
     }
 }
 
 void Game::run_brain_updates(const b2WorldId& worldId, float timeStep) {
     (void)timeStep;
-    const float brain_period = (brain_updates_per_sim_second > 0.0f) ? (1.0f / brain_updates_per_sim_second) : std::numeric_limits<float>::max();
-    while (brain_time_accumulator >= brain_period) {
+    const float brain_period = (brain.updates_per_second > 0.0f) ? (1.0f / brain.updates_per_second) : std::numeric_limits<float>::max();
+    while (brain.time_accumulator >= brain_period) {
         for (size_t i = 0; i < circles.size(); ++i) {
             if (circles[i] && circles[i]->get_kind() == CircleKind::Creature) {
                 auto* creature_circle = static_cast<CreatureCircle*>(circles[i].get());
-                creature_circle->set_minimum_area(minimum_area);
+                creature_circle->set_minimum_area(creature.minimum_area);
                 creature_circle->set_display_mode(!show_true_color);
                 creature_circle->move_intelligently(worldId, *this, brain_period);
             }
         }
-        brain_time_accumulator -= brain_period;
+        brain.time_accumulator -= brain_period;
     }
 }
 
@@ -491,7 +491,7 @@ void Game::remove_outside_petri() {
             [&](const std::unique_ptr<EatableCircle>& circle) {
                 b2Vec2 pos = circle->getPosition();
                 float distance = std::sqrt(pos.x * pos.x + pos.y * pos.y);
-                bool out = distance + circle->getRadius() > petri_radius;
+                bool out = distance + circle->getRadius() > dish.radius;
                 if (out && snapshot.circle && circle.get() == snapshot.circle) {
                     selected_removed = true;
                 }
@@ -568,7 +568,7 @@ std::size_t Game::count_pellets(bool toxic, bool division_pellet) const {
             // Only count pellets inside the petri dish.
             b2Vec2 pos = e->getPosition();
             float dist = std::sqrt(pos.x * pos.x + pos.y * pos.y);
-            if (dist + e->getRadius() > petri_radius) continue;
+            if (dist + e->getRadius() > dish.radius) continue;
             if (e->is_toxic() == toxic && e->is_division_pellet() == division_pellet) {
                 ++count;
             }
@@ -578,8 +578,8 @@ std::size_t Game::count_pellets(bool toxic, bool division_pellet) const {
 }
 
 std::size_t Game::get_cached_pellet_count(bool toxic, bool division_pellet) const {
-    if (division_pellet) return division_pellet_count_cached;
-    return toxic ? toxic_pellet_count_cached : food_pellet_count_cached;
+    if (division_pellet) return pellets.division_count_cached;
+    return toxic ? pellets.toxic_count_cached : pellets.food_count_cached;
 }
 
 void Game::adjust_pellet_count(const EatableCircle* circle, int delta) {
@@ -597,30 +597,30 @@ void Game::adjust_pellet_count(const EatableCircle* circle, int delta) {
     };
 
     if (circle->is_division_pellet()) {
-        apply(division_pellet_count_cached);
+        apply(pellets.division_count_cached);
     } else if (circle->is_toxic()) {
-        apply(toxic_pellet_count_cached);
+        apply(pellets.toxic_count_cached);
     } else {
-        apply(food_pellet_count_cached);
+        apply(pellets.food_count_cached);
     }
 }
 
 std::size_t Game::get_food_pellet_count() const {
-    return food_pellet_count_cached;
+    return pellets.food_count_cached;
 }
 
 std::size_t Game::get_toxic_pellet_count() const {
-    return toxic_pellet_count_cached;
+    return pellets.toxic_count_cached;
 }
 
 std::size_t Game::get_division_pellet_count() const {
-    return division_pellet_count_cached;
+    return pellets.division_count_cached;
 }
 
 void Game::adjust_cleanup_rates() {
     constexpr float PI = 3.14159f;
-    float area = PI * petri_radius * petri_radius;
-    float pellet_area = std::max(add_eatable_area, 1e-6f);
+    float area = PI * dish.radius * dish.radius;
+    float pellet_area = std::max(creature.add_eatable_area, 1e-6f);
 
     auto desired_count = [&](float density_target) {
         float desired_area = std::max(0.0f, density_target) * area;
@@ -650,9 +650,9 @@ void Game::adjust_cleanup_rates() {
         cleanup_rate_out = compute_cleanup_rate(count, desired);
     };
 
-    adjust_spawn(false, false, food_pellet_density, sprinkle_rate_eatable, cleanup_rate_food);
-    adjust_spawn(true, false, toxic_pellet_density, sprinkle_rate_toxic, cleanup_rate_toxic);
-    adjust_spawn(false, true, division_pellet_density, sprinkle_rate_division, cleanup_rate_division);
+    adjust_spawn(false, false, pellets.food_density, pellets.sprinkle_rate_eatable, pellets.cleanup_rate_food);
+    adjust_spawn(true, false, pellets.toxic_density, pellets.sprinkle_rate_toxic, pellets.cleanup_rate_toxic);
+    adjust_spawn(false, true, pellets.division_density, pellets.sprinkle_rate_division, pellets.cleanup_rate_division);
 }
 
 void Game::remove_stopped_boost_particles() {
@@ -676,14 +676,14 @@ void Game::remove_stopped_boost_particles() {
 
 void Game::accumulate_real_time(float dt) {
     if (dt <= 0.0f) return;
-    last_real_dt = dt;
-    real_time_accum += dt;
-    fps_accum_time += dt;
-    ++fps_frames;
-    if (fps_accum_time >= 0.5f) {
-        fps_last = static_cast<float>(fps_frames) / fps_accum_time;
-        fps_accum_time = 0.0f;
-        fps_frames = 0;
+    timing.last_real_dt = dt;
+    timing.real_time_accum += dt;
+    fps.accum_time += dt;
+    ++fps.frames;
+    if (fps.accum_time >= 0.5f) {
+        fps.last = static_cast<float>(fps.frames) / fps.accum_time;
+        fps.accum_time = 0.0f;
+        fps.frames = 0;
     }
 }
 
@@ -693,69 +693,69 @@ void Game::frame_rendered() {
 
 void Game::update_actual_sim_speed() {
     constexpr float eps = std::numeric_limits<float>::epsilon();
-    if (last_real_dt > eps) {
-        actual_sim_speed_inst = last_sim_dt / last_real_dt;
+    if (timing.last_real_dt > eps) {
+        timing.actual_sim_speed_inst = timing.last_sim_dt / timing.last_real_dt;
     } else {
-        actual_sim_speed_inst = 0.0f;
+        timing.actual_sim_speed_inst = 0.0f;
     }
 }
 
 void Game::set_circle_density(float d) {
     float clamped = std::max(d, 0.0f);
-    if (std::abs(clamped - circle_density) < 1e-6f) {
+    if (std::abs(clamped - movement.circle_density) < 1e-6f) {
         return;
     }
-    circle_density = clamped;
+    movement.circle_density = clamped;
     for (auto& circle : circles) {
-        circle->set_density(circle_density, worldId);
+        circle->set_density(movement.circle_density, worldId);
     }
 }
 
 void Game::set_linear_impulse_magnitude(float m) {
     float clamped = std::max(m, 0.0f);
-    if (std::abs(clamped - linear_impulse_magnitude) < 1e-6f) {
+    if (std::abs(clamped - movement.linear_impulse_magnitude) < 1e-6f) {
         return;
     }
-    linear_impulse_magnitude = clamped;
+    movement.linear_impulse_magnitude = clamped;
     apply_impulse_magnitudes_to_circles();
 }
 
 void Game::set_angular_impulse_magnitude(float m) {
     float clamped = std::max(m, 0.0f);
-    if (std::abs(clamped - angular_impulse_magnitude) < 1e-6f) {
+    if (std::abs(clamped - movement.angular_impulse_magnitude) < 1e-6f) {
         return;
     }
-    angular_impulse_magnitude = clamped;
+    movement.angular_impulse_magnitude = clamped;
     apply_impulse_magnitudes_to_circles();
 }
 
 void Game::apply_impulse_magnitudes_to_circles() {
     for (auto& circle : circles) {
-        circle->set_impulse_magnitudes(linear_impulse_magnitude, angular_impulse_magnitude);
+        circle->set_impulse_magnitudes(movement.linear_impulse_magnitude, movement.angular_impulse_magnitude);
     }
 }
 
 void Game::set_linear_damping(float d) {
     float clamped = std::max(d, 0.0f);
-    if (std::abs(clamped - linear_damping) < 1e-6f) {
+    if (std::abs(clamped - movement.linear_damping) < 1e-6f) {
         return;
     }
-    linear_damping = clamped;
+    movement.linear_damping = clamped;
     apply_damping_to_circles();
 }
 
 void Game::set_angular_damping(float d) {
     float clamped = std::max(d, 0.0f);
-    if (std::abs(clamped - angular_damping) < 1e-6f) {
+    if (std::abs(clamped - movement.angular_damping) < 1e-6f) {
         return;
     }
-    angular_damping = clamped;
+    movement.angular_damping = clamped;
     apply_damping_to_circles();
 }
 
 void Game::apply_damping_to_circles() {
     for (auto& circle : circles) {
-        circle->set_linear_damping(linear_damping, worldId);
-        circle->set_angular_damping(angular_damping, worldId);
+        circle->set_linear_damping(movement.linear_damping, worldId);
+        circle->set_angular_damping(movement.angular_damping, worldId);
     }
 }
