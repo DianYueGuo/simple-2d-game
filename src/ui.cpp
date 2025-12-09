@@ -2,23 +2,23 @@
 #include <imgui-SFML.h>
 
 #include "ui.hpp"
-#include "eater_circle.hpp"
+#include "creature_circle.hpp"
 
 namespace {
 struct UiState {
     int cursor_mode = static_cast<int>(Game::CursorMode::Add);
-    int add_type = static_cast<int>(Game::AddType::Eater);
+    int add_type = static_cast<int>(Game::AddType::Creature);
     float eatable_area = 1.0f;
     float delete_percentage = 10.0f;
     float petri_radius = 0.0f;
     float time_scale = 0.0f;
     float brain_updates_per_sim_second = 0.0f;
     float minimum_area = 0.0f;
-    float average_eater_area = 0.0f;
+    float average_creature_area = 0.0f;
     float boost_area = 0.0f;
     float poison_death_probability = 0.0f;
     float poison_death_probability_normal = 0.0f;
-    float eater_cloud_area_percentage = 0.0f;
+    float creature_cloud_area_percentage = 0.0f;
     float division_pellet_divide_probability = 1.0f;
     float add_node_probability = 0.0f;
     float remove_node_probability = 0.0f;
@@ -50,7 +50,7 @@ struct UiState {
     float angular_impulse = 0.0f;
     float linear_damping = 0.0f;
     float angular_damping = 0.0f;
-    int minimum_eaters = 0;
+    int minimum_creatures = 0;
     float sprinkle_rate_eatable = 50.0f;
     float sprinkle_rate_toxic = 0.0f;
     float sprinkle_rate_division = 0.0f;
@@ -93,13 +93,13 @@ void apply_preset(Preset preset, UiState& state, Game& game) {
         case Preset::Default:
             set_and_apply(state.time_scale, 1.0f, [&](float v) { game.set_time_scale(v); });
             set_and_apply(state.brain_updates_per_sim_second, 10.0f, [&](float v) { game.set_brain_updates_per_sim_second(v); });
-            set_and_apply(state.average_eater_area, 5.0f, [&](float v) { game.set_average_eater_area(v); });
+            set_and_apply(state.average_creature_area, 5.0f, [&](float v) { game.set_average_creature_area(v); });
             set_and_apply(state.boost_area, 0.05f, [&](float v) { game.set_boost_area(v); });
             set_and_apply(state.boost_particle_impulse_fraction, 0.02f, [&](float v) { game.set_boost_particle_impulse_fraction(v); });
             set_and_apply(state.boost_particle_linear_damping, 2.0f, [&](float v) { game.set_boost_particle_linear_damping(v); });
             set_and_apply(state.poison_death_probability, 0.3f, [&](float v) { game.set_poison_death_probability(v); });
             set_and_apply(state.poison_death_probability_normal, 0.2f, [&](float v) { game.set_poison_death_probability_normal(v); });
-            set_and_apply(state.minimum_eaters, 12, [&](int v) { game.set_minimum_eater_count(v); });
+            set_and_apply(state.minimum_creatures, 12, [&](int v) { game.set_minimum_creature_count(v); });
             set_and_apply(state.food_density, 0.02f, [&](float v) { game.set_food_pellet_density(v); });
             set_and_apply(state.toxic_density, 0.005f, [&](float v) { game.set_toxic_pellet_density(v); });
             set_and_apply(state.division_density, 0.003f, [&](float v) { game.set_division_pellet_density(v); });
@@ -112,7 +112,7 @@ void apply_preset(Preset preset, UiState& state, Game& game) {
             set_and_apply(state.boost_particle_impulse_fraction, 0.01f, [&](float v) { game.set_boost_particle_impulse_fraction(v); });
             set_and_apply(state.poison_death_probability, 0.05f, [&](float v) { game.set_poison_death_probability(v); });
             set_and_apply(state.poison_death_probability_normal, 0.02f, [&](float v) { game.set_poison_death_probability_normal(v); });
-            set_and_apply(state.minimum_eaters, 8, [&](int v) { game.set_minimum_eater_count(v); });
+            set_and_apply(state.minimum_creatures, 8, [&](int v) { game.set_minimum_creature_count(v); });
             set_and_apply(state.food_density, 0.03f, [&](float v) { game.set_food_pellet_density(v); });
             set_and_apply(state.toxic_density, 0.0f, [&](float v) { game.set_toxic_pellet_density(v); });
             set_and_apply(state.division_density, 0.001f, [&](float v) { game.set_division_pellet_density(v); });
@@ -124,8 +124,8 @@ void apply_preset(Preset preset, UiState& state, Game& game) {
             set_and_apply(state.boost_area, 0.08f, [&](float v) { game.set_boost_area(v); });
             set_and_apply(state.poison_death_probability, 0.7f, [&](float v) { game.set_poison_death_probability(v); });
             set_and_apply(state.poison_death_probability_normal, 0.5f, [&](float v) { game.set_poison_death_probability_normal(v); });
-            set_and_apply(state.eater_cloud_area_percentage, 60.0f, [&](float v) { game.set_eater_cloud_area_percentage(v); });
-            set_and_apply(state.minimum_eaters, 18, [&](int v) { game.set_minimum_eater_count(v); });
+            set_and_apply(state.creature_cloud_area_percentage, 60.0f, [&](float v) { game.set_creature_cloud_area_percentage(v); });
+            set_and_apply(state.minimum_creatures, 18, [&](int v) { game.set_minimum_creature_count(v); });
             set_and_apply(state.food_density, 0.01f, [&](float v) { game.set_food_pellet_density(v); });
             set_and_apply(state.toxic_density, 0.015f, [&](float v) { game.set_toxic_pellet_density(v); });
             set_and_apply(state.division_density, 0.0f, [&](float v) { game.set_division_pellet_density(v); });
@@ -135,7 +135,7 @@ void apply_preset(Preset preset, UiState& state, Game& game) {
             set_and_apply(state.time_scale, 1.0f, [&](float v) { game.set_time_scale(v); });
             set_and_apply(state.brain_updates_per_sim_second, 8.0f, [&](float v) { game.set_brain_updates_per_sim_second(v); });
             set_and_apply(state.boost_area, 0.04f, [&](float v) { game.set_boost_area(v); });
-            set_and_apply(state.minimum_eaters, 15, [&](int v) { game.set_minimum_eater_count(v); });
+            set_and_apply(state.minimum_creatures, 15, [&](int v) { game.set_minimum_creature_count(v); });
             set_and_apply(state.food_density, 0.01f, [&](float v) { game.set_food_pellet_density(v); });
             set_and_apply(state.toxic_density, 0.002f, [&](float v) { game.set_toxic_pellet_density(v); });
             set_and_apply(state.division_density, 0.02f, [&](float v) { game.set_division_pellet_density(v); });
@@ -230,8 +230,8 @@ void render_cursor_controls(Game& game, UiState& state) {
 
     if (state.cursor_mode == static_cast<int>(Game::CursorMode::Add)) {
         bool add_type_changed = false;
-        if (ImGui::RadioButton("Eater", state.add_type == static_cast<int>(Game::AddType::Eater))) {
-            state.add_type = static_cast<int>(Game::AddType::Eater);
+        if (ImGui::RadioButton("Creature", state.add_type == static_cast<int>(Game::AddType::Creature))) {
+            state.add_type = static_cast<int>(Game::AddType::Creature);
             add_type_changed = true;
         }
         ImGui::SameLine();
@@ -267,11 +267,11 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
         state.time_scale = game.get_time_scale();
         state.brain_updates_per_sim_second = game.get_brain_updates_per_sim_second();
         state.minimum_area = game.get_minimum_area();
-        state.average_eater_area = game.get_average_eater_area();
+        state.average_creature_area = game.get_average_creature_area();
         state.boost_area = game.get_boost_area();
         state.poison_death_probability = game.get_poison_death_probability();
         state.poison_death_probability_normal = game.get_poison_death_probability_normal();
-        state.eater_cloud_area_percentage = game.get_eater_cloud_area_percentage();
+        state.creature_cloud_area_percentage = game.get_creature_cloud_area_percentage();
         state.division_pellet_divide_probability = game.get_division_pellet_divide_probability();
         state.add_node_probability = game.get_add_node_probability();
         state.remove_node_probability = game.get_remove_node_probability();
@@ -304,7 +304,7 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
         state.angular_impulse = game.get_angular_impulse_magnitude();
         state.linear_damping = game.get_linear_damping();
         state.angular_damping = game.get_angular_damping();
-        state.minimum_eaters = game.get_minimum_eater_count();
+        state.minimum_creatures = game.get_minimum_creature_count();
         state.sprinkle_rate_eatable = game.get_sprinkle_rate_eatable();
         state.sprinkle_rate_toxic = game.get_sprinkle_rate_toxic();
         state.sprinkle_rate_division = game.get_sprinkle_rate_division();
@@ -357,7 +357,7 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
     if (ImGui::Checkbox("Pause simulation", &paused)) {
         game.set_paused(paused);
     }
-    show_hover_text("Stop simulation updates so you can inspect selected eater info.");
+    show_hover_text("Stop simulation updates so you can inspect selected creature info.");
     if (ImGui::SliderFloat("Simulation speed", &state.time_scale, 0.01f, 8.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
         game.set_time_scale(state.time_scale);
     }
@@ -397,8 +397,8 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
             if (ImGui::CollapsingHeader("Status", ImGuiTreeNodeFlags_DefaultOpen)) {
                 ImGui::Text("Object count: %zu", game.get_circle_count());
                 show_hover_text("How many circles currently exist inside the dish.");
-                ImGui::Text("Eaters: %zu", game.get_eater_count());
-                show_hover_text("Number of eater circles currently alive.");
+                ImGui::Text("Creatures: %zu", game.get_creature_count());
+                show_hover_text("Number of creature circles currently alive.");
                 ImGui::Text("Current pellets - food: %zu  toxic: %zu  division: %zu",
                             game.get_food_pellet_count(),
                             game.get_toxic_pellet_count(),
@@ -409,16 +409,16 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 ImGui::Text("Longest life  creation/division: %.2fs / %.2fs",
                             game.get_longest_life_since_creation(),
                             game.get_longest_life_since_division());
-                show_hover_text("Longest survival among eaters since spawn and since their last division.");
+                show_hover_text("Longest survival among creatures since spawn and since their last division.");
                 ImGui::Text("Max generation: %d", game.get_max_generation());
-                show_hover_text("Highest division count reached by any eater so far.");
+                show_hover_text("Highest division count reached by any creature so far.");
             }
 
             if (ImGui::CollapsingHeader("Follow targets & selection", ImGuiTreeNodeFlags_DefaultOpen)) {
                 int follow_mode = state.follow_mode;
                 const char* follow_labels[] = {
                     "None",
-                    "Selected eater",
+                    "Selected creature",
                     "Oldest (largest if tie)",
                     "Oldest (smallest if tie)",
                     "Oldest (median size)"
@@ -441,9 +441,9 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                     game.set_follow_oldest_middle(follow_mode == 4);
                 }
                 show_hover_text("Choose one follow target; modes are mutually exclusive.");
-                if (const auto* followed = game.get_follow_target_eater()) {
+                if (const auto* followed = game.get_follow_target_creature()) {
                     ImGui::Separator();
-                    ImGui::Text("Followed eater");
+                    ImGui::Text("Followed creature");
                     ImGui::Text("Age: %.2fs  Generation: %d", game.get_sim_time() - followed->get_creation_time(), followed->get_generation());
                     ImGui::Text("Area: %.3f  Radius: %.3f", followed->getArea(), followed->getRadius());
                     const neat::Genome& brain = followed->get_brain();
@@ -454,19 +454,19 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 int selected_gen = game.get_selected_generation();
                 if (selected_brain) {
                     ImGui::Separator();
-                    ImGui::Text("Selected eater: generation %d", selected_gen);
+                    ImGui::Text("Selected creature: generation %d", selected_gen);
                     ImGui::Text("Nodes: %zu", selected_brain->nodes.size());
                     ImGui::Text("Connections: %zu", selected_brain->connections.size());
                     // Show area/radius if we still have the circle
-                    if (const auto* eater = game.get_selected_eater()) {
-                        ImGui::Text("Age: %.2fs", game.get_sim_time() - eater->get_creation_time());
-                        ImGui::Text("Area: %.3f  Radius: %.3f", eater->getArea(), eater->getRadius());
+                    if (const auto* creature = game.get_selected_creature()) {
+                        ImGui::Text("Age: %.2fs", game.get_sim_time() - creature->get_creation_time());
+                        ImGui::Text("Area: %.3f  Radius: %.3f", creature->getArea(), creature->getRadius());
                     }
 
                     render_brain_graph(*selected_brain);
                 } else {
                     ImGui::Separator();
-                    ImGui::Text("No eater selected");
+                    ImGui::Text("No creature selected");
                 }
             }
             ImGui::EndTabItem();
@@ -474,22 +474,22 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
 
         if (ImGui::BeginTabItem("Simulation")) {
             if (ImGui::CollapsingHeader("Brain update rate", ImGuiTreeNodeFlags_DefaultOpen)) {
-                if (ImGui::SliderFloat("Eater brain update per sim second", &state.brain_updates_per_sim_second, 0.1f, 60.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
+                if (ImGui::SliderFloat("Creature brain update per sim second", &state.brain_updates_per_sim_second, 0.1f, 60.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
                     game.set_brain_updates_per_sim_second(state.brain_updates_per_sim_second);
                 }
-                show_hover_text("How many times eater AI brains tick per simulated second.");
+                show_hover_text("How many times creature AI brains tick per simulated second.");
             }
 
             if (ImGui::CollapsingHeader("Sizes & costs", ImGuiTreeNodeFlags_DefaultOpen)) {
-                if (ImGui::SliderFloat("Minimum eater area (m^2)", &state.minimum_area, 0.1f, 5.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
+                if (ImGui::SliderFloat("Minimum creature area (m^2)", &state.minimum_area, 0.1f, 5.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
                     game.set_minimum_area(state.minimum_area);
                 }
                 show_hover_text("Smallest allowed size before circles are considered too tiny to exist.");
 
-                if (ImGui::SliderFloat("Eater spawn area (m^2)", &state.average_eater_area, 0.1f, 20.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
-                    game.set_average_eater_area(state.average_eater_area);
+                if (ImGui::SliderFloat("Creature spawn area (m^2)", &state.average_creature_area, 0.1f, 20.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
+                    game.set_average_creature_area(state.average_creature_area);
                 }
-                show_hover_text("Area given to newly created eater circles.");
+                show_hover_text("Area given to newly created creature circles.");
 
                 if (ImGui::SliderFloat("Food pellet area (m^2)", &state.eatable_area, 0.1f, 10.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
                     game.set_add_eatable_area(state.eatable_area);
@@ -498,7 +498,7 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 if (ImGui::SliderFloat("Boost cost (m^2)", &state.boost_area, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_Logarithmic)) {
                     game.set_boost_area(state.boost_area);
                 }
-                show_hover_text("Area an eater spends to dash forward; 0 means no pellet is left behind. Finer range.");
+                show_hover_text("Area a creature spends to dash forward; 0 means no pellet is left behind. Finer range.");
             }
 
             if (ImGui::CollapsingHeader("Impulse & damping", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -517,7 +517,7 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 if (ImGui::SliderFloat("Boost pellet impulse fraction", &state.boost_particle_impulse_fraction, 0.0f, 0.1f, "%.4f", ImGuiSliderFlags_Logarithmic)) {
                     game.set_boost_particle_impulse_fraction(state.boost_particle_impulse_fraction);
                 }
-                show_hover_text("Fraction of the eater's impulse given to the spawned boost pellet (fine range).");
+                show_hover_text("Fraction of the creature's impulse given to the spawned boost pellet (fine range).");
                 if (ImGui::SliderFloat("Boost pellet linear damping", &state.boost_particle_linear_damping, 0.1f, 20.0f, "%.3f", ImGuiSliderFlags_Logarithmic)) {
                     game.set_boost_particle_linear_damping(state.boost_particle_linear_damping);
                 }
@@ -537,25 +537,25 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 if (ImGui::SliderFloat("Toxic pellet death prob", &state.poison_death_probability, 0.0f, 1.0f, "%.2f")) {
                     game.set_poison_death_probability(state.poison_death_probability);
                 }
-                show_hover_text("Chance that eating a toxic pellet kills an eater.");
+                show_hover_text("Chance that eating a toxic pellet kills a creature.");
                 if (ImGui::SliderFloat("Food pellet death prob", &state.poison_death_probability_normal, 0.0f, 1.0f, "%.2f")) {
                     game.set_poison_death_probability_normal(state.poison_death_probability_normal);
                 }
                 show_hover_text("Baseline toxic lethality when circles are not boosted.");
-                if (ImGui::SliderFloat("Death Remain Area %", &state.eater_cloud_area_percentage, 0.0f, 100.0f, "%.0f")) {
-                    game.set_eater_cloud_area_percentage(state.eater_cloud_area_percentage);
+                if (ImGui::SliderFloat("Death Remain Area %", &state.creature_cloud_area_percentage, 0.0f, 100.0f, "%.0f")) {
+                    game.set_creature_cloud_area_percentage(state.creature_cloud_area_percentage);
                 }
-                show_hover_text("Percent of an eater's area that returns as pellets when it dies to poison.");
+                show_hover_text("Percent of a creature's area that returns as pellets when it dies to poison.");
                 if (ImGui::SliderFloat("Inactivity timeout (s)", &state.inactivity_timeout, 0.0f, 60.0f, "%.1f")) {
                     game.set_inactivity_timeout(state.inactivity_timeout);
                 }
-                show_hover_text("If an eater fails to boost forward for this many seconds, it dies like poison.");
+                show_hover_text("If a creature fails to boost forward for this many seconds, it dies like poison.");
 
                 ImGui::SeparatorText("Division");
                 if (ImGui::SliderFloat("Division pellet divide prob", &state.division_pellet_divide_probability, 0.0f, 1.0f, "%.2f")) {
                     game.set_division_pellet_divide_probability(state.division_pellet_divide_probability);
                 }
-                show_hover_text("Probability an eater divides after eating a blue division pellet.");
+                show_hover_text("Probability a creature divides after eating a blue division pellet.");
             }
 
             ImGui::EndTabItem();
@@ -596,7 +596,7 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 division_mutate_changed |= ImGui::SliderFloat("Add connection % (mutate add link)", &state.add_connection_probability, 0.0f, 1.0f, "%.2f");
                 show_hover_text("Probability passed to NEAT mutate for adding a connection during division.");
                 division_mutate_changed |= ImGui::SliderInt("Mutation rounds", &state.mutation_rounds, 0, 50);
-                show_hover_text("How many times to roll the mutation probabilities when an eater divides.");
+                show_hover_text("How many times to roll the mutation probabilities when a creature divides.");
                 if (division_mutate_changed) {
                     game.set_add_node_probability(state.add_node_probability);
                     game.set_add_connection_probability(state.add_connection_probability);
@@ -611,9 +611,9 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 ImGui::BeginDisabled(!state.live_mutation_enabled);
                 bool live_mutate_changed = false;
                 live_mutate_changed |= ImGui::SliderFloat("Live add node %", &state.tick_add_node_probability, 0.0f, 1.0f, "%.2f");
-                show_hover_text("Chance an eater adds a brain node each behavior tick.");
+                show_hover_text("Chance a creature adds a brain node each behavior tick.");
                 live_mutate_changed |= ImGui::SliderFloat("Live add connection %", &state.tick_add_connection_probability, 0.0f, 1.0f, "%.2f");
-                show_hover_text("Chance an eater adds a brain connection each behavior tick.");
+                show_hover_text("Chance a creature adds a brain connection each behavior tick.");
                 if (live_mutate_changed) {
                     game.set_tick_add_node_probability(state.tick_add_node_probability);
                     game.set_tick_add_connection_probability(state.tick_add_connection_probability);
@@ -627,7 +627,7 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 init_mutate_changed |= ImGui::SliderFloat("Init add connection %", &state.init_add_connection_probability, 0.0f, 1.0f, "%.2f");
                 show_hover_text("Probability passed to NEAT mutate for adding a connection during initial seeding.");
                 init_mutate_changed |= ImGui::SliderInt("Init mutation rounds", &state.init_mutation_rounds, 0, 100);
-                show_hover_text("How many initialization iterations to perform when an eater is created.");
+                show_hover_text("How many initialization iterations to perform when a creature is created.");
                 if (init_mutate_changed) {
                     game.set_init_add_node_probability(state.init_add_node_probability);
                     game.set_init_add_connection_probability(state.init_add_connection_probability);
@@ -641,8 +641,8 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
         if (ImGui::BeginTabItem("Spawning")) {
             if (ImGui::CollapsingHeader("Spawn & density targets", ImGuiTreeNodeFlags_DefaultOpen)) {
                 bool spawning_changed = false;
-                spawning_changed |= ImGui::SliderInt("Minimum eater count", &state.minimum_eaters, 0, 500);
-                show_hover_text("The simulation auto-spawns new eaters until this count is reached.");
+                spawning_changed |= ImGui::SliderInt("Minimum creature count", &state.minimum_creatures, 0, 500);
+                show_hover_text("The simulation auto-spawns new creatures until this count is reached.");
                 spawning_changed |= ImGui::SliderFloat("Food area density (m^2 per m^2)", &state.food_density, 0.0f, 0.1f, "%.4f", ImGuiSliderFlags_Logarithmic);
                 show_hover_text("Target area fraction for non-toxic pellets; the system adjusts spawn/cleanup automatically.");
                 spawning_changed |= ImGui::SliderFloat("Toxic area density (m^2 per m^2)", &state.toxic_density, 0.0f, 0.02f, "%.4f", ImGuiSliderFlags_Logarithmic);
@@ -650,7 +650,7 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 spawning_changed |= ImGui::SliderFloat("Division area density (m^2 per m^2)", &state.division_density, 0.0f, 0.02f, "%.4f", ImGuiSliderFlags_Logarithmic);
                 show_hover_text("Target area fraction for division-triggering blue pellets.");
                 if (spawning_changed) {
-                    game.set_minimum_eater_count(state.minimum_eaters);
+                    game.set_minimum_creature_count(state.minimum_creatures);
                     game.set_food_pellet_density(state.food_density);
                     game.set_toxic_pellet_density(state.toxic_density);
                     game.set_division_pellet_density(state.division_density);

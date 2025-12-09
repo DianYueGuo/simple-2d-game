@@ -6,7 +6,7 @@
 #include <limits>
 #include <random>
 
-#include "eater_circle.hpp"
+#include "creature_circle.hpp"
 #include "game.hpp"
 
 namespace {
@@ -25,8 +25,8 @@ Spawner::Spawner(Game& game_ref) : game(game_ref) {}
 
 void Spawner::try_add_circle_at(const sf::Vector2f& worldPos) {
     switch (game.get_add_type()) {
-        case Game::AddType::Eater:
-            if (auto circle = create_eater_at({worldPos.x, worldPos.y})) {
+        case Game::AddType::Creature:
+            if (auto circle = create_creature_at({worldPos.x, worldPos.y})) {
                 game.update_max_generation_from_circle(circle.get());
                 game.circles.push_back(std::move(circle));
             }
@@ -42,7 +42,7 @@ void Spawner::try_add_circle_at(const sf::Vector2f& worldPos) {
 }
 
 void Spawner::begin_add_drag_if_applicable(const sf::Vector2f& worldPos) {
-    if (game.get_add_type() == Game::AddType::Eater) {
+    if (game.get_add_type() == Game::AddType::Creature) {
         reset_add_drag_state();
         return;
     }
@@ -70,7 +70,7 @@ void Spawner::continue_add_drag(const sf::Vector2f& worldPos) {
 
     if (add_drag_distance >= min_spacing) {
         switch (game.get_add_type()) {
-            case Game::AddType::Eater:
+            case Game::AddType::Creature:
                 break;
             case Game::AddType::Eatable:
             case Game::AddType::ToxicEatable:
@@ -91,23 +91,23 @@ void Spawner::reset_add_drag_state() {
 }
 
 void Spawner::sprinkle_entities(float dt) {
-    ensure_minimum_eaters();
+    ensure_minimum_creatures();
     sprinkle_with_rate(game.get_sprinkle_rate_eatable(), static_cast<int>(Game::AddType::Eatable), dt);
     sprinkle_with_rate(game.get_sprinkle_rate_toxic(), static_cast<int>(Game::AddType::ToxicEatable), dt);
     sprinkle_with_rate(game.get_sprinkle_rate_division(), static_cast<int>(Game::AddType::DivisionEatable), dt);
 }
 
-void Spawner::ensure_minimum_eaters() {
-    int eater_count = static_cast<int>(game.get_eater_count());
-    if (eater_count >= game.get_minimum_eater_count()) {
+void Spawner::ensure_minimum_creatures() {
+    int creature_count = static_cast<int>(game.get_creature_count());
+    if (creature_count >= game.get_minimum_creature_count()) {
         return;
     }
 
-    int to_spawn = game.get_minimum_eater_count() - eater_count;
+    int to_spawn = game.get_minimum_creature_count() - creature_count;
     for (int i = 0; i < to_spawn; ++i) {
-        if (auto eater = create_eater_at(random_point_in_petri())) {
-            game.update_max_generation_from_circle(eater.get());
-            game.circles.push_back(std::move(eater));
+        if (auto creature = create_creature_at(random_point_in_petri())) {
+            game.update_max_generation_from_circle(creature.get());
+            game.circles.push_back(std::move(creature));
         }
     }
 }
@@ -118,13 +118,13 @@ b2Vec2 Spawner::random_point_in_petri() const {
     return b2Vec2{radius * std::cos(angle), radius * std::sin(angle)};
 }
 
-std::unique_ptr<EaterCircle> Spawner::create_eater_at(const b2Vec2& pos) {
-    float base_area = std::max(game.get_average_eater_area(), 0.0001f);
+std::unique_ptr<CreatureCircle> Spawner::create_creature_at(const b2Vec2& pos) {
+    float base_area = std::max(game.get_average_creature_area(), 0.0001f);
     float varied_area = base_area;
     float radius = radius_from_area(varied_area);
     float angle = random_unit() * 2.0f * PI;
     const neat::Genome* base_brain = game.get_max_generation_brain();
-    auto circle = std::make_unique<EaterCircle>(
+    auto circle = std::make_unique<CreatureCircle>(
         game.worldId,
         pos.x,
         pos.y,
@@ -158,24 +158,24 @@ std::unique_ptr<EatableCircle> Spawner::create_eatable_at(const b2Vec2& pos, boo
     return circle;
 }
 
-void Spawner::spawn_eatable_cloud(const EaterCircle& eater, std::vector<std::unique_ptr<EatableCircle>>& out) {
-    float eater_radius = eater.getRadius();
-    float total_area = eater.getArea();
+void Spawner::spawn_eatable_cloud(const CreatureCircle& creature, std::vector<std::unique_ptr<EatableCircle>>& out) {
+    float creature_radius = creature.getRadius();
+    float total_area = creature.getArea();
     if (game.get_minimum_area() <= 0.0f || total_area <= 0.0f) {
         return;
     }
 
     float chunk_area = std::min(game.get_minimum_area(), total_area);
-    float remaining_area = total_area * (std::clamp(game.get_eater_cloud_area_percentage(), 0.0f, 100.0f) / 100.0f);
+    float remaining_area = total_area * (std::clamp(game.get_creature_cloud_area_percentage(), 0.0f, 100.0f) / 100.0f);
 
     while (remaining_area > 0.0f) {
         float use_area = std::min(chunk_area, remaining_area);
         float piece_radius = radius_from_area(use_area);
-        float max_offset = std::max(0.0f, eater_radius - piece_radius);
+        float max_offset = std::max(0.0f, creature_radius - piece_radius);
 
         float angle = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX) * 2.0f * PI;
         float dist = max_offset * std::sqrt(random_unit());
-        b2Vec2 pos = eater.getPosition();
+        b2Vec2 pos = creature.getPosition();
         b2Vec2 piece_pos = {pos.x + std::cos(angle) * dist, pos.y + std::sin(angle) * dist};
 
         out.push_back(create_eatable_at(piece_pos, false));
@@ -198,10 +198,10 @@ void Spawner::sprinkle_with_rate(float rate, int type_value, float dt) {
     auto spawn_once = [&]() {
         b2Vec2 pos = random_point_in_petri();
         switch (type) {
-            case Game::AddType::Eater:
-                if (auto eater = create_eater_at(pos)) {
-                    game.update_max_generation_from_circle(eater.get());
-                    game.circles.push_back(std::move(eater));
+            case Game::AddType::Creature:
+                if (auto creature = create_creature_at(pos)) {
+                    game.update_max_generation_from_circle(creature.get());
+                    game.circles.push_back(std::move(creature));
                 }
                 break;
             case Game::AddType::Eatable:

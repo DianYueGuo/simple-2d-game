@@ -1,5 +1,5 @@
 #include "eatable_circle.hpp"
-#include "eater_circle.hpp"
+#include "creature_circle.hpp"
 
 EatableCircle::EatableCircle(const b2WorldId &worldId, float position_x, float position_y, float radius, float density, bool toxic, bool division_boost, float angle, bool boost_particle) :
     DrawableCircle(
@@ -28,7 +28,7 @@ EatableCircle::EatableCircle(const b2WorldId &worldId, float position_x, float p
 
 void EatableCircle::be_eaten() {
     eaten = true;
-    // eaten_by is set by the eater that consumed us (if applicable).
+    // eaten_by is set by the creature that consumed us (if applicable).
 }
 
 bool EatableCircle::is_eaten() const {

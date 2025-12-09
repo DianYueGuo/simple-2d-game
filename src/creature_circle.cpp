@@ -1,4 +1,4 @@
-#include "eater_circle.hpp"
+#include "creature_circle.hpp"
 #include "game.hpp"
 
 #include <algorithm>
@@ -116,7 +116,7 @@ void accumulate_offset_circle(const DrawableCircle& drawable,
 }
 } // namespace
 
-EaterCircle::EaterCircle(const b2WorldId &worldId,
+CreatureCircle::CreatureCircle(const b2WorldId &worldId,
                          float position_x,
                          float position_y,
                          float radius,
@@ -134,7 +134,7 @@ EaterCircle::EaterCircle(const b2WorldId &worldId,
                          Game* owner) :
     EatableCircle(worldId, position_x, position_y, radius, density, /*toxic=*/false, /*division_boost=*/false, angle, /*boost_particle=*/false),
     brain(base_brain ? *base_brain : neat::Genome(29, 11, 0, 0.5f, innov_ids, last_innov_id)) {
-    set_kind(CircleKind::Eater);
+    set_kind(CircleKind::Creature);
     neat_innovations = innov_ids;
     neat_last_innov_id = last_innov_id;
     owner_game = owner;
@@ -167,7 +167,7 @@ float calculate_overlap_area(float r1, float r2, float distance) {
     return part1 + part2 - part3;
 }
 
-void EaterCircle::process_eating(const b2WorldId &worldId, Game& game, float poison_death_probability_toxic, float poison_death_probability_normal) {
+void CreatureCircle::process_eating(const b2WorldId &worldId, Game& game, float poison_death_probability_toxic, float poison_death_probability_normal) {
     poisoned = false;
     for_each_touching([&](CirclePhysics& touching_circle) {
         if (!can_eat_circle(touching_circle)) {
@@ -189,11 +189,11 @@ void EaterCircle::process_eating(const b2WorldId &worldId, Game& game, float poi
     }
 }
 
-bool EaterCircle::can_eat_circle(const CirclePhysics& circle) const {
+bool CreatureCircle::can_eat_circle(const CirclePhysics& circle) const {
     return circle.getRadius() < this->getRadius();
 }
 
-bool EaterCircle::has_overlap_to_eat(const CirclePhysics& circle) const {
+bool CreatureCircle::has_overlap_to_eat(const CirclePhysics& circle) const {
     float touching_area = circle.getArea();
     float overlap_threshold = touching_area * 0.8f;
 
@@ -203,7 +203,7 @@ bool EaterCircle::has_overlap_to_eat(const CirclePhysics& circle) const {
     return overlap_area >= overlap_threshold;
 }
 
-void EaterCircle::consume_touching_circle(const b2WorldId &worldId, Game& game, EatableCircle& eatable, float touching_area, float poison_death_probability_toxic, float poison_death_probability_normal) {
+void CreatureCircle::consume_touching_circle(const b2WorldId &worldId, Game& game, EatableCircle& eatable, float touching_area, float poison_death_probability_toxic, float poison_death_probability_normal) {
     float roll = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
     if (eatable.is_toxic()) {
         if (roll < poison_death_probability_toxic) {
@@ -228,7 +228,7 @@ void EaterCircle::consume_touching_circle(const b2WorldId &worldId, Game& game, 
     this->grow_by_area(touching_area, worldId);
 }
 
-void EaterCircle::move_randomly(const b2WorldId &worldId, Game &game) {
+void CreatureCircle::move_randomly(const b2WorldId &worldId, Game &game) {
     float probability = static_cast<float>(rand()) / RAND_MAX;
     if (probability > 0.9f)
         this->boost_forward(worldId, game);
@@ -242,7 +242,7 @@ void EaterCircle::move_randomly(const b2WorldId &worldId, Game &game) {
         this->apply_right_turn_impulse();
 }
 
-void EaterCircle::run_brain_cycle_from_touching() {
+void CreatureCircle::run_brain_cycle_from_touching() {
     update_brain_inputs_from_touching();
     brain.loadInputs(brain_inputs.data());
     brain.runNetwork(neat_activation);
@@ -250,7 +250,7 @@ void EaterCircle::run_brain_cycle_from_touching() {
     update_color_from_brain();
 }
 
-void EaterCircle::move_intelligently(const b2WorldId &worldId, Game &game, float dt) {
+void CreatureCircle::move_intelligently(const b2WorldId &worldId, Game &game, float dt) {
     (void)dt;
     run_brain_cycle_from_touching();
 
@@ -290,7 +290,7 @@ void EaterCircle::move_intelligently(const b2WorldId &worldId, Game &game, float
 
 }
 
-void EaterCircle::update_inactivity(float dt, float timeout) {
+void CreatureCircle::update_inactivity(float dt, float timeout) {
     if (dt <= 0.0f) return;
     inactivity_timer += dt;
     b2Vec2 velocity = getLinearVelocity();
@@ -315,7 +315,7 @@ void EaterCircle::update_inactivity(float dt, float timeout) {
     }
 }
 
-void EaterCircle::boost_forward(const b2WorldId &worldId, Game& game) {
+void CreatureCircle::boost_forward(const b2WorldId &worldId, Game& game) {
     float current_area = this->getArea();
     float boost_cost = std::max(game.get_boost_area(), 0.0f);
     float new_area = current_area - boost_cost;
@@ -349,8 +349,8 @@ void EaterCircle::boost_forward(const b2WorldId &worldId, Game& game) {
             /*angle=*/0.0f,
             /*boost_particle=*/true);
         EatableCircle* boost_circle_ptr = boost_circle.get();
-        const auto eater_signal_color = get_color_rgb(); // use true signal, not smoothed display
-        boost_circle_ptr->set_color_rgb(eater_signal_color[0], eater_signal_color[1], eater_signal_color[2]);
+        const auto creature_signal_color = get_color_rgb(); // use true signal, not smoothed display
+        boost_circle_ptr->set_color_rgb(creature_signal_color[0], creature_signal_color[1], creature_signal_color[2]);
         boost_circle_ptr->smooth_display_color(1.0f);
         float frac = game.get_boost_particle_impulse_fraction();
         boost_circle_ptr->set_impulse_magnitudes(game.get_linear_impulse_magnitude() * frac, game.get_angular_impulse_magnitude() * frac);
@@ -364,7 +364,7 @@ void EaterCircle::boost_forward(const b2WorldId &worldId, Game& game) {
     }
 }
 
-void EaterCircle::initialize_brain(int mutation_rounds, float add_node_p, float /*remove_node_p*/, float add_connection_p, float /*remove_connection_p*/) {
+void CreatureCircle::initialize_brain(int mutation_rounds, float add_node_p, float /*remove_node_p*/, float add_connection_p, float /*remove_connection_p*/) {
     // Mutate repeatedly to seed a non-trivial brain topology.
     int rounds = std::max(0, mutation_rounds);
     for (int i = 0; i < rounds; ++i) {
@@ -401,7 +401,7 @@ void EaterCircle::initialize_brain(int mutation_rounds, float add_node_p, float 
     }
 }
 
-void EaterCircle::divide(const b2WorldId &worldId, Game& game) {
+void CreatureCircle::divide(const b2WorldId &worldId, Game& game) {
     const float current_area = this->getArea();
     const float divided_area = current_area / 2.0f;
 
@@ -428,7 +428,7 @@ void EaterCircle::divide(const b2WorldId &worldId, Game& game) {
 
     const int next_generation = this->get_generation() + 1;
 
-    auto new_circle = std::make_unique<EaterCircle>(
+    auto new_circle = std::make_unique<CreatureCircle>(
         worldId,
         child_position.x,
         child_position.y,
@@ -445,7 +445,7 @@ void EaterCircle::divide(const b2WorldId &worldId, Game& game) {
         game.get_neat_innovations(),
         game.get_neat_last_innovation_id(),
         &game);
-    EaterCircle* new_circle_ptr = new_circle.get();
+    CreatureCircle* new_circle_ptr = new_circle.get();
     if (new_circle_ptr) {
         configure_child_after_division(*new_circle_ptr, worldId, game, angle, parent_brain_copy);
     }
@@ -468,7 +468,7 @@ void EaterCircle::divide(const b2WorldId &worldId, Game& game) {
     game.add_circle(std::move(new_circle));
 }
 
-void EaterCircle::configure_child_after_division(EaterCircle& child, const b2WorldId& worldId, Game& game, float angle, const neat::Genome& parent_brain_copy) {
+void CreatureCircle::configure_child_after_division(CreatureCircle& child, const b2WorldId& worldId, Game& game, float angle, const neat::Genome& parent_brain_copy) {
     child.brain = parent_brain_copy;
     child.set_impulse_magnitudes(game.get_linear_impulse_magnitude(), game.get_angular_impulse_magnitude());
     child.set_linear_damping(game.get_linear_damping(), worldId);
@@ -481,7 +481,7 @@ void EaterCircle::configure_child_after_division(EaterCircle& child, const b2Wor
     child.set_last_division_time(game.get_sim_time());
 }
 
-void EaterCircle::mutate_lineage(Game& game, EaterCircle* child) {
+void CreatureCircle::mutate_lineage(Game& game, CreatureCircle* child) {
     const int mutation_rounds = std::max(0, game.get_mutation_rounds());
     float weight_thresh = game.get_mutate_weight_thresh();
     float weight_full = game.get_mutate_weight_full_change_thresh();
@@ -522,7 +522,7 @@ void EaterCircle::mutate_lineage(Game& game, EaterCircle* child) {
     }
 }
 
-void EaterCircle::update_color_from_brain() {
+void CreatureCircle::update_color_from_brain() {
     float target_r = std::clamp(brain_outputs[4], 0.0f, 1.0f);
     float target_g = std::clamp(brain_outputs[5], 0.0f, 1.0f);
     float target_b = std::clamp(brain_outputs[6], 0.0f, 1.0f);
@@ -531,7 +531,7 @@ void EaterCircle::update_color_from_brain() {
     smooth_display_color(smoothing);
 }
 
-void EaterCircle::update_brain_inputs_from_touching() {
+void CreatureCircle::update_brain_inputs_from_touching() {
     SensorColors summed_colors{};
     SensorWeights weights{};
 
@@ -570,7 +570,7 @@ void EaterCircle::update_brain_inputs_from_touching() {
     write_size_and_memory_inputs();
 }
 
-void EaterCircle::apply_sensor_inputs(const std::array<std::array<float, 3>, 8>& summed_colors, const std::array<float, 8>& weights) {
+void CreatureCircle::apply_sensor_inputs(const std::array<std::array<float, 3>, 8>& summed_colors, const std::array<float, 8>& weights) {
     // Order sensors clockwise starting from front: front, front-right, right, back-right, back, back-left, left, front-left.
     for (int i = 0; i < SENSOR_COUNT; ++i) {
         int base_index = i * 3;
@@ -588,7 +588,7 @@ void EaterCircle::apply_sensor_inputs(const std::array<std::array<float, 3>, 8>&
     }
 }
 
-void EaterCircle::write_size_and_memory_inputs() {
+void CreatureCircle::write_size_and_memory_inputs() {
     float area = this->getArea();
     float normalized = area / (area + 25.0f); // gentler saturation for larger sizes
     brain_inputs[24] = normalized;

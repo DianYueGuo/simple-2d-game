@@ -8,7 +8,7 @@
 
 enum class CircleKind {
     Unknown,
-    Eater,
+    Creature,
     Pellet,
     ToxicPellet,
     DivisionPellet,

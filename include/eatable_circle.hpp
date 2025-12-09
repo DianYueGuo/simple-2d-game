@@ -3,7 +3,7 @@
 
 #include "drawable_circle.hpp"
 
-class EaterCircle;
+class CreatureCircle;
 
 class EatableCircle : public DrawableCircle {
 public:
@@ -17,8 +17,8 @@ public:
                   float angle = 0.0f,
                   bool boost_particle = false);
     void be_eaten();
-    void set_eaten_by(const EaterCircle* eater) { eaten_by = eater; }
-    const EaterCircle* get_eaten_by() const { return eaten_by; }
+    void set_eaten_by(const CreatureCircle* creature) { eaten_by = creature; }
+    const CreatureCircle* get_eaten_by() const { return eaten_by; }
     bool is_eaten() const;
     bool is_toxic() const { return toxic; }
     void set_toxic(bool value) { toxic = value; update_kind_from_flags(); }
@@ -31,7 +31,7 @@ private:
     bool toxic = false;
     bool division_boost = false;
     bool boost_particle = false;
-    const EaterCircle* eaten_by = nullptr;
+    const CreatureCircle* eaten_by = nullptr;
 };
 
 #endif

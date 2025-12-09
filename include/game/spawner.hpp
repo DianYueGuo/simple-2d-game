@@ -9,7 +9,7 @@
 #include <box2d/box2d.h>
 
 class EatableCircle;
-class EaterCircle;
+class CreatureCircle;
 class Game;
 
 // Responsible for creating circles and spawning logic.
@@ -23,11 +23,11 @@ public:
     void reset_add_drag_state();
 
     void sprinkle_entities(float dt);
-    void ensure_minimum_eaters();
+    void ensure_minimum_creatures();
     b2Vec2 random_point_in_petri() const;
-    std::unique_ptr<EaterCircle> create_eater_at(const b2Vec2& pos);
+    std::unique_ptr<CreatureCircle> create_creature_at(const b2Vec2& pos);
     std::unique_ptr<EatableCircle> create_eatable_at(const b2Vec2& pos, bool toxic, bool division_boost = false) const;
-    void spawn_eatable_cloud(const EaterCircle& eater, std::vector<std::unique_ptr<EatableCircle>>& out);
+    void spawn_eatable_cloud(const CreatureCircle& creature, std::vector<std::unique_ptr<EatableCircle>>& out);
 
 private:
     void sprinkle_with_rate(float rate, int type, float dt);

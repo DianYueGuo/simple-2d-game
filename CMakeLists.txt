@@ -86,7 +86,7 @@ add_executable(
     src/circle_physics.cpp
     src/drawable_circle.cpp
     src/eatable_circle.cpp
-    src/eater_circle.cpp
+    src/creature_circle.cpp
     src/ui.cpp
     src/game/spawner.cpp
     src/game/selection_manager.cpp

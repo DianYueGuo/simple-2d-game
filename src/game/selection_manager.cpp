@@ -4,7 +4,7 @@
 #include <cmath>
 #include <limits>
 
-#include "eater_circle.hpp"
+#include "creature_circle.hpp"
 #include "eatable_circle.hpp"
 
 SelectionManager::SelectionManager(std::vector<std::unique_ptr<EatableCircle>>& circles_ref, float& sim_time_accum_ref)
@@ -39,36 +39,36 @@ const neat::Genome* SelectionManager::get_selected_brain() const {
         return nullptr;
     }
     auto* base = (*circles)[*selected_index].get();
-    if (base && base->get_kind() == CircleKind::Eater) {
-        auto* eater = static_cast<EaterCircle*>(base);
-        return &eater->get_brain();
+    if (base && base->get_kind() == CircleKind::Creature) {
+        auto* creature = static_cast<CreatureCircle*>(base);
+        return &creature->get_brain();
     }
     return nullptr;
 }
 
-const EaterCircle* SelectionManager::get_selected_eater() const {
+const CreatureCircle* SelectionManager::get_selected_creature() const {
     if (!circles || !selected_index || *selected_index >= circles->size()) {
         return nullptr;
     }
     auto* base = (*circles)[*selected_index].get();
-    if (base && base->get_kind() == CircleKind::Eater) {
-        return static_cast<EaterCircle*>(base);
+    if (base && base->get_kind() == CircleKind::Creature) {
+        return static_cast<CreatureCircle*>(base);
     }
     return nullptr;
 }
 
-const EaterCircle* SelectionManager::get_oldest_largest_eater() const {
+const CreatureCircle* SelectionManager::get_oldest_largest_creature() const {
     if (!circles || !sim_time) return nullptr;
-    const EaterCircle* best = nullptr;
+    const CreatureCircle* best = nullptr;
     float best_age = -1.0f;
     float best_area = -1.0f;
     for (const auto& c : *circles) {
-        if (c && c->get_kind() == CircleKind::Eater) {
-            auto* eater = static_cast<const EaterCircle*>(c.get());
-            float age = std::max(0.0f, *sim_time - eater->get_creation_time());
-            float area = eater->getArea();
+        if (c && c->get_kind() == CircleKind::Creature) {
+            auto* creature = static_cast<const CreatureCircle*>(c.get());
+            float age = std::max(0.0f, *sim_time - creature->get_creation_time());
+            float area = creature->getArea();
             if (age > best_age || (std::abs(age - best_age) < 1e-6f && area > best_area)) {
-                best = eater;
+                best = creature;
                 best_age = age;
                 best_area = area;
             }
@@ -77,43 +77,43 @@ const EaterCircle* SelectionManager::get_oldest_largest_eater() const {
     return best;
 }
 
-const EaterCircle* SelectionManager::get_oldest_smallest_eater() const {
+const CreatureCircle* SelectionManager::get_oldest_smallest_creature() const {
     if (!circles || !sim_time) return nullptr;
-    const EaterCircle* best = nullptr;
+    const CreatureCircle* best = nullptr;
     float best_age = -1.0f;
     float best_area = std::numeric_limits<float>::max();
     constexpr float eps = 1e-6f;
     for (const auto& c : *circles) {
-        if (c && c->get_kind() == CircleKind::Eater) {
-            auto* eater = static_cast<const EaterCircle*>(c.get());
-            float age = std::max(0.0f, *sim_time - eater->get_creation_time());
-            float area = eater->getArea();
+        if (c && c->get_kind() == CircleKind::Creature) {
+            auto* creature = static_cast<const CreatureCircle*>(c.get());
+            float age = std::max(0.0f, *sim_time - creature->get_creation_time());
+            float area = creature->getArea();
             if (age > best_age + eps || (std::abs(age - best_age) <= eps && area < best_area)) {
                 best_age = age;
                 best_area = area;
-                best = eater;
+                best = creature;
             }
         }
     }
     return best;
 }
 
-const EaterCircle* SelectionManager::get_oldest_middle_eater() const {
+const CreatureCircle* SelectionManager::get_oldest_middle_creature() const {
     if (!circles || !sim_time) return nullptr;
-    std::vector<std::pair<float, const EaterCircle*>> candidates;
+    std::vector<std::pair<float, const CreatureCircle*>> candidates;
     float best_age = -1.0f;
     constexpr float eps = 1e-6f;
     for (const auto& c : *circles) {
-        if (c && c->get_kind() == CircleKind::Eater) {
-            auto* eater = static_cast<const EaterCircle*>(c.get());
-            float age = std::max(0.0f, *sim_time - eater->get_creation_time());
-            float area = eater->getArea();
+        if (c && c->get_kind() == CircleKind::Creature) {
+            auto* creature = static_cast<const CreatureCircle*>(c.get());
+            float age = std::max(0.0f, *sim_time - creature->get_creation_time());
+            float area = creature->getArea();
             if (age > best_age + eps) {
                 best_age = age;
                 candidates.clear();
-                candidates.emplace_back(area, eater);
+                candidates.emplace_back(area, creature);
             } else if (std::abs(age - best_age) <= eps) {
-                candidates.emplace_back(area, eater);
+                candidates.emplace_back(area, creature);
             }
         }
     }
@@ -122,18 +122,18 @@ const EaterCircle* SelectionManager::get_oldest_middle_eater() const {
     return candidates[candidates.size() / 2].second;
 }
 
-const EaterCircle* SelectionManager::get_follow_target_eater() const {
+const CreatureCircle* SelectionManager::get_follow_target_creature() const {
     if (follow_selected) {
-        if (const auto* sel = get_selected_eater()) return sel;
+        if (const auto* sel = get_selected_creature()) return sel;
     }
     if (follow_oldest_largest) {
-        if (const auto* e = get_oldest_largest_eater()) return e;
+        if (const auto* e = get_oldest_largest_creature()) return e;
     }
     if (follow_oldest_smallest) {
-        if (const auto* e = get_oldest_smallest_eater()) return e;
+        if (const auto* e = get_oldest_smallest_creature()) return e;
     }
     if (follow_oldest_middle) {
-        if (const auto* e = get_oldest_middle_eater()) return e;
+        if (const auto* e = get_oldest_middle_creature()) return e;
     }
     return nullptr;
 }
@@ -143,15 +143,15 @@ int SelectionManager::get_selected_generation() const {
         return -1;
     }
     auto* base = (*circles)[*selected_index].get();
-    if (base && base->get_kind() == CircleKind::Eater) {
-        return static_cast<EaterCircle*>(base)->get_generation();
+    if (base && base->get_kind() == CircleKind::Creature) {
+        return static_cast<CreatureCircle*>(base)->get_generation();
     }
     return -1;
 }
 
 void SelectionManager::update_follow_view(sf::View& view) const {
-    if (const EaterCircle* eater = get_follow_target_eater()) {
-        b2Vec2 p = eater->getPosition();
+    if (const CreatureCircle* creature = get_follow_target_creature()) {
+        b2Vec2 p = creature->getPosition();
         view.setCenter({p.x, p.y});
     }
 }
@@ -230,14 +230,14 @@ void SelectionManager::revalidate_selection(const EatableCircle* previously_sele
     }
 }
 
-void SelectionManager::set_selection_to_eater(const EaterCircle* eater) {
+void SelectionManager::set_selection_to_creature(const CreatureCircle* creature) {
     if (!circles) return;
-    if (!eater) {
+    if (!creature) {
         selected_index.reset();
         return;
     }
     for (std::size_t i = 0; i < circles->size(); ++i) {
-        if ((*circles)[i].get() == eater) {
+        if ((*circles)[i].get() == creature) {
             selected_index = i;
             return;
         }
@@ -245,33 +245,33 @@ void SelectionManager::set_selection_to_eater(const EaterCircle* eater) {
     selected_index.reset();
 }
 
-const EaterCircle* SelectionManager::find_nearest_eater(const b2Vec2& pos) const {
+const CreatureCircle* SelectionManager::find_nearest_creature(const b2Vec2& pos) const {
     if (!circles) return nullptr;
-    const EaterCircle* best = nullptr;
+    const CreatureCircle* best = nullptr;
     float best_dist2 = std::numeric_limits<float>::max();
     for (const auto& c : *circles) {
-        if (c && c->get_kind() == CircleKind::Eater) {
-            auto* eater = static_cast<const EaterCircle*>(c.get());
-            b2Vec2 p = eater->getPosition();
+        if (c && c->get_kind() == CircleKind::Creature) {
+            auto* creature = static_cast<const CreatureCircle*>(c.get());
+            b2Vec2 p = creature->getPosition();
             float dx = p.x - pos.x;
             float dy = p.y - pos.y;
             float d2 = dx * dx + dy * dy;
             if (d2 < best_dist2) {
                 best_dist2 = d2;
-                best = eater;
+                best = creature;
             }
         }
     }
     return best;
 }
 
-void SelectionManager::handle_selection_after_removal(const Snapshot& snapshot, bool was_removed, const EaterCircle* preferred_fallback, const b2Vec2& fallback_position) {
+void SelectionManager::handle_selection_after_removal(const Snapshot& snapshot, bool was_removed, const CreatureCircle* preferred_fallback, const b2Vec2& fallback_position) {
     if (was_removed && follow_selected) {
-        const EaterCircle* fallback = preferred_fallback;
+        const CreatureCircle* fallback = preferred_fallback;
         if (!fallback) {
-            fallback = find_nearest_eater(fallback_position);
+            fallback = find_nearest_creature(fallback_position);
         }
-        set_selection_to_eater(fallback);
+        set_selection_to_creature(fallback);
     } else if (!was_removed && snapshot.circle) {
         revalidate_selection(snapshot.circle);
     }

@@ -9,7 +9,7 @@
 #include <box2d/box2d.h>
 
 class EatableCircle;
-class EaterCircle;
+class CreatureCircle;
 namespace neat { class Genome; }
 
 // Manages which circle is selected and follow-target logic.
@@ -25,11 +25,11 @@ public:
     void clear();
     bool select_circle_at_world(const b2Vec2& pos);
     const neat::Genome* get_selected_brain() const;
-    const EaterCircle* get_selected_eater() const;
-    const EaterCircle* get_oldest_largest_eater() const;
-    const EaterCircle* get_oldest_smallest_eater() const;
-    const EaterCircle* get_oldest_middle_eater() const;
-    const EaterCircle* get_follow_target_eater() const;
+    const CreatureCircle* get_selected_creature() const;
+    const CreatureCircle* get_oldest_largest_creature() const;
+    const CreatureCircle* get_oldest_smallest_creature() const;
+    const CreatureCircle* get_oldest_middle_creature() const;
+    const CreatureCircle* get_follow_target_creature() const;
     int get_selected_generation() const;
     void update_follow_view(sf::View& view) const;
 
@@ -44,9 +44,9 @@ public:
 
     Snapshot capture_snapshot() const;
     void revalidate_selection(const EatableCircle* previously_selected);
-    void set_selection_to_eater(const EaterCircle* eater);
-    const EaterCircle* find_nearest_eater(const b2Vec2& pos) const;
-    void handle_selection_after_removal(const Snapshot& snapshot, bool was_removed, const EaterCircle* preferred_fallback, const b2Vec2& fallback_position);
+    void set_selection_to_creature(const CreatureCircle* creature);
+    const CreatureCircle* find_nearest_creature(const b2Vec2& pos) const;
+    void handle_selection_after_removal(const Snapshot& snapshot, bool was_removed, const CreatureCircle* preferred_fallback, const b2Vec2& fallback_position);
 
 private:
     std::vector<std::unique_ptr<EatableCircle>>* circles;

@@ -13,7 +13,7 @@
 #include "game/spawner.hpp"
 #include <NEAT/genome.hpp>
 
-class EaterCircle;
+class CreatureCircle;
 
 
 class Game {
@@ -24,7 +24,7 @@ public:
         Select
     };
     enum class AddType {
-        Eater,
+        Creature,
         Eatable,
         ToxicEatable,
         DivisionEatable
@@ -120,18 +120,18 @@ public:
     float get_boost_area() const { return boost_area; }
     void set_petri_radius(float r) { petri_radius = r; }
     float get_petri_radius() const { return petri_radius; }
-    void set_minimum_eater_count(int count) { minimum_eater_count = std::max(0, count); }
-    int get_minimum_eater_count() const { return minimum_eater_count; }
-    void set_average_eater_area(float area) { average_eater_area = area; }
-    float get_average_eater_area() const { return average_eater_area; }
+    void set_minimum_creature_count(int count) { minimum_creature_count = std::max(0, count); }
+    int get_minimum_creature_count() const { return minimum_creature_count; }
+    void set_average_creature_area(float area) { average_creature_area = area; }
+    float get_average_creature_area() const { return average_creature_area; }
     void set_sprinkle_rate_eatable(float r) { sprinkle_rate_eatable = r; }
     void set_sprinkle_rate_toxic(float r) { sprinkle_rate_toxic = r; }
     void set_sprinkle_rate_division(float r) { sprinkle_rate_division = r; }
     float get_sprinkle_rate_eatable() const { return sprinkle_rate_eatable; }
     float get_sprinkle_rate_toxic() const { return sprinkle_rate_toxic; }
     float get_sprinkle_rate_division() const { return sprinkle_rate_division; }
-    void set_eater_cloud_area_percentage(float percentage) { eater_cloud_area_percentage = percentage; }
-    float get_eater_cloud_area_percentage() const { return eater_cloud_area_percentage; }
+    void set_creature_cloud_area_percentage(float percentage) { creature_cloud_area_percentage = percentage; }
+    float get_creature_cloud_area_percentage() const { return creature_cloud_area_percentage; }
     void set_division_pellet_divide_probability(float p) { division_pellet_divide_probability = std::clamp(p, 0.0f, 1.0f); }
     float get_division_pellet_divide_probability() const { return division_pellet_divide_probability; }
     void set_max_food_pellets(int v) { max_food_pellets = std::max(0, v); }
@@ -154,7 +154,7 @@ public:
     void set_show_true_color(bool value) { show_true_color = value; }
     bool get_show_true_color() const { return show_true_color; }
     void add_circle(std::unique_ptr<EatableCircle> circle);
-    std::size_t get_eater_count() const;
+    std::size_t get_creature_count() const;
     void remove_random_percentage(float percentage);
     void remove_percentage_pellets(float percentage, bool toxic, bool division_boost);
     void remove_outside_petri();
@@ -179,26 +179,26 @@ public:
     void update_follow_view(sf::View& view) const;
     void clear_selection();
     const neat::Genome* get_selected_brain() const;
-    const EaterCircle* get_selected_eater() const;
-    const EaterCircle* get_oldest_largest_eater() const;
-    const EaterCircle* get_oldest_smallest_eater() const;
-    const EaterCircle* get_oldest_middle_eater() const;
-    const EaterCircle* get_follow_target_eater() const;
-    void set_selection_to_eater(const EaterCircle* eater);
-    const EaterCircle* find_nearest_eater(const b2Vec2& pos) const;
+    const CreatureCircle* get_selected_creature() const;
+    const CreatureCircle* get_oldest_largest_creature() const;
+    const CreatureCircle* get_oldest_smallest_creature() const;
+    const CreatureCircle* get_oldest_middle_creature() const;
+    const CreatureCircle* get_follow_target_creature() const;
+    void set_selection_to_creature(const CreatureCircle* creature);
+    const CreatureCircle* find_nearest_creature(const b2Vec2& pos) const;
     int get_selected_generation() const;
     bool select_circle_at_world(const b2Vec2& pos);
     CursorMode get_cursor_mode() const { return cursor_mode; }
 private:
     struct RemovalResult {
         bool should_remove = false;
-        const EaterCircle* killer = nullptr;
+        const CreatureCircle* killer = nullptr;
     };
 
     sf::Vector2f pixel_to_world(sf::RenderWindow& window, const sf::Vector2i& pixel) const;
     void start_view_drag(const sf::Event::MouseButtonPressed& e, bool is_right_button);
     void pan_view(sf::RenderWindow& window, const sf::Event::MouseMoved& e);
-    void update_eaters(const b2WorldId& worldId, float dt);
+    void update_creatures(const b2WorldId& worldId, float dt);
     void run_brain_updates(const b2WorldId& worldId, float timeStep);
     void cull_consumed();
     void remove_stopped_boost_particles();
@@ -227,18 +227,18 @@ private:
     float brain_time_accumulator = 0.0f;
     float minimum_area = 1.0f;
     CursorMode cursor_mode = CursorMode::Add;
-    AddType add_type = AddType::Eater;
+    AddType add_type = AddType::Creature;
     float add_eatable_area = 0.3f;
     float boost_area = 0.003f;
     float poison_death_probability = 1.0f;
     float poison_death_probability_normal = 0.0f;
     float petri_radius = 50.0f;
-    int minimum_eater_count = 10;
-    float average_eater_area = 5.0f;
+    int minimum_creature_count = 10;
+    float average_creature_area = 5.0f;
     float sprinkle_rate_eatable = 50.0f;
     float sprinkle_rate_toxic = 1.0f;
     float sprinkle_rate_division = 1.0f;
-    float eater_cloud_area_percentage = 70.0f;
+    float creature_cloud_area_percentage = 70.0f;
     float division_pellet_divide_probability = 1.0f;
     float cleanup_rate_food = 0.0f;     // percent per second (computed)
     float cleanup_rate_toxic = 0.0f;    // percent per second (computed)
