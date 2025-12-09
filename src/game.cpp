@@ -238,6 +238,7 @@ void Game::handle_key_press(sf::RenderWindow& window, const sf::Event::KeyPresse
 
 void Game::add_circle(std::unique_ptr<EatableCircle> circle) {
     update_max_generation_from_circle(circle.get());
+    adjust_pellet_count(circle.get(), 1);
     circles.push_back(std::move(circle));
 }
 
@@ -435,6 +436,7 @@ void Game::cull_consumed() {
                 selected_was_removed = true;
                 selected_killer = removal.killer;
             }
+            adjust_pellet_count(it->get(), -1);
             it = circles.erase(it);
         } else {
             ++it;
@@ -445,7 +447,7 @@ void Game::cull_consumed() {
     refresh_generation_and_age();
 
     for (auto& c : spawned_cloud) {
-        circles.push_back(std::move(c));
+        add_circle(std::move(c));
     }
 }
 
@@ -461,6 +463,7 @@ void Game::erase_indices_descending(std::vector<std::size_t>& indices) {
 
     for (std::size_t idx : indices) {
         if (idx < circles.size()) {
+            adjust_pellet_count(circles[idx].get(), -1);
             circles.erase(circles.begin() + static_cast<std::ptrdiff_t>(idx));
         }
     }
@@ -487,6 +490,9 @@ void Game::remove_outside_petri() {
                 bool out = distance + circle->getRadius() > petri_radius;
                 if (out && snapshot.circle && circle.get() == snapshot.circle) {
                     selected_removed = true;
+                }
+                if (out) {
+                    adjust_pellet_count(circle.get(), -1);
                 }
                 return out;
             }),
@@ -567,16 +573,44 @@ std::size_t Game::count_pellets(bool toxic, bool division_pellet) const {
     return count;
 }
 
+std::size_t Game::get_cached_pellet_count(bool toxic, bool division_pellet) const {
+    if (division_pellet) return division_pellet_count_cached;
+    return toxic ? toxic_pellet_count_cached : food_pellet_count_cached;
+}
+
+void Game::adjust_pellet_count(const EatableCircle* circle, int delta) {
+    if (!circle) return;
+    if (circle->is_boost_particle()) return;
+    if (circle->get_kind() == CircleKind::Creature) return;
+
+    auto apply = [&](std::size_t& counter) {
+        if (delta > 0) {
+            counter += static_cast<std::size_t>(delta);
+        } else {
+            std::size_t dec = static_cast<std::size_t>(-delta);
+            counter = (counter > dec) ? (counter - dec) : 0;
+        }
+    };
+
+    if (circle->is_division_pellet()) {
+        apply(division_pellet_count_cached);
+    } else if (circle->is_toxic()) {
+        apply(toxic_pellet_count_cached);
+    } else {
+        apply(food_pellet_count_cached);
+    }
+}
+
 std::size_t Game::get_food_pellet_count() const {
-    return count_pellets(false, false);
+    return food_pellet_count_cached;
 }
 
 std::size_t Game::get_toxic_pellet_count() const {
-    return count_pellets(true, false);
+    return toxic_pellet_count_cached;
 }
 
 std::size_t Game::get_division_pellet_count() const {
-    return count_pellets(false, true);
+    return division_pellet_count_cached;
 }
 
 void Game::adjust_cleanup_rates() {
@@ -601,7 +635,7 @@ void Game::adjust_cleanup_rates() {
 
     auto adjust_spawn = [&](bool toxic, bool division_pellet, float density_target, float& sprinkle_rate_out, float& cleanup_rate_out) {
         float desired = desired_count(density_target);
-        std::size_t count = count_pellets(toxic, division_pellet);
+        std::size_t count = get_cached_pellet_count(toxic, division_pellet);
         float diff = desired - static_cast<float>(count);
         if (diff > 0.0f) {
             // Need to add

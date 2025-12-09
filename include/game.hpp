@@ -204,6 +204,8 @@ private:
     void remove_stopped_boost_particles();
     void apply_impulse_magnitudes_to_circles();
     void apply_damping_to_circles();
+    void adjust_pellet_count(const EatableCircle* circle, int delta);
+    std::size_t get_cached_pellet_count(bool toxic, bool division) const;
     void handle_mouse_press(sf::RenderWindow& window, const sf::Event::MouseButtonPressed& e);
     void handle_mouse_release(const sf::Event::MouseButtonReleased& e);
     void handle_mouse_move(sf::RenderWindow& window, const sf::Event::MouseMoved& e);
@@ -240,6 +242,10 @@ private:
     float sprinkle_rate_division = 1.0f;
     float creature_cloud_area_percentage = 70.0f;
     float division_pellet_divide_probability = 1.0f;
+    // Cached pellet counts to avoid per-frame scans.
+    std::size_t food_pellet_count_cached = 0;
+    std::size_t toxic_pellet_count_cached = 0;
+    std::size_t division_pellet_count_cached = 0;
     float cleanup_rate_food = 0.0f;     // percent per second (computed)
     float cleanup_rate_toxic = 0.0f;    // percent per second (computed)
     float cleanup_rate_division = 0.0f; // percent per second (computed)
