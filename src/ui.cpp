@@ -392,6 +392,8 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
         apply_preset(Preset::DivisionTest, state, game);
     }
 
+    ImGui::Separator();
+
     if (ImGui::BeginTabBar("ControlsTabs")) {
         if (ImGui::BeginTabItem("Overview")) {
             if (ImGui::CollapsingHeader("Status", ImGuiTreeNodeFlags_DefaultOpen)) {
