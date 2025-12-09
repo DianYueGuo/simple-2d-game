@@ -87,7 +87,7 @@ struct SpawningSettings {
     float food_density = 0.0f;
     float toxic_density = 0.0f;
     float division_density = 0.0f;
-    float delete_percentage = 10.0f;
+    float delete_percentage = 100.0f;
     int max_food_pellets = 0;
     int max_toxic_pellets = 0;
     int max_division_pellets = 0;
