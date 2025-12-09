@@ -56,7 +56,7 @@ private:
     struct CreatureSettings {
         float minimum_area = 1.0f;
         float add_eatable_area = 0.3f;
-        float boost_area = 0.003f;
+        float boost_area = 0.002f;
         float average_area = 5.0f;
     };
     struct CursorState {
@@ -75,7 +75,7 @@ private:
         int max_food_pellets = 200;
         int max_toxic_pellets = 50;
         int max_division_pellets = 50;
-        float food_density = 0.05f;
+        float food_density = 0.06f;
         float toxic_density = 0.005f;
         float division_density = 0.005f;
         float cleanup_rate_food = 0.0f;
