@@ -61,6 +61,8 @@ void process_touch_events(const b2WorldId& worldId) {
 
 void Game::process_game_logic() {
     if (paused) {
+        last_sim_dt = 0.0f;
+        update_actual_sim_speed();
         return;
     }
 
@@ -68,6 +70,8 @@ void Game::process_game_logic() {
     int subStepCount = 4;
     b2World_Step(worldId, timeStep, subStepCount);
     sim_time_accum += timeStep;
+    last_sim_dt = timeStep;
+    update_actual_sim_speed();
     // real_time_accum should be updated by caller using frame delta; leave as is here.
 
     process_touch_events(worldId);
@@ -672,6 +676,7 @@ void Game::remove_stopped_boost_particles() {
 
 void Game::accumulate_real_time(float dt) {
     if (dt <= 0.0f) return;
+    last_real_dt = dt;
     real_time_accum += dt;
     fps_accum_time += dt;
     ++fps_frames;
@@ -684,6 +689,15 @@ void Game::accumulate_real_time(float dt) {
 
 void Game::frame_rendered() {
     // reserved for any per-frame hooks; fps handled in accumulate_real_time
+}
+
+void Game::update_actual_sim_speed() {
+    constexpr float eps = std::numeric_limits<float>::epsilon();
+    if (last_real_dt > eps) {
+        actual_sim_speed_inst = last_sim_dt / last_real_dt;
+    } else {
+        actual_sim_speed_inst = 0.0f;
+    }
 }
 
 void Game::set_circle_density(float d) {

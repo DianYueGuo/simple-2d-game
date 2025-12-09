@@ -408,6 +408,8 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
                 show_hover_text("Live counts for pellet types currently in the dish.");
                 ImGui::Text("Sim time: %.2fs  Real time: %.2fs  FPS: %.1f", game.get_sim_time(), game.get_real_time(), game.get_last_fps());
                 show_hover_text("Sim time is the accumulated simulated seconds; real is wall time since start.");
+                ImGui::Text("Actual sim speed: %.2fx", game.get_actual_sim_speed());
+                show_hover_text("Instantaneous simulated seconds per real second using the last frame's dt.");
                 ImGui::Text("Longest life  creation/division: %.2fs / %.2fs",
                             game.get_longest_life_since_creation(),
                             game.get_longest_life_since_division());

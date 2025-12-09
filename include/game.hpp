@@ -163,6 +163,7 @@ public:
     std::size_t get_circle_count() const { return circles.size(); }
     float get_sim_time() const { return sim_time_accum; }
     float get_real_time() const { return real_time_accum; }
+    float get_actual_sim_speed() const { return actual_sim_speed_inst; }
     float get_last_fps() const { return fps_last; }
     float get_longest_life_since_creation() const { return max_age_since_creation; }
     float get_longest_life_since_division() const { return max_age_since_division; }
@@ -216,12 +217,16 @@ private:
     void erase_indices_descending(std::vector<std::size_t>& indices);
     void refresh_generation_and_age();
     RemovalResult evaluate_circle_removal(EatableCircle& circle, std::vector<std::unique_ptr<EatableCircle>>& spawned_cloud);
+    void update_actual_sim_speed();
 
     b2WorldId worldId;
     std::vector<std::unique_ptr<EatableCircle>> circles;
     float time_scale = 1.0f;
     float sim_time_accum = 0.0f;
     float real_time_accum = 0.0f;
+    float last_real_dt = 0.0f;
+    float last_sim_dt = 0.0f;
+    float actual_sim_speed_inst = 0.0f;
     float fps_accum_time = 0.0f;
     int fps_frames = 0;
     float fps_last = 0.0f;
