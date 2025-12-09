@@ -120,7 +120,7 @@ b2Vec2 Spawner::random_point_in_petri() const {
 
 std::unique_ptr<EaterCircle> Spawner::create_eater_at(const b2Vec2& pos) {
     float base_area = std::max(game.get_average_eater_area(), 0.0001f);
-    float varied_area = base_area * (0.5f + random_unit()); // random scale around the average
+    float varied_area = base_area;
     float radius = radius_from_area(varied_area);
     float angle = random_unit() * 2.0f * PI;
     const neat::Genome* base_brain = game.get_max_generation_brain();
