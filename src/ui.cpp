@@ -406,7 +406,7 @@ void render_simulation_controls(Game& game, UiState& state) {
         game.set_paused(paused);
     }
     show_hover_text("Stop simulation updates so you can inspect selected creature info.");
-    if (ImGui::SliderFloat("Simulation speed", &state.time_scale.display, 0.01f, 1000.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
+    if (ImGui::SliderFloat("Simulation speed", &state.time_scale.display, 0.05f, 20.0f, "%.2f", ImGuiSliderFlags_Logarithmic)) {
         state.time_scale.requested = state.time_scale.display;
         game.set_time_scale(state.time_scale.requested);
     }
