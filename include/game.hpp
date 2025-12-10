@@ -66,7 +66,7 @@ private:
     };
     struct DishSettings {
         float radius = 50.0f;
-        int minimum_creature_count = 10;
+        int minimum_creature_count = 0;
         bool auto_remove_outside = true;
     };
     struct PelletSettings {
