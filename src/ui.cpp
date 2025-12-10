@@ -425,7 +425,7 @@ void render_simulation_controls(Game& game, UiState& state) {
 }
 
 void render_spawning_region(Game& game, UiState& state) {
-    if (ImGui::SliderFloat("Region radius (m)", &state.region.petri_radius, 1.0f, 100.0f, "%.2f")) {
+    if (ImGui::SliderFloat("Region radius (m)", &state.region.petri_radius, 30.0f, 70.0f, "%.2f")) {
         game.set_petri_radius(state.region.petri_radius);
     }
     show_hover_text("Size of the petri dish in world meters.");
