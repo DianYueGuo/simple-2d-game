@@ -13,6 +13,23 @@ if(APPLE)
     set(CMAKE_INSTALL_RPATH "@executable_path/../Frameworks")
 endif()
 
+# --- Static analysis: clang-tidy (Debug only, optional) ---
+option(ENABLE_CLANG_TIDY "Enable clang-tidy static analysis in Debug builds" ON)
+
+if(ENABLE_CLANG_TIDY)
+    find_program(CLANG_TIDY_EXE NAMES clang-tidy)
+
+    if(CLANG_TIDY_EXE)
+        message(STATUS "clang-tidy found: ${CLANG_TIDY_EXE}")
+        # Apply clang-tidy only to Debug config (generator expression).
+        set(CMAKE_CXX_CLANG_TIDY
+            "${CLANG_TIDY_EXE};-extra-arg=-std=c++20;-checks=clang-analyzer-*,bugprone-*,-bugprone-too-small-loop-variable,performance-*"
+        )
+    else()
+        message(WARNING "ENABLE_CLANG_TIDY=ON, but clang-tidy was not found.")
+    endif()
+endif()
+
 if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
     set(
         CMAKE_BUILD_TYPE
@@ -120,23 +137,6 @@ if(ENABLE_WARNINGS)
         if(ENABLE_WARNINGS_AS_ERRORS)
         target_compile_options(${APP_TARGET} PRIVATE -Werror)
         endif()
-    endif()
-endif()
-
-# --- Static analysis: clang-tidy (Debug only, optional) ---
-option(ENABLE_CLANG_TIDY "Enable clang-tidy static analysis in Debug builds" ON)
-
-if(ENABLE_CLANG_TIDY)
-    find_program(CLANG_TIDY_EXE NAMES clang-tidy)
-
-    if(CLANG_TIDY_EXE)
-        message(STATUS "clang-tidy found: ${CLANG_TIDY_EXE}")
-        # Apply clang-tidy only to Debug config (generator expression).
-        set(CMAKE_CXX_CLANG_TIDY
-            "${CLANG_TIDY_EXE};-extra-arg=-std=c++20;-checks=clang-analyzer-*,bugprone-*,-bugprone-too-small-loop-variable,performance-*"
-        )
-    else()
-        message(WARNING "ENABLE_CLANG_TIDY=ON, but clang-tidy was not found.")
     endif()
 endif()
 
