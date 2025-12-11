@@ -192,6 +192,7 @@ if(CPPCHECK_EXE)
             --std=c++20
             --language=c++
             --inline-suppr
+            --check-level=exhaustive
             -I ${CMAKE_SOURCE_DIR}/include
             ${CMAKE_SOURCE_DIR}/src
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
