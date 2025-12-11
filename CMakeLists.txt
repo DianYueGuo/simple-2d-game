@@ -25,6 +25,14 @@ if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
     )
 endif()
 
+# --- Enable sanitizers in Debug builds ---
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_CXX_FLAGS_DEBUG
+        "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address,undefined -fno-omit-frame-pointer -g")
+    set(CMAKE_EXE_LINKER_FLAGS_DEBUG
+        "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -fsanitize=address,undefined -fno-omit-frame-pointer")
+endif()
+
 include(FetchContent)
 
 FetchContent_Declare(
