@@ -380,10 +380,8 @@ void CreatureCircle::boost_forward(const b2WorldId &worldId, Game& game) {
         boost_circle_ptr->set_linear_damping(game.get_boost_particle_linear_damping(), worldId);
         boost_circle_ptr->set_angular_damping(game.get_angular_damping(), worldId);
         game.add_circle(std::move(boost_circle));
-        if (boost_circle_ptr) {
-            boost_circle_ptr->setAngle(angle + PI, worldId);
-            boost_circle_ptr->apply_forward_impulse();
-        }
+        boost_circle_ptr->setAngle(angle + PI, worldId);
+        boost_circle_ptr->apply_forward_impulse();
     }
 }
 
