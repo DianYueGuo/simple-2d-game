@@ -503,6 +503,7 @@ void render_overview_window(Game& game, UiState& state) {
     ImGui::End();
 }
 
+#ifndef NDEBUG
 void render_simulation_tab(Game& game, UiState& state) {
     if (!ImGui::BeginTabItem("Simulation")) {
         return;
@@ -595,7 +596,9 @@ void render_simulation_tab(Game& game, UiState& state) {
 
     ImGui::EndTabItem();
 }
+#endif // NDEBUG
 
+#ifndef NDEBUG
 void render_mutation_tab(Game& game, UiState& state) {
     if (!ImGui::BeginTabItem("Mutation")) {
         return;
@@ -676,12 +679,9 @@ void render_mutation_tab(Game& game, UiState& state) {
 
     ImGui::EndTabItem();
 }
+#endif // NDEBUG
 
-void render_spawning_tab(Game& game, UiState& state) {
-    if (!ImGui::BeginTabItem("Spawning")) {
-        return;
-    }
-
+void render_spawning_controls(Game& game, UiState& state) {
     if (ImGui::CollapsingHeader("Spawn & density targets", ImGuiTreeNodeFlags_DefaultOpen)) {
         bool spawning_changed = false;
         spawning_changed |= ImGui::SliderInt("Minimum creature count", &state.spawning.minimum_creatures, 0, 500);
@@ -721,8 +721,6 @@ void render_spawning_tab(Game& game, UiState& state) {
             game.set_max_division_pellets(state.spawning.max_division_pellets);
         }
     }
-
-    ImGui::EndTabItem();
 }
 } // namespace
 
@@ -745,13 +743,18 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
     ImGui::SeparatorText("Spawning region");
     render_spawning_region(game, state);
 
+    ImGui::SeparatorText("Spawning & cleanup");
+    render_spawning_controls(game, state);
+
     ImGui::Separator();
 
+    // Debug-only tabs
+#ifndef NDEBUG
     if (ImGui::BeginTabBar("ControlsTabs")) {
         render_simulation_tab(game, state);
         render_mutation_tab(game, state);
-        render_spawning_tab(game, state);
         ImGui::EndTabBar();
     }
+#endif
     ImGui::End();
 }
