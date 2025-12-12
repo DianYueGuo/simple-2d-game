@@ -161,6 +161,120 @@ float circle_wedge_overlap_area(const b2Vec2& circle_center_local, float radius,
     float area = circle_triangle_intersection_area(triangle, circle_center_local, radius);
     return std::max(0.0f, area);
 }
+
+float normalize_angle_positive(float angle) {
+    float a = std::fmod(angle, TWO_PI);
+    if (a < 0.0f) {
+        a += TWO_PI;
+    }
+    return a;
+}
+
+void accumulate_touching_circle(const CirclePhysics& circle,
+                                const DrawableCircle& drawable,
+                                const b2Vec2& self_pos,
+                                float cos_h,
+                                float sin_h,
+                                const SectorSegments& sector_segments,
+                                SensorColors& summed_colors,
+                                SensorWeights& weights) {
+    const b2Vec2 other_pos = circle.getPosition();
+    b2Vec2 rel_world{other_pos.x - self_pos.x, other_pos.y - self_pos.y};
+    b2Vec2 rel_local{
+        cos_h * rel_world.x + sin_h * rel_world.y,
+        -sin_h * rel_world.x + cos_h * rel_world.y
+    };
+
+    const float other_r = circle.getRadius();
+    const float dist2 = rel_local.x * rel_local.x + rel_local.y * rel_local.y;
+    const float other_r2 = other_r * other_r;
+    const auto& color = drawable.get_color_rgb();
+
+    auto accumulate_sector = [&](int sector) {
+        float area_in_sector = 0.0f;
+        const auto& segs = sector_segments[sector];
+        for (int idx = 0; idx < segs.count; ++idx) {
+            const auto& seg = segs.segments[idx];
+            area_in_sector += circle_wedge_overlap_area(rel_local, other_r, seg.first, seg.second);
+        }
+
+        if (area_in_sector <= 0.0f) {
+            return;
+        }
+
+        summed_colors[sector][0] += color[0] * area_in_sector;
+        summed_colors[sector][1] += color[1] * area_in_sector;
+        summed_colors[sector][2] += color[2] * area_in_sector;
+        weights[sector] += area_in_sector;
+    };
+
+    if (dist2 <= other_r2) {
+        // Circle encompasses the origin; intersects all sectors.
+        for (int sector = 0; sector < SENSOR_COUNT; ++sector) {
+            accumulate_sector(sector);
+        }
+        return;
+    }
+
+    const float dist = std::sqrt(dist2);
+    const float half_span = std::asin(std::clamp(other_r / dist, 0.0f, 1.0f));
+    const float center_angle = std::atan2(rel_local.y, rel_local.x);
+    constexpr float pad = 1e-4f; // avoid missing boundary-touching sectors
+    float start = normalize_angle_positive(center_angle - half_span - pad);
+    float end = normalize_angle_positive(center_angle + half_span + pad);
+
+    auto angle_to_index = [](float angle) {
+        int idx = static_cast<int>(std::floor(angle / SECTOR_WIDTH));
+        if (idx >= SENSOR_COUNT) idx = 0;
+        return idx;
+    };
+
+    int start_idx = angle_to_index(start);
+    int end_idx = angle_to_index(end);
+
+    auto process_range = [&](int from, int to) {
+        for (int s = from; ; ++s) {
+            accumulate_sector(s);
+            if (s == to) break;
+        }
+    };
+
+    if (start <= end) {
+        process_range(start_idx, end_idx);
+    } else {
+        process_range(start_idx, SENSOR_COUNT - 1);
+        process_range(0, end_idx);
+    }
+}
+
+void spawn_boost_particle(const b2WorldId& worldId,
+                          Game& game,
+                          const CreatureCircle& parent,
+                          float boost_radius,
+                          float angle,
+                          const b2Vec2& back_position) {
+    auto boost_circle = std::make_unique<EatableCircle>(
+        worldId,
+        back_position.x,
+        back_position.y,
+        boost_radius,
+        game.get_circle_density(),
+        /*toxic=*/false,
+        /*division_pellet=*/false,
+        /*angle=*/0.0f,
+        /*boost_particle=*/true);
+    EatableCircle* boost_circle_ptr = boost_circle.get();
+    const auto creature_signal_color = parent.get_color_rgb(); // use true signal, not smoothed display
+    boost_circle_ptr->set_color_rgb(creature_signal_color[0], creature_signal_color[1], creature_signal_color[2]);
+    boost_circle_ptr->smooth_display_color(1.0f);
+    float frac = game.get_boost_particle_impulse_fraction();
+    boost_circle_ptr->set_impulse_magnitudes(game.get_linear_impulse_magnitude() * frac, game.get_angular_impulse_magnitude() * frac);
+    boost_circle_ptr->set_linear_damping(game.get_boost_particle_linear_damping(), worldId);
+    boost_circle_ptr->set_angular_damping(game.get_angular_damping(), worldId);
+    game.add_circle(std::move(boost_circle));
+    boost_circle_ptr->setAngle(angle + PI, worldId);
+    boost_circle_ptr->apply_forward_impulse();
+}
 } // namespace
 
 CreatureCircle::CreatureCircle(const b2WorldId &worldId,
@@ -424,30 +538,12 @@ void CreatureCircle::boost_forward(const b2WorldId &worldId, Game& game) {
         b2Vec2 pos = this->getPosition();
         float angle = this->getAngle();
         b2Vec2 direction = {cos(angle), sin(angle)};
-        b2Vec2 back_position = {pos.x - direction.x * (this->getRadius() + boost_radius), 
-                    pos.y - direction.y * (this->getRadius() + boost_radius)};
+        b2Vec2 back_position = {
+            pos.x - direction.x * (this->getRadius() + boost_radius),
+            pos.y - direction.y * (this->getRadius() + boost_radius)
+        };
 
-        auto boost_circle = std::make_unique<EatableCircle>(
-            worldId,
-            back_position.x,
-            back_position.y,
-            boost_radius,
-            game.get_circle_density(),
-            /*toxic=*/false,
-            /*division_pellet=*/false,
-            /*angle=*/0.0f,
-            /*boost_particle=*/true);
-        EatableCircle* boost_circle_ptr = boost_circle.get();
-        const auto creature_signal_color = get_color_rgb(); // use true signal, not smoothed display
-        boost_circle_ptr->set_color_rgb(creature_signal_color[0], creature_signal_color[1], creature_signal_color[2]);
-        boost_circle_ptr->smooth_display_color(1.0f);
-        float frac = game.get_boost_particle_impulse_fraction();
-        boost_circle_ptr->set_impulse_magnitudes(game.get_linear_impulse_magnitude() * frac, game.get_angular_impulse_magnitude() * frac);
-        boost_circle_ptr->set_linear_damping(game.get_boost_particle_linear_damping(), worldId);
-        boost_circle_ptr->set_angular_damping(game.get_angular_damping(), worldId);
-        game.add_circle(std::move(boost_circle));
-        boost_circle_ptr->setAngle(angle + PI, worldId);
-        boost_circle_ptr->apply_forward_impulse();
+        spawn_boost_particle(worldId, game, *this, boost_radius, angle, back_position);
     }
 }
 
@@ -624,11 +720,6 @@ void CreatureCircle::update_brain_inputs_from_touching() {
     SensorWeights weights{};
 
     if (!touching_circles.empty()) {
-        const auto normalize_angle_pos = [](float angle) {
-            float a = std::fmod(angle, TWO_PI);
-            if (a < 0.0f) a += TWO_PI;
-            return a;
-        };
         const b2Vec2 self_pos = this->getPosition();
         const float heading = this->getAngle();
         const float cos_h = std::cos(heading);
@@ -640,76 +731,7 @@ void CreatureCircle::update_brain_inputs_from_touching() {
             if (!drawable) {
                 return;
             }
-
-            const b2Vec2 other_pos = circle.getPosition();
-            b2Vec2 rel_world{other_pos.x - self_pos.x, other_pos.y - self_pos.y};
-            // Rotate into the creature's local frame so sectors are fixed around the x-axis.
-            b2Vec2 rel_local{
-                cos_h * rel_world.x + sin_h * rel_world.y,
-                -sin_h * rel_world.x + cos_h * rel_world.y
-            };
-
-            const float other_r = circle.getRadius();
-            const auto& color = drawable->get_color_rgb();
-
-            const float dist2 = rel_local.x * rel_local.x + rel_local.y * rel_local.y;
-            const float other_r2 = other_r * other_r;
-
-            auto accumulate_sector = [&](int sector) {
-                float area_in_sector = 0.0f;
-                const auto& segs = sector_segments[sector];
-                for (int idx = 0; idx < segs.count; ++idx) {
-                    const auto& seg = segs.segments[idx];
-                    area_in_sector += circle_wedge_overlap_area(rel_local, other_r, seg.first, seg.second);
-                }
-
-                if (area_in_sector <= 0.0f) {
-                    return;
-                }
-
-                summed_colors[sector][0] += color[0] * area_in_sector;
-                summed_colors[sector][1] += color[1] * area_in_sector;
-                summed_colors[sector][2] += color[2] * area_in_sector;
-                weights[sector] += area_in_sector;
-            };
-
-            if (dist2 <= other_r2) {
-                // Circle encompasses the origin; intersects all sectors.
-                for (int sector = 0; sector < SENSOR_COUNT; ++sector) {
-                    accumulate_sector(sector);
-                }
-                return;
-            }
-
-            const float dist = std::sqrt(dist2);
-            const float half_span = std::asin(std::clamp(other_r / dist, 0.0f, 1.0f));
-            const float center_angle = std::atan2(rel_local.y, rel_local.x);
-            constexpr float pad = 1e-4f; // avoid missing boundary-touching sectors
-            float start = normalize_angle_pos(center_angle - half_span - pad);
-            float end = normalize_angle_pos(center_angle + half_span + pad);
-
-            auto angle_to_index = [](float angle) {
-                int idx = static_cast<int>(std::floor(angle / SECTOR_WIDTH));
-                if (idx >= SENSOR_COUNT) idx = 0;
-                return idx;
-            };
-
-            int start_idx = angle_to_index(start);
-            int end_idx = angle_to_index(end);
-
-            auto process_range = [&](int from, int to) {
-                for (int s = from; ; ++s) {
-                    accumulate_sector(s);
-                    if (s == to) break;
-                }
-            };
-
-            if (start <= end) {
-                process_range(start_idx, end_idx);
-            } else {
-                process_range(start_idx, SENSOR_COUNT - 1);
-                process_range(0, end_idx);
-            }
+            accumulate_touching_circle(circle, *drawable, self_pos, cos_h, sin_h, sector_segments, summed_colors, weights);
         });
     }
 
