@@ -5,6 +5,7 @@
 #include <cmath>
 
 #include <cstdlib>
+#include <vector>
 
 namespace {
 constexpr float PI = 3.14159f;
@@ -51,12 +52,6 @@ SpanSegments split_interval(float start, float end) {
     return segments;
 }
 
-float overlap_length(const SectorSegment& a, const SectorSegment& b) {
-    float start = std::max(a.first, b.first);
-    float end = std::min(a.second, b.second);
-    return std::max(0.0f, end - start);
-}
-
 const SectorSegments& get_sector_segments() {
     static const SectorSegments sector_segments = []() {
         SectorSegments result{};
@@ -70,61 +65,98 @@ const SectorSegments& get_sector_segments() {
     return sector_segments;
 }
 
-float compute_half_span(float distance, float other_radius) {
-    if (distance <= other_radius) {
-        return PI;
+float cross(const b2Vec2& a, const b2Vec2& b) {
+    return a.x * b.y - a.y * b.x;
+}
+
+float dot(const b2Vec2& a, const b2Vec2& b) {
+    return a.x * b.x + a.y * b.y;
+}
+
+float triangle_circle_intersection_area(const b2Vec2& a, const b2Vec2& b, float radius) {
+    // Circle is centered at the origin in this helper.
+    const float r2 = radius * radius;
+    const float len_a2 = dot(a, a);
+    const float EPS = 1e-6f;
+
+    // If both vertices are effectively at the origin, there is no area.
+    if (len_a2 < EPS && dot(b, b) < EPS) {
+        return 0.0f;
     }
-    float ratio = std::clamp(other_radius / distance, -1.0f, 1.0f);
-    return std::asin(ratio);
-}
 
-SpanSegments build_span_segments(float relative_angle, float half_span) {
-    float span_start = relative_angle - half_span;
-    float span_end = relative_angle + half_span;
-    return split_interval(span_start, span_end);
-}
+    struct ParamPoint {
+        float t;
+        b2Vec2 p;
+    };
+    std::vector<ParamPoint> pts;
+    pts.reserve(4);
+    pts.push_back({0.0f, a});
 
-void accumulate_coincident_circle(const DrawableCircle& drawable, float weight, SensorColors& summed_colors, SensorWeights& weights) {
-    const auto& color = drawable.get_color_rgb();
-    float per_sector_w = weight * (SECTOR_WIDTH / (2.0f * PI));
-    for (int sector = 0; sector < SENSOR_COUNT; ++sector) {
-        summed_colors[sector][0] += color[0] * per_sector_w;
-        summed_colors[sector][1] += color[1] * per_sector_w;
-        summed_colors[sector][2] += color[2] * per_sector_w;
-        weights[sector] += per_sector_w;
-    }
-}
-
-void accumulate_offset_circle(const DrawableCircle& drawable,
-                              float area,
-                              const SpanSegments& span_segments,
-                              const SectorSegments& sector_segments,
-                              SensorColors& summed_colors,
-                              SensorWeights& weights) {
-    std::array<float, SENSOR_COUNT> overlap_angles{};
-    for (int i = 0; i < SENSOR_COUNT; ++i) {
-        float total_overlap = 0.0f;
-        const auto& sector = sector_segments[i];
-        for (int ss_idx = 0; ss_idx < sector.count; ++ss_idx) {
-            const auto& ss = sector.segments[ss_idx];
-            for (int sp_idx = 0; sp_idx < span_segments.count; ++sp_idx) {
-                const auto& sp = span_segments.segments[sp_idx];
-                total_overlap += overlap_length(ss, sp);
-            }
+    // Solve for intersections of segment ab with the circle.
+    b2Vec2 d{b.x - a.x, b.y - a.y};
+    float A = dot(d, d);
+    float B = 2.0f * dot(a, d);
+    float C = len_a2 - r2;
+    float disc = B * B - 4.0f * A * C;
+    if (disc >= 0.0f && A > EPS) {
+        float sqrt_disc = std::sqrt(disc);
+        float inv_denom = 0.5f / A;
+        float t1 = (-B - sqrt_disc) * inv_denom;
+        float t2 = (-B + sqrt_disc) * inv_denom;
+        if (t1 > t2) std::swap(t1, t2);
+        if (t1 > EPS && t1 < 1.0f - EPS) {
+            pts.push_back({t1, b2Vec2{a.x + d.x * t1, a.y + d.y * t1}});
         }
-        overlap_angles[i] = total_overlap;
+        if (t2 > EPS && t2 < 1.0f - EPS && std::fabs(t2 - t1) > EPS) {
+            pts.push_back({t2, b2Vec2{a.x + d.x * t2, a.y + d.y * t2}});
+        }
     }
 
-    const auto& color = drawable.get_color_rgb();
-    for (int sector = 0; sector < SENSOR_COUNT; ++sector) {
-        float ang = overlap_angles[sector];
-        if (ang <= 0.0f) continue;
-        float w_sector = area * (ang / (2.0f * PI));
-        summed_colors[sector][0] += color[0] * w_sector;
-        summed_colors[sector][1] += color[1] * w_sector;
-        summed_colors[sector][2] += color[2] * w_sector;
-        weights[sector] += w_sector;
+    pts.push_back({1.0f, b});
+    std::sort(pts.begin(), pts.end(), [&](const ParamPoint& p1, const ParamPoint& p2) {
+        return p1.t < p2.t;
+    });
+
+    float area = 0.0f;
+    for (size_t i = 0; i + 1 < pts.size(); ++i) {
+        const b2Vec2& p = pts[i].p;
+        const b2Vec2& q = pts[i + 1].p;
+        b2Vec2 mid{0.5f * (p.x + q.x), 0.5f * (p.y + q.y)};
+        const float mid_len2 = dot(mid, mid);
+        if (mid_len2 <= r2 + EPS) {
+            area += 0.5f * cross(p, q);
+        } else {
+            float ang = std::atan2(cross(p, q), dot(p, q));
+            area += 0.5f * r2 * ang;
+        }
     }
+
+    return area;
+}
+
+float circle_triangle_intersection_area(const std::array<b2Vec2, 3>& poly, const b2Vec2& center, float radius) {
+    // Translate polygon so circle center is at the origin.
+    float area = 0.0f;
+    for (int i = 0; i < 3; ++i) {
+        b2Vec2 a{poly[i].x - center.x, poly[i].y - center.y};
+        const auto& next = poly[(i + 1) % 3];
+        b2Vec2 b{next.x - center.x, next.y - center.y};
+        area += triangle_circle_intersection_area(a, b, radius);
+    }
+    return area;
+}
+
+float circle_wedge_overlap_area(const b2Vec2& circle_center_local, float radius, float start_angle, float end_angle) {
+    // Build a large triangle that represents the wedge; large enough to fully contain the circle footprint.
+    float dist_to_origin = std::sqrt(circle_center_local.x * circle_center_local.x + circle_center_local.y * circle_center_local.y);
+    float ray_length = dist_to_origin + radius + 1.0f; // add slack to guarantee containment
+
+    b2Vec2 p1{std::cos(start_angle) * ray_length, std::sin(start_angle) * ray_length};
+    b2Vec2 p2{std::cos(end_angle) * ray_length, std::sin(end_angle) * ray_length};
+    std::array<b2Vec2, 3> triangle{{b2Vec2{0.0f, 0.0f}, p1, p2}};
+
+    float area = circle_triangle_intersection_area(triangle, circle_center_local, radius);
+    return std::max(0.0f, area);
 }
 } // namespace
 
@@ -571,6 +603,8 @@ void CreatureCircle::update_brain_inputs_from_touching() {
     if (!touching_circles.empty()) {
         const b2Vec2 self_pos = this->getPosition();
         const float heading = this->getAngle();
+        const float cos_h = std::cos(heading);
+        const float sin_h = std::sin(heading);
         const auto& sector_segments = get_sector_segments();
 
         for_each_touching([&](const CirclePhysics& circle) {
@@ -580,22 +614,33 @@ void CreatureCircle::update_brain_inputs_from_touching() {
             }
 
             const b2Vec2 other_pos = circle.getPosition();
-            const float dx = other_pos.x - self_pos.x;
-            const float dy = other_pos.y - self_pos.y;
-            const float area = std::max(circle.getArea(), 0.0f);
+            b2Vec2 rel_world{other_pos.x - self_pos.x, other_pos.y - self_pos.y};
+            // Rotate into the creature's local frame so sectors are fixed around the x-axis.
+            b2Vec2 rel_local{
+                cos_h * rel_world.x + sin_h * rel_world.y,
+                -sin_h * rel_world.x + cos_h * rel_world.y
+            };
 
-            if (dx == 0.0f && dy == 0.0f) {
-                accumulate_coincident_circle(*drawable, area, summed_colors, weights);
-                return;
-            }
-
-            float relative_angle = normalize_angle(std::atan2(dy, dx) - heading);
-            float distance = std::sqrt(dx * dx + dy * dy);
             float other_r = circle.getRadius();
-            float half_span = compute_half_span(distance, other_r);
+            const auto& color = drawable->get_color_rgb();
 
-            auto span_segments = build_span_segments(relative_angle, half_span);
-            accumulate_offset_circle(*drawable, area, span_segments, sector_segments, summed_colors, weights);
+            for (int sector = 0; sector < SENSOR_COUNT; ++sector) {
+                float area_in_sector = 0.0f;
+                const auto& segs = sector_segments[sector];
+                for (int idx = 0; idx < segs.count; ++idx) {
+                    const auto& seg = segs.segments[idx];
+                    area_in_sector += circle_wedge_overlap_area(rel_local, other_r, seg.first, seg.second);
+                }
+
+                if (area_in_sector <= 0.0f) {
+                    continue;
+                }
+
+                summed_colors[sector][0] += color[0] * area_in_sector;
+                summed_colors[sector][1] += color[1] * area_in_sector;
+                summed_colors[sector][2] += color[2] * area_in_sector;
+                weights[sector] += area_in_sector;
+            }
         });
     }
 
