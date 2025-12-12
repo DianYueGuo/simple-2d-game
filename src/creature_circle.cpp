@@ -14,7 +14,11 @@ constexpr float SECTOR_WIDTH = PI / 4.0f;
 constexpr float SECTOR_HALF = SECTOR_WIDTH * 0.5f;
 
 using SectorSegment = std::pair<float, float>;
-using SectorSegments = std::array<std::vector<SectorSegment>, SENSOR_COUNT>;
+struct SpanSegments {
+    std::array<SectorSegment, 2> segments{};
+    int count = 0;
+};
+using SectorSegments = std::array<SpanSegments, SENSOR_COUNT>;
 using SensorColors = std::array<std::array<float, 3>, SENSOR_COUNT>;
 using SensorWeights = std::array<float, SENSOR_COUNT>;
 
@@ -32,15 +36,17 @@ float normalize_angle(float angle) {
     return angle;
 }
 
-std::vector<SectorSegment> split_interval(float start, float end) {
-    std::vector<SectorSegment> segments;
+SpanSegments split_interval(float start, float end) {
+    SpanSegments segments{};
     start = normalize_angle(start);
     end = normalize_angle(end);
     if (end < start) {
-        segments.emplace_back(start, PI);
-        segments.emplace_back(-PI, end);
+        segments.segments[0] = {start, PI};
+        segments.segments[1] = {-PI, end};
+        segments.count = 2;
     } else {
-        segments.emplace_back(start, end);
+        segments.segments[0] = {start, end};
+        segments.count = 1;
     }
     return segments;
 }
@@ -51,13 +57,16 @@ float overlap_length(const SectorSegment& a, const SectorSegment& b) {
     return std::max(0.0f, end - start);
 }
 
-SectorSegments build_sector_segments() {
-    SectorSegments sector_segments{};
-    for (int i = 0; i < SENSOR_COUNT; ++i) {
-        float s_start = -SECTOR_HALF + i * SECTOR_WIDTH;
-        float s_end = s_start + SECTOR_WIDTH;
-        sector_segments[i] = split_interval(s_start, s_end);
-    }
+const SectorSegments& get_sector_segments() {
+    static const SectorSegments sector_segments = []() {
+        SectorSegments result{};
+        for (int i = 0; i < SENSOR_COUNT; ++i) {
+            float s_start = -SECTOR_HALF + i * SECTOR_WIDTH;
+            float s_end = s_start + SECTOR_WIDTH;
+            result[i] = split_interval(s_start, s_end);
+        }
+        return result;
+    }();
     return sector_segments;
 }
 
@@ -69,7 +78,7 @@ float compute_half_span(float distance, float other_radius) {
     return std::asin(ratio);
 }
 
-std::vector<SectorSegment> build_span_segments(float relative_angle, float half_span) {
+SpanSegments build_span_segments(float relative_angle, float half_span) {
     float span_start = relative_angle - half_span;
     float span_end = relative_angle + half_span;
     return split_interval(span_start, span_end);
@@ -88,15 +97,18 @@ void accumulate_coincident_circle(const DrawableCircle& drawable, float weight, 
 
 void accumulate_offset_circle(const DrawableCircle& drawable,
                               float area,
-                              const std::vector<SectorSegment>& span_segments,
+                              const SpanSegments& span_segments,
                               const SectorSegments& sector_segments,
                               SensorColors& summed_colors,
                               SensorWeights& weights) {
     std::array<float, SENSOR_COUNT> overlap_angles{};
     for (int i = 0; i < SENSOR_COUNT; ++i) {
         float total_overlap = 0.0f;
-        for (const auto& ss : sector_segments[i]) {
-            for (const auto& sp : span_segments) {
+        const auto& sector = sector_segments[i];
+        for (int ss_idx = 0; ss_idx < sector.count; ++ss_idx) {
+            const auto& ss = sector.segments[ss_idx];
+            for (int sp_idx = 0; sp_idx < span_segments.count; ++sp_idx) {
+                const auto& sp = span_segments.segments[sp_idx];
                 total_overlap += overlap_length(ss, sp);
             }
         }
@@ -559,7 +571,7 @@ void CreatureCircle::update_brain_inputs_from_touching() {
     if (!touching_circles.empty()) {
         const b2Vec2 self_pos = this->getPosition();
         const float heading = this->getAngle();
-        const auto sector_segments = build_sector_segments();
+        const auto& sector_segments = get_sector_segments();
 
         for_each_touching([&](const CirclePhysics& circle) {
             auto* drawable = dynamic_cast<const DrawableCircle*>(&circle);

@@ -3,6 +3,7 @@
 
 #include "ui.hpp"
 #include "creature_circle.hpp"
+#include <unordered_map>
 
 namespace {
 struct CursorSettings {
@@ -244,19 +245,21 @@ void render_brain_graph(const neat::Genome& brain) {
             }
         }
 
-        auto findPos = [&](int nodeId) -> ImVec2 {
-            for (auto& dn : drawNodes) {
-                if (dn.id == nodeId) return dn.pos;
-            }
-            return ImVec2{min.x, min.y};
-        };
+        std::unordered_map<int, ImVec2> posById;
+        posById.reserve(drawNodes.size());
+        for (const auto& dn : drawNodes) {
+            posById.emplace(dn.id, dn.pos);
+        }
 
         ImDrawList* dl = ImGui::GetWindowDrawList();
         // Draw connections first
         for (const auto& c : brain.connections) {
             if (!c.enabled) continue;
-            ImVec2 p1 = findPos(c.inNodeId);
-            ImVec2 p2 = findPos(c.outNodeId);
+            auto it_in = posById.find(c.inNodeId);
+            auto it_out = posById.find(c.outNodeId);
+            if (it_in == posById.end() || it_out == posById.end()) continue;
+            ImVec2 p1 = it_in->second;
+            ImVec2 p2 = it_out->second;
             float w = std::clamp(std::fabs(c.weight), 0.0f, 5.0f);
             float alpha = std::clamp(std::fabs(c.weight), 0.1f, 1.0f);
             ImU32 col = ImGui::GetColorU32(ImVec4(c.weight >= 0 ? 0.2f : 0.8f, c.weight >= 0 ? 0.8f : 0.2f, 0.2f, alpha));

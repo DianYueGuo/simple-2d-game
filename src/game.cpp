@@ -554,14 +554,24 @@ void Game::remove_outside_petri() {
     auto snapshot = selection.capture_snapshot();
 
     bool selected_removed = false;
+    const float dish_radius = dish.radius;
     circles.erase(
         std::remove_if(
             circles.begin(),
             circles.end(),
             [&](const std::unique_ptr<EatableCircle>& circle) {
                 b2Vec2 pos = circle->getPosition();
-                float distance = std::sqrt(pos.x * pos.x + pos.y * pos.y);
-                bool out = distance + circle->getRadius() > dish.radius;
+                float r = circle->getRadius();
+                if (r >= dish_radius) {
+                    if (snapshot.circle && circle.get() == snapshot.circle) {
+                        selected_removed = true;
+                    }
+                    adjust_pellet_count(circle.get(), -1);
+                    return true;
+                }
+                float max_center_dist = dish_radius - r;
+                float dist2 = pos.x * pos.x + pos.y * pos.y;
+                bool out = dist2 > max_center_dist * max_center_dist;
                 if (out && snapshot.circle && circle.get() == snapshot.circle) {
                     selected_removed = true;
                 }
@@ -635,14 +645,18 @@ void Game::remove_percentage_pellets(float percentage, bool toxic, bool division
 
 std::size_t Game::count_pellets(bool toxic, bool division_pellet) const {
     std::size_t count = 0;
+    const float dish_radius = dish.radius;
     for (const auto& c : circles) {
         if (auto* e = dynamic_cast<const EatableCircle*>(c.get())) {
             if (e->is_boost_particle()) continue;
             if (e->get_kind() == CircleKind::Creature) continue;
             // Only count pellets inside the petri dish.
             b2Vec2 pos = e->getPosition();
-            float dist = std::sqrt(pos.x * pos.x + pos.y * pos.y);
-            if (dist + e->getRadius() > dish.radius) continue;
+            float r = e->getRadius();
+            if (r >= dish_radius) continue;
+            float max_center_dist = dish_radius - r;
+            float dist2 = pos.x * pos.x + pos.y * pos.y;
+            if (dist2 > max_center_dist * max_center_dist) continue;
             if (e->is_toxic() == toxic && e->is_division_pellet() == division_pellet) {
                 ++count;
             }
