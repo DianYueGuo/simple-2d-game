@@ -213,13 +213,17 @@ const CreatureCircle* SelectionManager::find_nearest_creature(const b2Vec2& pos)
 }
 
 void SelectionManager::handle_selection_after_removal(const Snapshot& snapshot, bool was_removed, const CreatureCircle* preferred_fallback, const b2Vec2& fallback_position) {
-    if (was_removed && follow_selected) {
-        const CreatureCircle* fallback = preferred_fallback;
-        if (!fallback) {
-            fallback = find_nearest_creature(fallback_position);
+    if (was_removed) {
+        if (follow_selected) {
+            const CreatureCircle* fallback = preferred_fallback;
+            if (!fallback) {
+                fallback = find_nearest_creature(fallback_position);
+            }
+            set_selection_to_creature(fallback);
+        } else {
+            selected_index.reset();
         }
-        set_selection_to_creature(fallback);
-    } else if (!was_removed && snapshot.circle) {
+    } else if (snapshot.circle) {
         revalidate_selection(snapshot.circle);
     }
 }

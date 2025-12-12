@@ -13,6 +13,9 @@ CirclePhysics* circle_from_shape(const b2ShapeId& shapeId) {
 }
 
 void handle_sensor_begin_touch(const b2SensorBeginTouchEvent& beginTouch) {
+    if (!b2Shape_IsValid(beginTouch.sensorShapeId) || !b2Shape_IsValid(beginTouch.visitorShapeId)) {
+        return;
+    }
     if (auto* sensor = circle_from_shape(beginTouch.sensorShapeId)) {
         if (auto* visitor = circle_from_shape(beginTouch.visitorShapeId)) {
             sensor->add_touching_circle(visitor);
@@ -41,6 +44,7 @@ Game::Game()
 }
 
 Game::~Game() {
+    circles.clear();
     b2DestroyWorld(worldId);
 }
 
