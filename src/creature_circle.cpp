@@ -650,14 +650,20 @@ void CreatureCircle::update_brain_inputs_from_touching() {
 
 void CreatureCircle::apply_sensor_inputs(const std::array<std::array<float, 3>, 8>& summed_colors, const std::array<float, 8>& weights) {
     // Order sensors clockwise starting from front: front, front-right, right, back-right, back, back-left, left, front-left.
+    const float sector_area = (PI * getRadius() * getRadius()) / static_cast<float>(SENSOR_COUNT);
     for (int i = 0; i < SENSOR_COUNT; ++i) {
         int base_index = i * 3;
         float weight = weights[i];
         if (weight > 0.0f) {
-            float inv = 1.0f / weight;
-            brain_inputs[base_index]     = summed_colors[i][0] * inv;
-            brain_inputs[base_index + 1] = summed_colors[i][1] * inv;
-            brain_inputs[base_index + 2] = summed_colors[i][2] * inv;
+            float r_sum = summed_colors[i][0];
+            float g_sum = summed_colors[i][1];
+            float b_sum = summed_colors[i][2];
+            float denom_r = r_sum + sector_area;
+            float denom_g = g_sum + sector_area;
+            float denom_b = b_sum + sector_area;
+            brain_inputs[base_index]     = denom_r > 0.0f ? (r_sum / denom_r) : 0.0f;
+            brain_inputs[base_index + 1] = denom_g > 0.0f ? (g_sum / denom_g) : 0.0f;
+            brain_inputs[base_index + 2] = denom_b > 0.0f ? (b_sum / denom_b) : 0.0f;
         } else {
             brain_inputs[base_index]     = 0.0f;
             brain_inputs[base_index + 1] = 0.0f;
