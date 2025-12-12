@@ -140,9 +140,9 @@ void set_and_apply(T& field, T value, Setter setter) {
 void apply_preset(Preset preset, UiState& state, Game& game) {
     switch (preset) {
         case Preset::Default:
-            set_and_apply(state.spawning.food_density, 0.02f, [&](float v) { game.set_food_pellet_density(v); });
-            set_and_apply(state.spawning.toxic_density, 0.005f, [&](float v) { game.set_toxic_pellet_density(v); });
-            set_and_apply(state.spawning.division_density, 0.003f, [&](float v) { game.set_division_pellet_density(v); });
+            set_and_apply(state.spawning.food_density, 0.1f, [&](float v) { game.set_food_pellet_density(v); });
+            set_and_apply(state.spawning.toxic_density, 0.008f, [&](float v) { game.set_toxic_pellet_density(v); });
+            set_and_apply(state.spawning.division_density, 0.005f, [&](float v) { game.set_division_pellet_density(v); });
             break;
         case Preset::Peaceful:
             set_and_apply(state.spawning.food_density, 0.03f, [&](float v) { game.set_food_pellet_density(v); });
