@@ -747,9 +747,9 @@ void render_spawning_tab(Game& game, UiState& state) {
         show_hover_text("Deletes a random selection of circles using the percentage above.");
         ImGui::SeparatorText("Cleanup pellets (max targets)");
         bool pellet_limits_changed = false;
-        pellet_limits_changed |= ImGui::SliderInt("Max food pellets", &state.spawning.max_food_pellets, 0, 3000);
-        pellet_limits_changed |= ImGui::SliderInt("Max toxic pellets", &state.spawning.max_toxic_pellets, 0, 3000);
-        pellet_limits_changed |= ImGui::SliderInt("Max division pellets", &state.spawning.max_division_pellets, 0, 3000);
+        pellet_limits_changed |= ImGui::SliderInt("Max food pellets", &state.spawning.max_food_pellets, 0, 5000);
+        pellet_limits_changed |= ImGui::SliderInt("Max toxic pellets", &state.spawning.max_toxic_pellets, 0, 5000);
+        pellet_limits_changed |= ImGui::SliderInt("Max division pellets", &state.spawning.max_division_pellets, 0, 5000);
         show_hover_text("System auto-adjusts cleanup rates to keep pellets near these targets.");
         if (pellet_limits_changed) {
             game.set_max_food_pellets(state.spawning.max_food_pellets);
