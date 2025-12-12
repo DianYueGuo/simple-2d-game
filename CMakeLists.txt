@@ -16,13 +16,16 @@ endif()
 # --- Static analysis: clang-tidy (Debug only, optional) ---
 option(ENABLE_CLANG_TIDY "Enable clang-tidy static analysis in Debug builds" ON)
 
+set(CLANG_TIDY_COMMAND "")
+
 if(ENABLE_CLANG_TIDY)
     find_program(CLANG_TIDY_EXE NAMES clang-tidy)
 
     if(CLANG_TIDY_EXE)
         message(STATUS "clang-tidy found: ${CLANG_TIDY_EXE}")
-        # Apply clang-tidy only to Debug config (generator expression).
-        set(CMAKE_CXX_CLANG_TIDY
+        # Build the generator expression once, to constrain it to Debug builds later.
+        set(
+            CLANG_TIDY_COMMAND
             "${CLANG_TIDY_EXE};-extra-arg=-std=c++20;-checks=clang-analyzer-*,bugprone-*,-bugprone-too-small-loop-variable,performance-*"
         )
     else()
@@ -122,6 +125,15 @@ target_link_libraries(${APP_TARGET} PRIVATE imgui)
 target_link_libraries(${APP_TARGET} PRIVATE ImGui-SFML::ImGui-SFML)
 target_link_libraries(${APP_TARGET} PRIVATE box2d)
 target_link_libraries(${APP_TARGET} PRIVATE neat)
+
+if(CLANG_TIDY_COMMAND)
+    set_target_properties(
+        ${APP_TARGET}
+        PROPERTIES
+            CXX_CLANG_TIDY
+            "$<$<CONFIG:Debug>:${CLANG_TIDY_COMMAND}>"
+    )
+endif()
 
 option(ENABLE_WARNINGS "Enable compiler warnings" ON)
 option(ENABLE_WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
