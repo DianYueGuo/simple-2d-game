@@ -140,6 +140,10 @@ void Game::draw(sf::RenderWindow& window) const {
 }
 
 void Game::process_input_events(sf::RenderWindow& window, const std::optional<sf::Event>& event) {
+    if (!event) {
+        return;
+    }
+
     if (const auto* mouseButtonPressed = event->getIf<sf::Event::MouseButtonPressed>()) {
         handle_mouse_press(window, *mouseButtonPressed);
     }
@@ -574,7 +578,9 @@ void Game::remove_random_percentage(float percentage) {
     }
 
     float clamped = std::clamp(percentage, 0.0f, 100.0f);
-    std::size_t target = static_cast<std::size_t>(std::round(circles.size() * (clamped / 100.0f)));
+    double ratio = static_cast<double>(clamped) / 100.0;
+    double available = static_cast<double>(circles.size());
+    std::size_t target = static_cast<std::size_t>(std::round(available * ratio));
     if (target == 0) {
         return;
     }
@@ -610,7 +616,9 @@ void Game::remove_percentage_pellets(float percentage, bool toxic, bool division
     }
 
     float clamped = std::clamp(percentage, 0.0f, 100.0f);
-    std::size_t target = static_cast<std::size_t>(std::round(indices.size() * (clamped / 100.0f)));
+    double ratio = static_cast<double>(clamped) / 100.0;
+    double available = static_cast<double>(indices.size());
+    std::size_t target = static_cast<std::size_t>(std::round(available * ratio));
     if (target == 0) {
         return;
     }
@@ -693,28 +701,36 @@ void Game::adjust_cleanup_rates() {
         if (desired <= 0.0f) {
             return count > 0 ? 100.0f : 0.0f;
         }
-        if (count <= desired) return 0.0f;
-        float ratio = (static_cast<float>(count) - desired) / desired;
+        float count_f = static_cast<float>(count);
+        if (count_f <= desired) return 0.0f;
+        float ratio = (count_f - desired) / desired;
         float rate = ratio * 50.0f; // 50%/s when double the desired
         return std::clamp(rate, 0.0f, 100.0f);
     };
 
-    auto adjust_spawn = [&](bool toxic, bool division_pellet, float density_target, float& sprinkle_rate_out, float& cleanup_rate_out) {
+    struct SpawnRates {
+        float sprinkle = 0.0f;
+        float cleanup = 0.0f;
+    };
+
+    auto adjust_spawn = [&](bool toxic, bool division_pellet, float density_target) -> SpawnRates {
         float desired = desired_count(density_target);
         std::size_t count = get_cached_pellet_count(toxic, division_pellet);
         float diff = desired - static_cast<float>(count);
-        if (diff > 0.0f) {
-            // Need to add
-            sprinkle_rate_out = std::min(diff * 0.5f, 200.0f);
-        } else {
-            sprinkle_rate_out = 0.0f;
-        }
-        cleanup_rate_out = compute_cleanup_rate(count, desired);
+        float sprinkle_rate = (diff > 0.0f) ? std::min(diff * 0.5f, 200.0f) : 0.0f;
+        float cleanup_rate = compute_cleanup_rate(count, desired);
+        return {sprinkle_rate, cleanup_rate};
     };
 
-    adjust_spawn(false, false, pellets.food_density, pellets.sprinkle_rate_eatable, pellets.cleanup_rate_food);
-    adjust_spawn(true, false, pellets.toxic_density, pellets.sprinkle_rate_toxic, pellets.cleanup_rate_toxic);
-    adjust_spawn(false, true, pellets.division_density, pellets.sprinkle_rate_division, pellets.cleanup_rate_division);
+    auto food_rates = adjust_spawn(false, false, pellets.food_density);
+    auto toxic_rates = adjust_spawn(true, false, pellets.toxic_density);
+    auto division_rates = adjust_spawn(false, true, pellets.division_density);
+    pellets.sprinkle_rate_eatable = food_rates.sprinkle;
+    pellets.cleanup_rate_food = food_rates.cleanup;
+    pellets.sprinkle_rate_toxic = toxic_rates.sprinkle;
+    pellets.cleanup_rate_toxic = toxic_rates.cleanup;
+    pellets.sprinkle_rate_division = division_rates.sprinkle;
+    pellets.cleanup_rate_division = division_rates.cleanup;
 }
 
 void Game::remove_stopped_boost_particles() {

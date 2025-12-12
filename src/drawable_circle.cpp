@@ -4,7 +4,13 @@
 #include <algorithm>
 
 DrawableCircle::DrawableCircle(const b2WorldId &worldId, float position_x, float position_y, float radius, float density, float angle, CircleKind kind) :
-    CirclePhysics(worldId, position_x, position_y, radius, density, angle, kind) {
+    CirclePhysics(worldId, CirclePhysics::Config{
+        b2Vec2{position_x, position_y},
+        radius,
+        density,
+        angle,
+        kind
+    }) {
     for (auto& c : color_rgb) {
         c = std::clamp(static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX), 0.0f, 1.0f);
     }

@@ -17,13 +17,29 @@ enum class CircleKind {
 
 class CirclePhysics {
 public:
-    explicit CirclePhysics(const b2WorldId &worldId,
-                  float position_x = 0.0f,
-                  float position_y = 0.0f,
-                  float radius = 1.0f,
-                  float density = 1.0f,
-                  float angle = 0.0f,
-                  CircleKind kind = CircleKind::Unknown);
+    struct Config {
+        b2Vec2 position;
+        float radius;
+        float density;
+        float angle;
+        CircleKind kind;
+
+        Config()
+            : position{0.0f, 0.0f},
+              radius(1.0f),
+              density(1.0f),
+              angle(0.0f),
+              kind(CircleKind::Unknown) {}
+
+        Config(b2Vec2 position_, float radius_, float density_, float angle_, CircleKind kind_)
+            : position(position_),
+              radius(radius_),
+              density(density_),
+              angle(angle_),
+              kind(kind_) {}
+    };
+
+    explicit CirclePhysics(const b2WorldId &worldId, Config config = {});
 
     virtual ~CirclePhysics();
 

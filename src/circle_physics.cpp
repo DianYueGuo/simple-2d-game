@@ -4,22 +4,22 @@
 #include <cmath>
 
 
-CirclePhysics::CirclePhysics(const b2WorldId &worldId, float position_x, float position_y, float radius, float density, float angle, CircleKind kind) :
+CirclePhysics::CirclePhysics(const b2WorldId &worldId, Config config) :
     bodyId{},
-    density(density),
+    density(config.density),
     isSensor(true),
     enableSensorEvents(true),
     linearDamping(0.3f),
     angularDamping(1.0f),
     linearImpulseMagnitude(5.0f),
     angularImpulseMagnitude(5.0f),
-    kind(kind) {
+    kind(config.kind) {
     BodyState initialState{};
-    initialState.position = b2Vec2{position_x, position_y};
-    initialState.rotation = b2MakeRot(angle);
+    initialState.position = config.position;
+    initialState.rotation = b2MakeRot(config.angle);
     initialState.linearVelocity = b2Vec2{0.0f, 0.0f};
     initialState.angularVelocity = 0.0f;
-    initialState.radius = radius;
+    initialState.radius = config.radius;
 
     createBodyWithState(worldId, initialState);
 }
