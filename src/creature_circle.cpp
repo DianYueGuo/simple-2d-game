@@ -240,11 +240,34 @@ bool CreatureCircle::can_eat_circle(const CirclePhysics& circle) const {
 }
 
 bool CreatureCircle::has_overlap_to_eat(const CirclePhysics& circle) const {
-    float touching_area = circle.getArea();
-    float overlap_threshold = touching_area * 0.8f;
+    const float touching_area = circle.getArea();
+    const float overlap_threshold = touching_area * 0.8f;
 
-    float distance = b2Distance(this->getPosition(), circle.getPosition());
-    float overlap_area = calculate_overlap_area(this->getRadius(), circle.getRadius(), distance);
+    const float r_self = this->getRadius();
+    const float r_other = circle.getRadius();
+
+    const b2Vec2 self_pos = this->getPosition();
+    const b2Vec2 other_pos = circle.getPosition();
+    const float dx = self_pos.x - other_pos.x;
+    const float dy = self_pos.y - other_pos.y;
+    const float dist2 = dx * dx + dy * dy;
+
+    const float sum_r = r_self + r_other;
+    const float sum_r2 = sum_r * sum_r;
+    if (dist2 >= sum_r2) {
+        // No overlap possible.
+        return false;
+    }
+
+    const float diff_r = r_self - r_other;
+    const float diff_r2 = diff_r * diff_r;
+    if (dist2 <= diff_r2) {
+        // Smaller circle fully contained; overlap is entire touching area.
+        return touching_area >= overlap_threshold;
+    }
+
+    const float distance = std::sqrt(dist2);
+    float overlap_area = calculate_overlap_area(r_self, r_other, distance);
 
     return overlap_area >= overlap_threshold;
 }
