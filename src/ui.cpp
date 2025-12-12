@@ -692,6 +692,8 @@ void render_spawning_tab(Game& game, UiState& state) {
         show_hover_text("Target area fraction for toxic pellets.");
         spawning_changed |= ImGui::SliderFloat("Division area density (m^2 per m^2)", &state.spawning.division_density, 0.0f, 0.02f, "%.4f", ImGuiSliderFlags_Logarithmic);
         show_hover_text("Target area fraction for division-triggering blue pellets.");
+        ImGui::SeparatorText("Quick presets");
+        render_preset_buttons(game, state);
         if (spawning_changed) {
             game.set_minimum_creature_count(state.spawning.minimum_creatures);
             game.set_food_pellet_density(state.spawning.food_density);
@@ -742,9 +744,6 @@ void render_ui(sf::RenderWindow& window, sf::View& view, Game& game) {
 
     ImGui::SeparatorText("Spawning region");
     render_spawning_region(game, state);
-
-    ImGui::SeparatorText("Quick presets");
-    render_preset_buttons(game, state);
 
     ImGui::Separator();
 
