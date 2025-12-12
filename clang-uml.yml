@@ -13,3 +13,14 @@ diagrams:
       paths:
         - include
         - src
+  petri_sequence_diagram:
+    type: sequence
+    glob:
+      - include/**/*.hpp
+      - src/**/*.cpp
+    include:
+      paths:
+        - include
+        - src
+    start_from:
+      - function: main()

@@ -47,12 +47,10 @@ This emits `PetriDishSimulation-<version>.dmg`.
 ```bash
 clang-uml --config clang-uml.yml
 ```
-If system headers are not found on macOS, add the driver query so `clang-uml` picks up the SDK include paths:
-```bash
-clang-uml --config clang-uml.yml --query-driver /usr/bin/c++
-```
 To render images automatically (requires `plantuml` on PATH), run:
 ```bash
-clang-uml --config clang-uml.yml --render_diagrams --plantuml-cmd "plantuml -tsvg {}.puml"
+plantuml -tsvg uml/petri_class_diagram.puml
 ```
-Outputs: `uml/petri_class_diagram.puml` plus `svg` renders in the same folder.
+```bash
+plantuml -tsvg uml/petri_sequence_diagram.puml
+```
