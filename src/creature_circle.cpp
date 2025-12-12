@@ -10,8 +10,9 @@
 namespace {
 constexpr float PI = 3.14159f;
 constexpr float TWO_PI = PI * 2.0f;
-constexpr int SENSOR_COUNT = 8;
-constexpr float SECTOR_WIDTH = PI / 4.0f;
+constexpr int SENSOR_COUNT = kColorSensorCount;
+static_assert(SENSOR_COUNT >= kMinColorSensorCount && SENSOR_COUNT <= kMaxColorSensorCount, "Color sensor count out of supported range.");
+constexpr float SECTOR_WIDTH = TWO_PI / static_cast<float>(SENSOR_COUNT);
 constexpr float SECTOR_HALF = SECTOR_WIDTH * 0.5f;
 
 using SectorSegment = std::pair<float, float>;
@@ -177,7 +178,7 @@ CreatureCircle::CreatureCircle(const b2WorldId &worldId,
                          int* last_innov_id,
                          Game* owner) :
     EatableCircle(worldId, position_x, position_y, radius, density, /*toxic=*/false, /*division_pellet=*/false, angle, /*boost_particle=*/false),
-    brain(base_brain ? *base_brain : neat::Genome(29, 11, 0, 0.5f, innov_ids, last_innov_id)) {
+    brain(base_brain ? *base_brain : neat::Genome(BRAIN_INPUTS, BRAIN_OUTPUTS, 0, 0.5f, innov_ids, last_innov_id)) {
     set_kind(CircleKind::Creature);
     neat_innovations = innov_ids;
     neat_last_innov_id = last_innov_id;
@@ -354,7 +355,7 @@ void CreatureCircle::move_intelligently(const b2WorldId &worldId, Game &game, fl
 
     // Update memory from the first four outputs (clamped).
     // Memory outputs are distinct: outputs 7-10.
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < MEMORY_SLOTS; ++i) {
         memory_state[i] = std::clamp(brain_outputs[7 + i], 0.0f, 1.0f);
     }
 
@@ -648,8 +649,8 @@ void CreatureCircle::update_brain_inputs_from_touching() {
     write_size_and_memory_inputs();
 }
 
-void CreatureCircle::apply_sensor_inputs(const std::array<std::array<float, 3>, 8>& summed_colors, const std::array<float, 8>& weights) {
-    // Order sensors clockwise starting from front: front, front-right, right, back-right, back, back-left, left, front-left.
+void CreatureCircle::apply_sensor_inputs(const std::array<std::array<float, 3>, SENSOR_COUNT>& summed_colors, const std::array<float, SENSOR_COUNT>& weights) {
+    // Order sensors clockwise starting from the forward-facing sector.
     const float sector_area = (PI * getRadius() * getRadius()) / static_cast<float>(SENSOR_COUNT);
     for (int i = 0; i < SENSOR_COUNT; ++i) {
         int base_index = i * 3;
@@ -675,9 +676,9 @@ void CreatureCircle::apply_sensor_inputs(const std::array<std::array<float, 3>, 
 void CreatureCircle::write_size_and_memory_inputs() {
     float area = this->getArea();
     float normalized = area / (area + 25.0f); // gentler saturation for larger sizes
-    brain_inputs[24] = normalized;
+    brain_inputs[SIZE_INPUT_INDEX] = normalized;
 
-    for (int i = 0; i < 4; ++i) {
-        brain_inputs[25 + i] = memory_state[i];
+    for (int i = 0; i < MEMORY_SLOTS; ++i) {
+        brain_inputs[MEMORY_INPUT_START + i] = memory_state[i];
     }
 }

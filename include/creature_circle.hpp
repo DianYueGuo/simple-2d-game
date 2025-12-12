@@ -2,6 +2,7 @@
 #define CREATURE_CIRCLE_HPP
 
 #include "eatable_circle.hpp"
+#include "simulation_config.hpp"
 #include <NEAT/genome.hpp>
 
 #include <algorithm>
@@ -55,10 +56,18 @@ protected:
     bool should_draw_direction_indicator() const override { return true; }
 
 private:
+    static constexpr int SENSOR_COUNT = kColorSensorCount;
+    static constexpr int MEMORY_SLOTS = 4;
+    static constexpr int BRAIN_OUTPUTS = 11;
+    static constexpr int SENSOR_INPUTS = SENSOR_COUNT * 3;
+    static constexpr int SIZE_INPUT_INDEX = SENSOR_INPUTS;
+    static constexpr int MEMORY_INPUT_START = SIZE_INPUT_INDEX + 1;
+    static constexpr int BRAIN_INPUTS = SENSOR_INPUTS + 1 + MEMORY_SLOTS;
+
     void initialize_brain(int mutation_rounds, float add_node_p, float remove_node_p, float add_connection_p, float remove_connection_p);
     void run_brain_cycle_from_touching();
     void update_brain_inputs_from_touching();
-    void apply_sensor_inputs(const std::array<std::array<float, 3>, 8>& summed_colors, const std::array<float, 8>& weights);
+    void apply_sensor_inputs(const std::array<std::array<float, 3>, SENSOR_COUNT>& summed_colors, const std::array<float, SENSOR_COUNT>& weights);
     void write_size_and_memory_inputs();
     void update_color_from_brain();
     bool can_eat_circle(const CirclePhysics& circle) const;
@@ -68,9 +77,9 @@ private:
     void mutate_lineage(const Game& game, CreatureCircle* child);
 
     neat::Genome brain;
-    std::array<float, 29> brain_inputs{};
-    std::array<float, 11> brain_outputs{};
-    std::array<float, 4> memory_state{};
+    std::array<float, BRAIN_INPUTS> brain_inputs{};
+    std::array<float, BRAIN_OUTPUTS> brain_outputs{};
+    std::array<float, MEMORY_SLOTS> memory_state{};
     std::vector<std::vector<int>>* neat_innovations = nullptr;
     int* neat_last_innov_id = nullptr;
     float minimum_area = 1.0f;
