@@ -621,6 +621,11 @@ void CreatureCircle::update_brain_inputs_from_touching() {
     SensorWeights weights{};
 
     if (!touching_circles.empty()) {
+        const auto normalize_angle_pos = [](float angle) {
+            float a = std::fmod(angle, TWO_PI);
+            if (a < 0.0f) a += TWO_PI;
+            return a;
+        };
         const b2Vec2 self_pos = this->getPosition();
         const float heading = this->getAngle();
         const float cos_h = std::cos(heading);
@@ -641,10 +646,13 @@ void CreatureCircle::update_brain_inputs_from_touching() {
                 -sin_h * rel_world.x + cos_h * rel_world.y
             };
 
-            float other_r = circle.getRadius();
+            const float other_r = circle.getRadius();
             const auto& color = drawable->get_color_rgb();
 
-            for (int sector = 0; sector < SENSOR_COUNT; ++sector) {
+            const float dist2 = rel_local.x * rel_local.x + rel_local.y * rel_local.y;
+            const float other_r2 = other_r * other_r;
+
+            auto accumulate_sector = [&](int sector) {
                 float area_in_sector = 0.0f;
                 const auto& segs = sector_segments[sector];
                 for (int idx = 0; idx < segs.count; ++idx) {
@@ -653,13 +661,51 @@ void CreatureCircle::update_brain_inputs_from_touching() {
                 }
 
                 if (area_in_sector <= 0.0f) {
-                    continue;
+                    return;
                 }
 
                 summed_colors[sector][0] += color[0] * area_in_sector;
                 summed_colors[sector][1] += color[1] * area_in_sector;
                 summed_colors[sector][2] += color[2] * area_in_sector;
                 weights[sector] += area_in_sector;
+            };
+
+            if (dist2 <= other_r2) {
+                // Circle encompasses the origin; intersects all sectors.
+                for (int sector = 0; sector < SENSOR_COUNT; ++sector) {
+                    accumulate_sector(sector);
+                }
+                return;
+            }
+
+            const float dist = std::sqrt(dist2);
+            const float half_span = std::asin(std::clamp(other_r / dist, 0.0f, 1.0f));
+            const float center_angle = std::atan2(rel_local.y, rel_local.x);
+            constexpr float pad = 1e-4f; // avoid missing boundary-touching sectors
+            float start = normalize_angle_pos(center_angle - half_span - pad);
+            float end = normalize_angle_pos(center_angle + half_span + pad);
+
+            auto angle_to_index = [](float angle) {
+                int idx = static_cast<int>(std::floor(angle / SECTOR_WIDTH));
+                if (idx >= SENSOR_COUNT) idx = 0;
+                return idx;
+            };
+
+            int start_idx = angle_to_index(start);
+            int end_idx = angle_to_index(end);
+
+            auto process_range = [&](int from, int to) {
+                for (int s = from; ; ++s) {
+                    accumulate_sector(s);
+                    if (s == to) break;
+                }
+            };
+
+            if (start <= end) {
+                process_range(start_idx, end_idx);
+            } else {
+                process_range(start_idx, SENSOR_COUNT - 1);
+                process_range(0, end_idx);
             }
         });
     }
