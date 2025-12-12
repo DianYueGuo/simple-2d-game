@@ -112,24 +112,8 @@ void Game::process_game_logic() {
     spawner.sprinkle_entities(timeStep);
     update_creatures(worldId, timeStep);
     run_brain_updates(worldId, timeStep);
-    adjust_cleanup_rates();
-    // continuous pellet cleanup by rate (percent per second)
-    if (pellets.cleanup_rate_food > 0.0f) {
-        remove_percentage_pellets(pellets.cleanup_rate_food * timeStep, false, false);
-    }
-    if (pellets.cleanup_rate_toxic > 0.0f) {
-        remove_percentage_pellets(pellets.cleanup_rate_toxic * timeStep, true, false);
-    }
-    if (pellets.cleanup_rate_division > 0.0f) {
-        remove_percentage_pellets(pellets.cleanup_rate_division * timeStep, false, true);
-    }
-    cull_consumed();
-    remove_stopped_boost_particles();
-    if (dish.auto_remove_outside) {
-        remove_outside_petri();
-    }
-    update_max_ages();
-    apply_selection_mode();
+    cleanup_pellets_by_rate(timeStep);
+    finalize_world_state();
 }
 
 void Game::draw(sf::RenderWindow& window) const {
@@ -874,6 +858,20 @@ void Game::adjust_cleanup_rates() {
     pellets.cleanup_rate_division = division_rates.cleanup;
 }
 
+void Game::cleanup_pellets_by_rate(float timeStep) {
+    adjust_cleanup_rates();
+    // continuous pellet cleanup by rate (percent per second)
+    if (pellets.cleanup_rate_food > 0.0f) {
+        remove_percentage_pellets(pellets.cleanup_rate_food * timeStep, false, false);
+    }
+    if (pellets.cleanup_rate_toxic > 0.0f) {
+        remove_percentage_pellets(pellets.cleanup_rate_toxic * timeStep, true, false);
+    }
+    if (pellets.cleanup_rate_division > 0.0f) {
+        remove_percentage_pellets(pellets.cleanup_rate_division * timeStep, false, true);
+    }
+}
+
 void Game::remove_stopped_boost_particles() {
     constexpr float vel_epsilon = 1e-3f;
     auto snapshot = selection.capture_snapshot();
@@ -891,6 +889,16 @@ void Game::remove_stopped_boost_particles() {
         circles.end());
     selection.handle_selection_after_removal(snapshot, false, nullptr, snapshot.position);
     refresh_generation_and_age();
+}
+
+void Game::finalize_world_state() {
+    cull_consumed();
+    remove_stopped_boost_particles();
+    if (dish.auto_remove_outside) {
+        remove_outside_petri();
+    }
+    update_max_ages();
+    apply_selection_mode();
 }
 
 void Game::accumulate_real_time(float dt) {

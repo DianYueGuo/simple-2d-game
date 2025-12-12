@@ -7,6 +7,8 @@
 
 #include <algorithm>
 #include <array>
+#include <memory>
+#include <utility>
 #include <vector>
 
 class Game;
@@ -71,6 +73,16 @@ private:
     bool can_eat_circle(const CirclePhysics& circle) const;
     bool has_overlap_to_eat(const CirclePhysics& circle) const;
     void consume_touching_circle(const b2WorldId &worldId, Game& game, EatableCircle& eatable, float touching_area, float poison_death_probability_toxic, float poison_death_probability_normal);
+    bool has_sufficient_area_for_division(float divided_area) const;
+    std::pair<b2Vec2, b2Vec2> calculate_division_positions(const b2Vec2& original_pos, float angle, float new_radius) const;
+    std::unique_ptr<CreatureCircle> create_division_child(const b2WorldId& worldId,
+                                                          Game& game,
+                                                          float new_radius,
+                                                          float angle,
+                                                          int next_generation,
+                                                          const b2Vec2& child_position,
+                                                          const neat::Genome& parent_brain_copy);
+    void apply_post_division_updates(Game& game, CreatureCircle* child, int next_generation);
     void configure_child_after_division(CreatureCircle& child, const b2WorldId& worldId, const Game& game, float angle, const neat::Genome& parent_brain_copy) const;
     void mutate_lineage(const Game& game, CreatureCircle* child);
 

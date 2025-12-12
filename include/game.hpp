@@ -340,6 +340,8 @@ private:
     void mark_age_dirty();
     void mark_selection_dirty();
     void adjust_cleanup_rates();
+    void cleanup_pellets_by_rate(float timeStep);
+    void finalize_world_state();
     std::size_t count_pellets(bool toxic, bool division_pellet) const;
     float desired_pellet_count(float density_target) const;
     float compute_cleanup_rate(std::size_t count, float desired) const;

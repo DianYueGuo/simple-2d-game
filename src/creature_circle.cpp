@@ -588,29 +588,55 @@ void CreatureCircle::divide(const b2WorldId &worldId, Game& game) {
     const float current_area = this->getArea();
     const float divided_area = current_area / 2.0f;
 
-    if (divided_area <= minimum_area) {
+    if (!has_sufficient_area_for_division(divided_area)) {
         return;
     }
 
     const float new_radius = std::sqrt(divided_area / PI);
-
     neat::Genome parent_brain_copy = brain;
 
     const b2Vec2 original_pos = this->getPosition();
+    const float angle = this->getAngle();
+    const auto [parent_position, child_position] = calculate_division_positions(original_pos, angle, new_radius);
 
     this->setRadius(new_radius, worldId);
+    this->setPosition(parent_position, worldId);
 
-    float angle = this->getAngle();
+    const int next_generation = this->get_generation() + 1;
+    auto new_circle = create_division_child(
+        worldId,
+        game,
+        new_radius,
+        angle,
+        next_generation,
+        child_position,
+        parent_brain_copy);
+    CreatureCircle* new_circle_ptr = new_circle.get();
+
+    apply_post_division_updates(game, new_circle_ptr, next_generation);
+    game.add_circle(std::move(new_circle));
+}
+
+bool CreatureCircle::has_sufficient_area_for_division(float divided_area) const {
+    return divided_area > minimum_area;
+}
+
+std::pair<b2Vec2, b2Vec2> CreatureCircle::calculate_division_positions(const b2Vec2& original_pos, float angle, float new_radius) const {
     b2Vec2 direction = {std::cos(angle), std::sin(angle)};
     b2Vec2 forward_offset = {direction.x * new_radius, direction.y * new_radius};
 
     b2Vec2 parent_position = {original_pos.x + forward_offset.x, original_pos.y + forward_offset.y};
     b2Vec2 child_position = {original_pos.x - forward_offset.x, original_pos.y - forward_offset.y};
+    return {parent_position, child_position};
+}
 
-    this->setPosition(parent_position, worldId);
-
-    const int next_generation = this->get_generation() + 1;
-
+std::unique_ptr<CreatureCircle> CreatureCircle::create_division_child(const b2WorldId& worldId,
+                                                                      Game& game,
+                                                                      float new_radius,
+                                                                      float angle,
+                                                                      int next_generation,
+                                                                      const b2Vec2& child_position,
+                                                                      const neat::Genome& parent_brain_copy) {
     auto new_circle = std::make_unique<CreatureCircle>(
         worldId,
         child_position.x,
@@ -626,15 +652,20 @@ void CreatureCircle::divide(const b2WorldId &worldId, Game& game) {
         game.get_neat_innovations(),
         game.get_neat_last_innovation_id(),
         &game);
-    CreatureCircle* new_circle_ptr = new_circle.get();
-    if (new_circle_ptr) {
-        configure_child_after_division(*new_circle_ptr, worldId, game, angle, parent_brain_copy);
+
+    if (new_circle) {
+        configure_child_after_division(*new_circle, worldId, game, angle, parent_brain_copy);
     }
 
+    return new_circle;
+}
+
+void CreatureCircle::apply_post_division_updates(Game& game, CreatureCircle* child, int next_generation) {
     this->set_generation(next_generation);
-    if (new_circle_ptr) {
-        new_circle_ptr->set_generation(next_generation);
+    if (child) {
+        child->set_generation(next_generation);
     }
+
     owner_game = &game;
     set_last_division_time(game.get_sim_time());
     if (owner_game) {
@@ -642,14 +673,13 @@ void CreatureCircle::divide(const b2WorldId &worldId, Game& game) {
     }
 
     game.update_max_generation_from_circle(this);
-    game.update_max_generation_from_circle(new_circle_ptr);
+    game.update_max_generation_from_circle(child);
 
     this->apply_forward_impulse();
 
-    mutate_lineage(game, new_circle_ptr);
+    mutate_lineage(game, child);
 
     update_color_from_brain();
-    game.add_circle(std::move(new_circle));
 }
 
 void CreatureCircle::configure_child_after_division(CreatureCircle& child, const b2WorldId& worldId, const Game& game, float angle, const neat::Genome& parent_brain_copy) const {
