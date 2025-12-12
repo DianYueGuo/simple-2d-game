@@ -1,0 +1,15 @@
+compilation_database_dir: build
+output_directory: uml
+
+query_driver: /usr/bin/c++
+
+diagrams:
+  petri_class_diagram:
+    type: class
+    glob:
+      - include/**/*.hpp
+      - src/**/*.cpp
+    include:
+      paths:
+        - include
+        - src
