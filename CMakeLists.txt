@@ -4,6 +4,7 @@ project(petri-dish-simulation VERSION 0.1.0)
 
 set(APP_TARGET "petridish")
 set(APP_BUNDLE_NAME "Petri Dish Simulation")
+set(APP_ICON_FILE "PetriDish.icns")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -119,6 +120,12 @@ add_executable(
     src/game/spawner.cpp
     src/game/selection_manager.cpp
 )
+
+if(APPLE)
+    set(APP_ICON_PATH "${CMAKE_SOURCE_DIR}/AppIcons/${APP_ICON_FILE}")
+    set_source_files_properties(${APP_ICON_PATH} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+    target_sources(${APP_TARGET} PRIVATE ${APP_ICON_PATH})
+endif()
 target_include_directories(${APP_TARGET} PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(${APP_TARGET} PRIVATE SFML::Graphics SFML::Audio SFML::Network)
 target_link_libraries(${APP_TARGET} PRIVATE imgui)
@@ -158,6 +165,7 @@ set_target_properties(
         OUTPUT_NAME ${APP_BUNDLE_NAME}
         MACOSX_BUNDLE TRUE
         MACOSX_BUNDLE_BUNDLE_NAME ${APP_BUNDLE_NAME}
+        MACOSX_BUNDLE_ICON_FILE ${APP_ICON_FILE}
         MACOSX_BUNDLE_GUI_IDENTIFIER "com.example.petridishsimulation"
         MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
         MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
