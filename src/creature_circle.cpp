@@ -539,7 +539,7 @@ void CreatureCircle::boost_forward(const b2WorldId &worldId, Game& game) {
 }
 
 namespace {
-b2Vec2 compute_lateral_boost_position(const CreatureCircle& creature, float boost_radius, bool to_right) {
+b2Vec2 compute_lateral_boost_position(const CreatureCircle& creature, bool to_right) {
     b2Vec2 pos = creature.getPosition();
     float angle = creature.getAngle();
     b2Vec2 direction = {cos(angle), sin(angle)};
@@ -568,7 +568,7 @@ void CreatureCircle::boost_eccentric_forward_right(const b2WorldId &worldId, Gam
 
     float boost_radius = (boost_cost > 0.0f) ? sqrt(boost_cost / PI) : 0.0f;
     if (boost_cost <= 0.0f) {
-        b2Vec2 boost_position = compute_lateral_boost_position(*this, boost_radius, /*to_right=*/true);
+        b2Vec2 boost_position = compute_lateral_boost_position(*this, /*to_right=*/true);
         this->apply_forward_impulse_at_point(boost_position);
         inactivity_timer = 0.0f;
         return;
@@ -577,7 +577,7 @@ void CreatureCircle::boost_eccentric_forward_right(const b2WorldId &worldId, Gam
     if (new_area > minimum_area) {
         this->setArea(new_area, worldId);
         float angle = this->getAngle();
-        b2Vec2 boost_position = compute_lateral_boost_position(*this, boost_radius, /*to_right=*/true);
+        b2Vec2 boost_position = compute_lateral_boost_position(*this, /*to_right=*/true);
         this->apply_forward_impulse_at_point(boost_position);
 
         spawn_boost_particle(worldId, game, *this, boost_radius, angle, boost_position);
@@ -591,7 +591,7 @@ void CreatureCircle::boost_eccentric_forward_left(const b2WorldId &worldId, Game
 
     float boost_radius = (boost_cost > 0.0f) ? sqrt(boost_cost / PI) : 0.0f;
     if (boost_cost <= 0.0f) {
-        b2Vec2 boost_position = compute_lateral_boost_position(*this, boost_radius, /*to_right=*/false);
+        b2Vec2 boost_position = compute_lateral_boost_position(*this, /*to_right=*/false);
         this->apply_forward_impulse_at_point(boost_position);
         inactivity_timer = 0.0f;
         return;
@@ -600,7 +600,7 @@ void CreatureCircle::boost_eccentric_forward_left(const b2WorldId &worldId, Game
     if (new_area > minimum_area) {
         this->setArea(new_area, worldId);
         float angle = this->getAngle();
-        b2Vec2 boost_position = compute_lateral_boost_position(*this, boost_radius, /*to_right=*/false);
+        b2Vec2 boost_position = compute_lateral_boost_position(*this, /*to_right=*/false);
         this->apply_forward_impulse_at_point(boost_position);
 
         spawn_boost_particle(worldId, game, *this, boost_radius, angle, boost_position);
