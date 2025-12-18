@@ -24,8 +24,8 @@ public:
                 float angle = 0.0f,
                 int generation = 0,
                 int init_mutation_rounds = 100,
-                float init_add_node_probability = 0.8f,
-                float init_add_connection_probability = 1.0f,
+                float init_add_node_thresh = 0.8f,
+                float init_add_connection_thresh = 1.0f,
                 const neat::Genome* base_brain = nullptr,
                 std::vector<std::vector<int>>* innov_ids = nullptr,
                 int* last_innov_id = nullptr,
@@ -66,7 +66,7 @@ private:
     static constexpr int MEMORY_INPUT_START = SIZE_INPUT_INDEX + 1;
     static constexpr int BRAIN_INPUTS = SENSOR_INPUTS + 1 + MEMORY_SLOTS;
 
-    void initialize_brain(int mutation_rounds, float add_node_p, float add_connection_p);
+    void initialize_brain(int mutation_rounds, float add_node_thresh, float add_connection_thresh);
     void run_brain_cycle_from_touching();
     void update_brain_inputs_from_touching();
     void apply_sensor_inputs(const std::array<std::array<float, 3>, SENSOR_COUNT>& summed_colors, const std::array<float, SENSOR_COUNT>& weights);

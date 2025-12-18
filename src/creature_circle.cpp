@@ -344,14 +344,14 @@ CreatureCircle::CreatureCircle(const b2WorldId &worldId,
                          float angle,
                          int generation,
                          int init_mutation_rounds,
-                         float init_add_node_probability,
-                         float init_add_connection_probability,
+                         float init_add_node_thresh,
+                         float init_add_connection_thresh,
                          const neat::Genome* base_brain,
                          std::vector<std::vector<int>>* innov_ids,
                          int* last_innov_id,
                          Game* owner) :
     EatableCircle(worldId, position_x, position_y, radius, density, /*toxic=*/false, /*division_pellet=*/false, angle, /*boost_particle=*/false),
-    brain(base_brain ? *base_brain : neat::Genome(BRAIN_INPUTS, BRAIN_OUTPUTS, innov_ids, last_innov_id, owner ? owner->get_mutate_weight_extremum_init() : 0.001f)) {
+    brain(base_brain ? *base_brain : neat::Genome(BRAIN_INPUTS, BRAIN_OUTPUTS, innov_ids, last_innov_id, owner ? owner->get_weight_extremum_init() : 0.001f)) {
     set_kind(CircleKind::Creature);
     neat_innovations = innov_ids;
     neat_last_innov_id = last_innov_id;
@@ -359,8 +359,8 @@ CreatureCircle::CreatureCircle(const b2WorldId &worldId,
     set_generation(generation);
     initialize_brain(
         init_mutation_rounds,
-        init_add_node_probability,
-        init_add_connection_probability);
+        init_add_node_thresh,
+        init_add_connection_thresh);
     run_brain_cycle_from_touching();
     smooth_display_color(1.0f); // start display at brain-driven color immediately
 }
@@ -526,11 +526,11 @@ void CreatureCircle::move_intelligently(const b2WorldId &worldId, Game &game, fl
             game.get_mutate_weight_thresh(),
             game.get_mutate_weight_full_change_thresh(),
             game.get_mutate_weight_factor(),
-            game.get_tick_add_connection_probability(),
-            game.get_mutate_add_connection_iterations(),
-            game.get_mutate_reactivate_connection_thresh(),
-            game.get_tick_add_node_probability(),
-            game.get_mutate_add_node_iterations());
+            game.get_tick_add_connection_thresh(),
+            game.get_max_iterations_find_connection_thresh(),
+            game.get_reactivate_connection_thresh(),
+            game.get_tick_add_node_thresh(),
+            game.get_max_iterations_find_node_thresh());
     }
 
     // Update memory from dedicated memory outputs (clamped).
@@ -661,7 +661,7 @@ void CreatureCircle::boost_eccentric_forward_left(const b2WorldId &worldId, Game
     }
 }
 
-void CreatureCircle::initialize_brain(int mutation_rounds, float add_node_p, float add_connection_p) {
+void CreatureCircle::initialize_brain(int mutation_rounds, float add_node_thresh, float add_connection_thresh) {
     // Mutate repeatedly to seed a non-trivial brain topology.
     int rounds = std::max(0, mutation_rounds);
     for (int i = 0; i < rounds; ++i) {
@@ -676,9 +676,9 @@ void CreatureCircle::initialize_brain(int mutation_rounds, float add_node_p, flo
                 weight_thresh = owner_game->get_mutate_weight_thresh();
                 weight_full = owner_game->get_mutate_weight_full_change_thresh();
                 weight_factor = owner_game->get_mutate_weight_factor();
-                reactivate = owner_game->get_mutate_reactivate_connection_thresh();
-                add_conn_iters = owner_game->get_mutate_add_connection_iterations();
-                add_node_iters = owner_game->get_mutate_add_node_iterations();
+                reactivate = owner_game->get_reactivate_connection_thresh();
+                add_conn_iters = owner_game->get_max_iterations_find_connection_thresh();
+                add_node_iters = owner_game->get_max_iterations_find_node_thresh();
             }
             brain.mutate(
                 neat_innovations,
@@ -686,10 +686,10 @@ void CreatureCircle::initialize_brain(int mutation_rounds, float add_node_p, flo
                 weight_thresh,
                 weight_full,
                 weight_factor,
-                add_connection_p,
+                add_connection_thresh,
                 add_conn_iters,
                 reactivate,
-                add_node_p,
+                add_node_thresh,
                 add_node_iters);
         }
     }
@@ -757,8 +757,8 @@ std::unique_ptr<CreatureCircle> CreatureCircle::create_division_child(const b2Wo
         angle + PI,
         next_generation,
         game.get_init_mutation_rounds(),
-        game.get_init_add_node_probability(),
-        game.get_init_add_connection_probability(),
+        game.get_init_add_node_thresh(),
+        game.get_init_add_connection_thresh(),
         &brain,
         game.get_neat_innovations(),
         game.get_neat_last_innovation_id(),
@@ -811,9 +811,9 @@ void CreatureCircle::mutate_lineage(const Game& game, CreatureCircle* child) {
     float weight_thresh = game.get_mutate_weight_thresh();
     float weight_full = game.get_mutate_weight_full_change_thresh();
     float weight_factor = game.get_mutate_weight_factor();
-    float reactivate = game.get_mutate_reactivate_connection_thresh();
-    int add_conn_iters = game.get_mutate_add_connection_iterations();
-    int add_node_iters = game.get_mutate_add_node_iterations();
+    float reactivate = game.get_reactivate_connection_thresh();
+    int add_conn_iters = game.get_max_iterations_find_connection_thresh();
+    int add_node_iters = game.get_max_iterations_find_node_thresh();
     for (int i = 0; i < mutation_rounds; ++i) {
         if (neat_innovations && neat_last_innov_id) {
             brain.mutate(
@@ -822,10 +822,10 @@ void CreatureCircle::mutate_lineage(const Game& game, CreatureCircle* child) {
                 weight_thresh,
                 weight_full,
                 weight_factor,
-                game.get_add_connection_probability(),
+                game.get_add_connection_thresh(),
                 add_conn_iters,
                 reactivate,
-                game.get_add_node_probability(),
+                game.get_add_node_thresh(),
                 add_node_iters);
         }
         if (child && child->neat_innovations && child->neat_last_innov_id) {
@@ -835,10 +835,10 @@ void CreatureCircle::mutate_lineage(const Game& game, CreatureCircle* child) {
                 weight_thresh,
                 weight_full,
                 weight_factor,
-                game.get_add_connection_probability(),
+                game.get_add_connection_thresh(),
                 add_conn_iters,
                 reactivate,
-                game.get_add_node_probability(),
+                game.get_add_node_thresh(),
                 add_node_iters);
         }
     }

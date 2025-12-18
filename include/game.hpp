@@ -88,21 +88,21 @@ private:
         std::size_t division_count_cached = 0;
     };
     struct MutationSettings {
-        float add_node_probability = 0.001f;
-        float add_connection_probability = 0.02f;
-        float tick_add_node_probability = 0.0f;
-        float tick_add_connection_probability = 0.0f;
+        float add_node_thresh = 0.001f;
+        float add_connection_thresh = 0.02f;
+        float tick_add_node_thresh = 0.0f;
+        float tick_add_connection_thresh = 0.0f;
         float weight_extremum_init = 0.001f;
         bool live_mutation_enabled = false;
         float mutate_weight_thresh = 0.05f;
         float mutate_weight_full_change_thresh = 0.0f;
         float mutate_weight_factor = 2.0f;
-        int mutate_add_connection_iterations = 20;
-        float mutate_reactivate_connection_thresh = 0.25f;
-        int mutate_add_node_iterations = 20;
+        int max_iterations_find_connection_thresh = 20;
+        float reactivate_connection_thresh = 0.25f;
+        int max_iterations_find_node_thresh = 20;
         bool mutate_allow_recurrent = false;
-        float init_add_node_probability = 0.0f;
-        float init_add_connection_probability = 0.0f;
+        float init_add_node_thresh = 0.0f;
+        float init_add_connection_thresh = 0.0f;
         int init_mutation_rounds = 0;
         int mutation_rounds = 1;
     };
@@ -179,16 +179,16 @@ public:
     void set_boost_area(float area) { creature.boost_area = area; }
     void set_circle_density(float d);
     float get_circle_density() const { return movement.circle_density; }
-    void set_add_node_probability(float p) { mutation.add_node_probability = std::clamp(p, 0.0f, 1.0f); }
-    float get_add_node_probability() const { return mutation.add_node_probability; }
-    void set_add_connection_probability(float p) { mutation.add_connection_probability = std::clamp(p, 0.0f, 1.0f); }
-    float get_add_connection_probability() const { return mutation.add_connection_probability; }
-    void set_tick_add_node_probability(float p) { mutation.tick_add_node_probability = std::clamp(p, 0.0f, 1.0f); }
-    float get_tick_add_node_probability() const { return mutation.tick_add_node_probability; }
-    void set_tick_add_connection_probability(float p) { mutation.tick_add_connection_probability = std::clamp(p, 0.0f, 1.0f); }
-    float get_tick_add_connection_probability() const { return mutation.tick_add_connection_probability; }
-    void set_mutate_weight_extremum_init(float v) { mutation.weight_extremum_init = std::max(0.0f, v); }
-    float get_mutate_weight_extremum_init() const { return mutation.weight_extremum_init; }
+    void set_add_node_thresh(float p) { mutation.add_node_thresh = std::clamp(p, 0.0f, 1.0f); }
+    float get_add_node_thresh() const { return mutation.add_node_thresh; }
+    void set_add_connection_thresh(float p) { mutation.add_connection_thresh = std::clamp(p, 0.0f, 1.0f); }
+    float get_add_connection_thresh() const { return mutation.add_connection_thresh; }
+    void set_tick_add_node_thresh(float p) { mutation.tick_add_node_thresh = std::clamp(p, 0.0f, 1.0f); }
+    float get_tick_add_node_thresh() const { return mutation.tick_add_node_thresh; }
+    void set_tick_add_connection_thresh(float p) { mutation.tick_add_connection_thresh = std::clamp(p, 0.0f, 1.0f); }
+    float get_tick_add_connection_thresh() const { return mutation.tick_add_connection_thresh; }
+    void set_weight_extremum_init(float v) { mutation.weight_extremum_init = std::max(0.0f, v); }
+    float get_weight_extremum_init() const { return mutation.weight_extremum_init; }
     void set_live_mutation_enabled(bool enabled) { mutation.live_mutation_enabled = enabled; }
     bool get_live_mutation_enabled() const { return mutation.live_mutation_enabled; }
     void set_mutate_weight_thresh(float v) { mutation.mutate_weight_thresh = std::clamp(v, 0.0f, 1.0f); }
@@ -197,18 +197,18 @@ public:
     float get_mutate_weight_full_change_thresh() const { return mutation.mutate_weight_full_change_thresh; }
     void set_mutate_weight_factor(float v) { mutation.mutate_weight_factor = std::max(0.0f, v); }
     float get_mutate_weight_factor() const { return mutation.mutate_weight_factor; }
-    void set_mutate_add_connection_iterations(int v) { mutation.mutate_add_connection_iterations = std::max(1, v); }
-    int get_mutate_add_connection_iterations() const { return mutation.mutate_add_connection_iterations; }
-    void set_mutate_reactivate_connection_thresh(float v) { mutation.mutate_reactivate_connection_thresh = std::clamp(v, 0.0f, 1.0f); }
-    float get_mutate_reactivate_connection_thresh() const { return mutation.mutate_reactivate_connection_thresh; }
-    void set_mutate_add_node_iterations(int v) { mutation.mutate_add_node_iterations = std::max(1, v); }
-    int get_mutate_add_node_iterations() const { return mutation.mutate_add_node_iterations; }
+    void set_max_iterations_find_connection_thresh(int v) { mutation.max_iterations_find_connection_thresh = std::max(1, v); }
+    int get_max_iterations_find_connection_thresh() const { return mutation.max_iterations_find_connection_thresh; }
+    void set_reactivate_connection_thresh(float v) { mutation.reactivate_connection_thresh = std::clamp(v, 0.0f, 1.0f); }
+    float get_reactivate_connection_thresh() const { return mutation.reactivate_connection_thresh; }
+    void set_max_iterations_find_node_thresh(int v) { mutation.max_iterations_find_node_thresh = std::max(1, v); }
+    int get_max_iterations_find_node_thresh() const { return mutation.max_iterations_find_node_thresh; }
     void set_mutate_allow_recurrent(bool v) { mutation.mutate_allow_recurrent = v; }
     bool get_mutate_allow_recurrent() const { return mutation.mutate_allow_recurrent; }
-    void set_init_add_node_probability(float p) { mutation.init_add_node_probability = std::clamp(p, 0.0f, 1.0f); }
-    float get_init_add_node_probability() const { return mutation.init_add_node_probability; }
-    void set_init_add_connection_probability(float p) { mutation.init_add_connection_probability = std::clamp(p, 0.0f, 1.0f); }
-    float get_init_add_connection_probability() const { return mutation.init_add_connection_probability; }
+    void set_init_add_node_thresh(float p) { mutation.init_add_node_thresh = std::clamp(p, 0.0f, 1.0f); }
+    float get_init_add_node_thresh() const { return mutation.init_add_node_thresh; }
+    void set_init_add_connection_thresh(float p) { mutation.init_add_connection_thresh = std::clamp(p, 0.0f, 1.0f); }
+    float get_init_add_connection_thresh() const { return mutation.init_add_connection_thresh; }
     void set_init_mutation_rounds(int rounds) { mutation.init_mutation_rounds = std::clamp(rounds, 0, 100); }
     int get_init_mutation_rounds() const { return mutation.init_mutation_rounds; }
     void set_mutation_rounds(int rounds) { mutation.mutation_rounds = std::clamp(rounds, 0, 50); }
