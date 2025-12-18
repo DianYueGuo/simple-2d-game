@@ -483,15 +483,6 @@ void render_overview_content(Game& game, UiState& state) {
             game.set_selection_mode(static_cast<Game::SelectionMode>(selection_mode));
         }
 
-        if (const auto* followed = game.get_follow_target_creature()) {
-            ImGui::Separator();
-            ImGui::Text("Followed creature");
-            ImGui::Text("Age: %.2fs  Generation: %d", game.get_sim_time() - followed->get_creation_time(), followed->get_generation());
-            ImGui::Text("Area: %.3f  Radius: %.3f", followed->getArea(), followed->getRadius());
-            const neat::Genome& brain = followed->get_brain();
-            ImGui::Text("Nodes: %zu  Connections: %zu", brain.nodes.size(), brain.connections.size());
-            render_brain_graph(brain);
-        }
         const neat::Genome* selected_brain = game.get_selected_brain();
         int selected_gen = game.get_selected_generation();
         if (selected_brain) {
