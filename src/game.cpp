@@ -121,7 +121,7 @@ void Game::draw(sf::RenderWindow& window) const {
     sf::CircleShape boundary(dish.radius);
     boundary.setOrigin({dish.radius, dish.radius});
     boundary.setPosition({0.0f, 0.0f});
-    boundary.setOutlineColor(sf::Color::White);
+    boundary.setOutlineColor(sf::Color::Red);
     boundary.setOutlineThickness(0.2f);
     boundary.setFillColor(sf::Color::Transparent);
     window.draw(boundary);
