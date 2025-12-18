@@ -728,6 +728,7 @@ void render_spawning_controls(Game& game, UiState& state) {
             game.remove_random_percentage(state.spawning.delete_percentage);
         }
         show_hover_text("Deletes a random selection of circles using the percentage above.");
+#ifndef NDEBUG
         ImGui::SeparatorText("Cleanup pellets (max targets)");
         bool pellet_limits_changed = false;
         pellet_limits_changed |= ImGui::SliderInt("Max food pellets", &state.spawning.max_food_pellets, 0, 5000);
@@ -739,6 +740,7 @@ void render_spawning_controls(Game& game, UiState& state) {
             game.set_max_toxic_pellets(state.spawning.max_toxic_pellets);
             game.set_max_division_pellets(state.spawning.max_division_pellets);
         }
+#endif
     }
 }
 } // namespace

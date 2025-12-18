@@ -74,9 +74,9 @@ private:
         float sprinkle_rate_eatable = 50.0f;
         float sprinkle_rate_toxic = 1.0f;
         float sprinkle_rate_division = 1.0f;
-        int max_food_pellets = 3000;
-        int max_toxic_pellets = 3000;
-        int max_division_pellets = 3000;
+        int max_food_pellets = 5000;
+        int max_toxic_pellets = 5000;
+        int max_division_pellets = 5000;
         float food_density = 0.1f;
         float toxic_density = 0.008f;
         float division_density = 0.005f;
