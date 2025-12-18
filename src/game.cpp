@@ -634,14 +634,40 @@ void Game::erase_indices_descending(std::vector<std::size_t>& indices) {
 }
 
 bool Game::is_circle_outside_dish(const EatableCircle& circle, float dish_radius) const {
-    float r = circle.getRadius();
-    if (r >= dish_radius) {
-        return true;
+    const double r = static_cast<double>(circle.getRadius());
+    const double R = static_cast<double>(dish_radius);
+
+    if (r <= 0.0 || R <= 0.0) {
+        return false;
     }
-    float max_center_dist = dish_radius - r;
-    b2Vec2 pos = circle.getPosition();
-    float dist2 = pos.x * pos.x + pos.y * pos.y;
-    return dist2 > max_center_dist * max_center_dist;
+
+    const b2Vec2 pos = circle.getPosition();
+    const double dist_sq = static_cast<double>(pos.x) * static_cast<double>(pos.x) +
+                           static_cast<double>(pos.y) * static_cast<double>(pos.y);
+    const double d = std::sqrt(dist_sq);
+
+    const double pi = std::acos(-1.0);
+    const double circle_area = pi * r * r;
+
+    double overlap_area = 0.0;
+    if (d >= R + r) {
+        overlap_area = 0.0; // No intersection
+    } else if (d <= std::abs(R - r)) {
+        const double min_radius = std::min(R, r);
+        overlap_area = pi * min_radius * min_radius; // One circle fully inside the other
+    } else {
+        const double d2 = d * d;
+        const double r2 = r * r;
+        const double R2 = R * R;
+        const double alpha = std::acos((d2 + r2 - R2) / (2.0 * d * r));
+        const double beta = std::acos((d2 + R2 - r2) / (2.0 * d * R));
+        const double term = (-d + r + R) * (d + r - R) * (d - r + R) * (d + r + R);
+        overlap_area = r2 * alpha + R2 * beta - 0.5 * std::sqrt(std::max(0.0, term));
+    }
+
+    const double inside_ratio = std::clamp(overlap_area / circle_area, 0.0, 1.0);
+    const double outside_ratio = 1.0 - inside_ratio;
+    return outside_ratio >= 0.8;
 }
 
 bool Game::handle_outside_removal(const std::unique_ptr<EatableCircle>& circle,
