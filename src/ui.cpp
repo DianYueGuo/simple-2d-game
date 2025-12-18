@@ -50,6 +50,11 @@ struct DeathSettings {
 };
 
 struct MutationSettings {
+    float add_node_probability = 0.0f;
+    float add_connection_probability = 0.0f;
+    float tick_add_node_probability = 0.0f;
+    float tick_add_connection_probability = 0.0f;
+    bool live_mutation_enabled = false;
     bool allow_recurrent = false;
     float weight_thresh = 0.0f;
     float weight_full_change_thresh = 0.0f;
@@ -57,24 +62,10 @@ struct MutationSettings {
     int add_connection_iterations = 0;
     float reactivate_connection_thresh = 0.0f;
     int add_node_iterations = 0;
-};
-
-struct DivisionMutationSettings {
-    float add_node_probability = 0.0f;
-    float add_connection_probability = 0.0f;
     int mutation_rounds = 0;
-};
-
-struct LiveMutationSettings {
-    bool enabled = false;
-    float tick_add_node_probability = 0.0f;
-    float tick_add_connection_probability = 0.0f;
-};
-
-struct InitMutationSettings {
-    float add_node_probability = 0.0f;
-    float add_connection_probability = 0.0f;
-    int mutation_rounds = 0;
+    float init_add_node_probability = 0.0f;
+    float init_add_connection_probability = 0.0f;
+    int init_mutation_rounds = 0;
 };
 
 struct SpawningSettings {
@@ -107,9 +98,6 @@ struct UiState {
     MovementSettings movement;
     DeathSettings death;
     MutationSettings mutation;
-    DivisionMutationSettings division_mutation;
-    LiveMutationSettings live_mutation;
-    InitMutationSettings init_mutation;
     SpawningSettings spawning;
     CleanupSettings cleanup;
     bool show_true_color = false;
@@ -292,15 +280,15 @@ void initialize_state(UiState& state, Game& game) {
     state.death.poison_death_probability_normal = game.get_poison_death_probability_normal();
     state.death.creature_cloud_area_percentage = game.get_creature_cloud_area_percentage();
     state.death.division_pellet_divide_probability = game.get_division_pellet_divide_probability();
-    state.division_mutation.add_node_probability = game.get_add_node_probability();
-    state.division_mutation.add_connection_probability = game.get_add_connection_probability();
-    state.live_mutation.tick_add_node_probability = game.get_tick_add_node_probability();
-    state.live_mutation.tick_add_connection_probability = game.get_tick_add_connection_probability();
-    state.live_mutation.enabled = game.get_live_mutation_enabled();
-    state.init_mutation.add_node_probability = game.get_init_add_node_probability();
-    state.init_mutation.add_connection_probability = game.get_init_add_connection_probability();
-    state.init_mutation.mutation_rounds = game.get_init_mutation_rounds();
-    state.division_mutation.mutation_rounds = game.get_mutation_rounds();
+    state.mutation.add_node_probability = game.get_add_node_probability();
+    state.mutation.add_connection_probability = game.get_add_connection_probability();
+    state.mutation.tick_add_node_probability = game.get_tick_add_node_probability();
+    state.mutation.tick_add_connection_probability = game.get_tick_add_connection_probability();
+    state.mutation.live_mutation_enabled = game.get_live_mutation_enabled();
+    state.mutation.init_add_node_probability = game.get_init_add_node_probability();
+    state.mutation.init_add_connection_probability = game.get_init_add_connection_probability();
+    state.mutation.init_mutation_rounds = game.get_init_mutation_rounds();
+    state.mutation.mutation_rounds = game.get_mutation_rounds();
     state.mutation.weight_thresh = game.get_mutate_weight_thresh();
     state.mutation.weight_full_change_thresh = game.get_mutate_weight_full_change_thresh();
     state.mutation.weight_factor = game.get_mutate_weight_factor();
@@ -633,47 +621,47 @@ void render_mutation_tab(Game& game, UiState& state) {
 
         ImGui::SeparatorText("Division mutation (matches NEAT mutate)");
         bool division_mutate_changed = false;
-        division_mutate_changed |= ImGui::SliderFloat("Add node % (mutate add node)", &state.division_mutation.add_node_probability, 0.0f, 1.0f, "%.2f");
+        division_mutate_changed |= ImGui::SliderFloat("Add node % (mutate add node)", &state.mutation.add_node_probability, 0.0f, 1.0f, "%.2f");
         show_hover_text("Probability passed to NEAT mutate for adding a node during division.");
-        division_mutate_changed |= ImGui::SliderFloat("Add connection % (mutate add link)", &state.division_mutation.add_connection_probability, 0.0f, 1.0f, "%.2f");
+        division_mutate_changed |= ImGui::SliderFloat("Add connection % (mutate add link)", &state.mutation.add_connection_probability, 0.0f, 1.0f, "%.2f");
         show_hover_text("Probability passed to NEAT mutate for adding a connection during division.");
-        division_mutate_changed |= ImGui::SliderInt("Mutation rounds", &state.division_mutation.mutation_rounds, 0, 50);
+        division_mutate_changed |= ImGui::SliderInt("Mutation rounds", &state.mutation.mutation_rounds, 0, 50);
         show_hover_text("How many times to roll the mutation probabilities when a creature divides.");
         if (division_mutate_changed) {
-            game.set_add_node_probability(state.division_mutation.add_node_probability);
-            game.set_add_connection_probability(state.division_mutation.add_connection_probability);
-            game.set_mutation_rounds(state.division_mutation.mutation_rounds);
+            game.set_add_node_probability(state.mutation.add_node_probability);
+            game.set_add_connection_probability(state.mutation.add_connection_probability);
+            game.set_mutation_rounds(state.mutation.mutation_rounds);
         }
 
         ImGui::SeparatorText("Live mutation (matches NEAT mutate)");
-        if (ImGui::Checkbox("Enable live mutation", &state.live_mutation.enabled)) {
-            game.set_live_mutation_enabled(state.live_mutation.enabled);
+        if (ImGui::Checkbox("Enable live mutation", &state.mutation.live_mutation_enabled)) {
+            game.set_live_mutation_enabled(state.mutation.live_mutation_enabled);
         }
         show_hover_text("When off, no per-tick brain mutations happen. Off by default.");
-        ImGui::BeginDisabled(!state.live_mutation.enabled);
+        ImGui::BeginDisabled(!state.mutation.live_mutation_enabled);
         bool live_mutate_changed = false;
-        live_mutate_changed |= ImGui::SliderFloat("Live add node %", &state.live_mutation.tick_add_node_probability, 0.0f, 1.0f, "%.2f");
+        live_mutate_changed |= ImGui::SliderFloat("Live add node %", &state.mutation.tick_add_node_probability, 0.0f, 1.0f, "%.2f");
         show_hover_text("Chance a creature adds a brain node each behavior tick.");
-        live_mutate_changed |= ImGui::SliderFloat("Live add connection %", &state.live_mutation.tick_add_connection_probability, 0.0f, 1.0f, "%.2f");
+        live_mutate_changed |= ImGui::SliderFloat("Live add connection %", &state.mutation.tick_add_connection_probability, 0.0f, 1.0f, "%.2f");
         show_hover_text("Chance a creature adds a brain connection each behavior tick.");
         if (live_mutate_changed) {
-            game.set_tick_add_node_probability(state.live_mutation.tick_add_node_probability);
-            game.set_tick_add_connection_probability(state.live_mutation.tick_add_connection_probability);
+            game.set_tick_add_node_probability(state.mutation.tick_add_node_probability);
+            game.set_tick_add_connection_probability(state.mutation.tick_add_connection_probability);
         }
         ImGui::EndDisabled();
 
         ImGui::SeparatorText("Initialization mutation (matches NEAT mutate)");
         bool init_mutate_changed = false;
-        init_mutate_changed |= ImGui::SliderFloat("Init add node %", &state.init_mutation.add_node_probability, 0.0f, 1.0f, "%.2f");
+        init_mutate_changed |= ImGui::SliderFloat("Init add node %", &state.mutation.init_add_node_probability, 0.0f, 1.0f, "%.2f");
         show_hover_text("Probability passed to NEAT mutate for adding a node during initial seeding.");
-        init_mutate_changed |= ImGui::SliderFloat("Init add connection %", &state.init_mutation.add_connection_probability, 0.0f, 1.0f, "%.2f");
+        init_mutate_changed |= ImGui::SliderFloat("Init add connection %", &state.mutation.init_add_connection_probability, 0.0f, 1.0f, "%.2f");
         show_hover_text("Probability passed to NEAT mutate for adding a connection during initial seeding.");
-        init_mutate_changed |= ImGui::SliderInt("Init mutation rounds", &state.init_mutation.mutation_rounds, 0, 100);
+        init_mutate_changed |= ImGui::SliderInt("Init mutation rounds", &state.mutation.init_mutation_rounds, 0, 100);
         show_hover_text("How many initialization iterations to perform when a creature is created.");
         if (init_mutate_changed) {
-            game.set_init_add_node_probability(state.init_mutation.add_node_probability);
-            game.set_init_add_connection_probability(state.init_mutation.add_connection_probability);
-            game.set_init_mutation_rounds(state.init_mutation.mutation_rounds);
+            game.set_init_add_node_probability(state.mutation.init_add_node_probability);
+            game.set_init_add_connection_probability(state.mutation.init_add_connection_probability);
+            game.set_init_mutation_rounds(state.mutation.init_mutation_rounds);
         }
     }
 
