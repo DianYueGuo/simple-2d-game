@@ -54,6 +54,7 @@ struct MutationSettings {
     float add_connection_probability = 0.0f;
     float tick_add_node_probability = 0.0f;
     float tick_add_connection_probability = 0.0f;
+    float weight_extremum_init = 0.0f;
     bool live_mutation_enabled = false;
     bool allow_recurrent = false;
     float weight_thresh = 0.0f;
@@ -284,6 +285,7 @@ void initialize_state(UiState& state, Game& game) {
     state.mutation.add_connection_probability = game.get_add_connection_probability();
     state.mutation.tick_add_node_probability = game.get_tick_add_node_probability();
     state.mutation.tick_add_connection_probability = game.get_tick_add_connection_probability();
+    state.mutation.weight_extremum_init = game.get_mutate_weight_extremum_init();
     state.mutation.live_mutation_enabled = game.get_live_mutation_enabled();
     state.mutation.init_add_node_probability = game.get_init_add_node_probability();
     state.mutation.init_add_connection_probability = game.get_init_add_connection_probability();
@@ -595,6 +597,8 @@ void render_mutation_tab(Game& game, UiState& state) {
     if (ImGui::CollapsingHeader("Mutation tuning", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::SeparatorText("NEAT mutate parameters");
         bool mutate_changed = false;
+        mutate_changed |= ImGui::SliderFloat("Init weight range", &state.mutation.weight_extremum_init, 0.0f, 5.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+        show_hover_text("weightExtremumInit: absolute value cap for initial connection weights when constructing brains.");
         mutate_changed |= ImGui::Checkbox("Allow recurrent connections", &state.mutation.allow_recurrent);
         show_hover_text("Passed to NEAT mutate as areRecurrentConnectionsAllowed.");
         mutate_changed |= ImGui::SliderFloat("Weight mutate prob", &state.mutation.weight_thresh, 0.0f, 1.0f, "%.2f");
@@ -610,6 +614,7 @@ void render_mutation_tab(Game& game, UiState& state) {
         mutate_changed |= ImGui::SliderInt("Max iter find node", &state.mutation.add_node_iterations, 1, 100);
         show_hover_text("maxIterationsFindNodeThresh passed to mutate.");
         if (mutate_changed) {
+            game.set_mutate_weight_extremum_init(state.mutation.weight_extremum_init);
             game.set_mutate_allow_recurrent(state.mutation.allow_recurrent);
             game.set_mutate_weight_thresh(state.mutation.weight_thresh);
             game.set_mutate_weight_full_change_thresh(state.mutation.weight_full_change_thresh);

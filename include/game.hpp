@@ -92,6 +92,7 @@ private:
         float add_connection_probability = 0.02f;
         float tick_add_node_probability = 0.0f;
         float tick_add_connection_probability = 0.0f;
+        float weight_extremum_init = 0.001f;
         bool live_mutation_enabled = false;
         float mutate_weight_thresh = 0.05f;
         float mutate_weight_full_change_thresh = 0.0f;
@@ -186,6 +187,8 @@ public:
     float get_tick_add_node_probability() const { return mutation.tick_add_node_probability; }
     void set_tick_add_connection_probability(float p) { mutation.tick_add_connection_probability = std::clamp(p, 0.0f, 1.0f); }
     float get_tick_add_connection_probability() const { return mutation.tick_add_connection_probability; }
+    void set_mutate_weight_extremum_init(float v) { mutation.weight_extremum_init = std::max(0.0f, v); }
+    float get_mutate_weight_extremum_init() const { return mutation.weight_extremum_init; }
     void set_live_mutation_enabled(bool enabled) { mutation.live_mutation_enabled = enabled; }
     bool get_live_mutation_enabled() const { return mutation.live_mutation_enabled; }
     void set_mutate_weight_thresh(float v) { mutation.mutate_weight_thresh = std::clamp(v, 0.0f, 1.0f); }

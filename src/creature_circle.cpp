@@ -351,7 +351,7 @@ CreatureCircle::CreatureCircle(const b2WorldId &worldId,
                          int* last_innov_id,
                          Game* owner) :
     EatableCircle(worldId, position_x, position_y, radius, density, /*toxic=*/false, /*division_pellet=*/false, angle, /*boost_particle=*/false),
-    brain(base_brain ? *base_brain : neat::Genome(BRAIN_INPUTS, BRAIN_OUTPUTS, innov_ids, last_innov_id, 0.001f)) {
+    brain(base_brain ? *base_brain : neat::Genome(BRAIN_INPUTS, BRAIN_OUTPUTS, innov_ids, last_innov_id, owner ? owner->get_mutate_weight_extremum_init() : 0.001f)) {
     set_kind(CircleKind::Creature);
     neat_innovations = innov_ids;
     neat_last_innov_id = last_innov_id;
