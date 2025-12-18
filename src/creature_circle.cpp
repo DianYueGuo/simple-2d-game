@@ -351,7 +351,7 @@ CreatureCircle::CreatureCircle(const b2WorldId &worldId,
                          int* last_innov_id,
                          Game* owner) :
     EatableCircle(worldId, position_x, position_y, radius, density, /*toxic=*/false, /*division_pellet=*/false, angle, /*boost_particle=*/false),
-    brain(base_brain ? *base_brain : neat::Genome(BRAIN_INPUTS, BRAIN_OUTPUTS, 0, 0.0f, innov_ids, last_innov_id, 0.001f)) {
+    brain(base_brain ? *base_brain : neat::Genome(BRAIN_INPUTS, BRAIN_OUTPUTS, innov_ids, last_innov_id, 0.001f)) {
     set_kind(CircleKind::Creature);
     neat_innovations = innov_ids;
     neat_last_innov_id = last_innov_id;
@@ -523,7 +523,6 @@ void CreatureCircle::move_intelligently(const b2WorldId &worldId, Game &game, fl
         brain.mutate(
             neat_innovations,
             neat_last_innov_id,
-            game.get_mutate_allow_recurrent(),
             game.get_mutate_weight_thresh(),
             game.get_mutate_weight_full_change_thresh(),
             game.get_mutate_weight_factor(),
@@ -673,7 +672,6 @@ void CreatureCircle::initialize_brain(int mutation_rounds, float add_node_p, flo
             float reactivate = 0.25f;
             int add_conn_iters = 20;
             int add_node_iters = 20;
-            bool allow_recurrent = false;
             if (owner_game) {
                 weight_thresh = owner_game->get_mutate_weight_thresh();
                 weight_full = owner_game->get_mutate_weight_full_change_thresh();
@@ -681,12 +679,10 @@ void CreatureCircle::initialize_brain(int mutation_rounds, float add_node_p, flo
                 reactivate = owner_game->get_mutate_reactivate_connection_thresh();
                 add_conn_iters = owner_game->get_mutate_add_connection_iterations();
                 add_node_iters = owner_game->get_mutate_add_node_iterations();
-                allow_recurrent = owner_game->get_mutate_allow_recurrent();
             }
             brain.mutate(
                 neat_innovations,
                 neat_last_innov_id,
-                allow_recurrent,
                 weight_thresh,
                 weight_full,
                 weight_factor,
@@ -818,13 +814,11 @@ void CreatureCircle::mutate_lineage(const Game& game, CreatureCircle* child) {
     float reactivate = game.get_mutate_reactivate_connection_thresh();
     int add_conn_iters = game.get_mutate_add_connection_iterations();
     int add_node_iters = game.get_mutate_add_node_iterations();
-    bool allow_recurrent = game.get_mutate_allow_recurrent();
     for (int i = 0; i < mutation_rounds; ++i) {
         if (neat_innovations && neat_last_innov_id) {
             brain.mutate(
                 neat_innovations,
                 neat_last_innov_id,
-                allow_recurrent,
                 weight_thresh,
                 weight_full,
                 weight_factor,
@@ -838,7 +832,6 @@ void CreatureCircle::mutate_lineage(const Game& game, CreatureCircle* child) {
             child->brain.mutate(
                 child->neat_innovations,
                 child->neat_last_innov_id,
-                allow_recurrent,
                 weight_thresh,
                 weight_full,
                 weight_factor,
