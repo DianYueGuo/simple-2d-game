@@ -4,6 +4,7 @@
 #include "ui.hpp"
 #include "creature_circle.hpp"
 #include <unordered_map>
+#include <algorithm>
 
 namespace {
 struct CursorSettings {
@@ -154,9 +155,35 @@ void apply_preset(Preset preset, UiState& state, Game& game) {
 void render_brain_graph(const neat::Genome& brain) {
     if (ImGui::BeginChild("BrainGraphGeneric", ImVec2(0, 220), true)) {
         // Layout nodes by layer: inputs (layer 0), hidden (1..max), outputs (max+1).
-        int maxLayer = 1;
-        for (const auto& n : brain.nodes) {
-            if (n.layer > maxLayer) maxLayer = n.layer;
+        const int outputStart = std::min<int>(brain.nbInput + 1, brain.nodes.size());
+        const int outputEnd = std::min<int>(outputStart + brain.nbOutput, brain.nodes.size());
+
+        // Build display layers that force outputs to the rightmost layer even if their raw
+        // layer values shrink during NEAT mutations.
+        std::vector<int> renderLayers(brain.nodes.size(), 0);
+        int maxHiddenLayer = 0;
+        for (size_t i = 0; i < brain.nodes.size(); ++i) {
+            const bool isOutput = static_cast<int>(i) >= outputStart && static_cast<int>(i) < outputEnd;
+            if (!isOutput) {
+                int l = std::max(0, brain.nodes[i].layer);
+                renderLayers[i] = l;
+                maxHiddenLayer = std::max(maxHiddenLayer, l);
+            }
+        }
+        const int outputLayer = maxHiddenLayer + 1;
+        for (size_t i = 0; i < brain.nodes.size(); ++i) {
+            const bool isOutput = static_cast<int>(i) >= outputStart && static_cast<int>(i) < outputEnd;
+            renderLayers[i] = isOutput ? outputLayer : std::max(0, brain.nodes[i].layer);
+        }
+
+        // Compact sparse layers so wide gaps in layer numbers don't waste space visually.
+        std::vector<int> uniqueLayers = renderLayers;
+        std::sort(uniqueLayers.begin(), uniqueLayers.end());
+        uniqueLayers.erase(std::unique(uniqueLayers.begin(), uniqueLayers.end()), uniqueLayers.end());
+        std::unordered_map<int, int> layerRemap;
+        layerRemap.reserve(uniqueLayers.size());
+        for (int i = 0; i < static_cast<int>(uniqueLayers.size()); ++i) {
+            layerRemap[uniqueLayers[i]] = i;
         }
         ImVec2 avail = ImGui::GetContentRegionAvail();
         ImVec2 origin = ImGui::GetCursorScreenPos();
@@ -169,11 +196,10 @@ void render_brain_graph(const neat::Genome& brain) {
         drawNodes.reserve(brain.nodes.size());
 
         // Bucket nodes by layer
-        std::vector<std::vector<int>> layerBuckets(maxLayer + 1);
+        std::vector<std::vector<int>> layerBuckets(uniqueLayers.size());
         for (size_t i = 0; i < brain.nodes.size(); ++i) {
-            int layer = std::max(0, brain.nodes[i].layer);
-            if (layer >= (int)layerBuckets.size()) layerBuckets.resize(layer + 1);
-            layerBuckets[layer].push_back(static_cast<int>(i));
+            int remappedLayer = layerRemap[renderLayers[i]];
+            layerBuckets[remappedLayer].push_back(static_cast<int>(i));
         }
 
         // Position nodes
