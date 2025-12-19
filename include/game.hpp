@@ -98,7 +98,7 @@ private:
         bool live_mutation_enabled = false;
         float mutate_weight_thresh = 0.8f;
         float mutate_weight_full_change_thresh = 0.1f;
-        float mutate_weight_factor = 0.1f;
+        float mutate_weight_factor = 0.2f;
         int max_iterations_find_connection_thresh = 20;
         float reactivate_connection_thresh = 0.25f;
         int max_iterations_find_node_thresh = 20;
